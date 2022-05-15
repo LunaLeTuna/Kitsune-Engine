@@ -1,0 +1,5 @@
+name=RJWalk
+texture=texture/RJWalk.png
+animated=1
+frames=4
+tps=15

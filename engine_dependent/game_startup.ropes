@@ -1,0 +1,11 @@
+//loads game assets in to memory
+
+control_priority("menus", #1#);
+render_allow("menus", "1");
+envvar("settings.env", "language", "lang");
+_set_lang(!lang!);
+_set_title("Kitsune Engine");
+set_menu("menu/main.menu");
+//set_menu("menu/debug.menu");
+varClear;
+End;
