@@ -1,1 +1,39 @@
-# Kitsune-Engine
+
+![Logo](https://github.com/LunaLeTuna/Kitsune-Engine/blob/main/kitsune_logo.png?raw=true)
+
+Basicly made this to help me quickly build aplications and games, mainly for a computer information sience class i'm taking in highschool.
+It has very messy V8 implementation. :3
+Also, to quickly get it up I kinda barrowed some code from learnopengl.
+from the first commit of this repository, i've been working on this for 3 or 4 months now.
+
+
+
+## Credits
+
+- [Google's V8 Engine](https://v8.dev/)
+- [Bullet Physics](https://pybullet.org/)
+- [GLFW](https://www.glfw.org/)
+- [GLM](https://github.com/g-truc/glm)
+- [FreeType](https://freetype.org/)
+- [learnopengl for lots of opengl code](https://learnopengl.com/)
+
+
+## Roadmap
+
+- Add audio system
+
+- Make robust obj importer, allowing for bones and auto triangulation
+
+- RayCast
+
+- Make Map/Scene editor (probably made engine)
+
+- Revamp input system
+
+- Make Documentation
+
+- Make better demos
+
+- Allow for scripts to call other scripts (like require in node.js)
+
+- Port to vulkan (long time before that)
