@@ -1,4 +1,0 @@
-function yes(pog)
-	console(pog);
-	console("yes");
-end;
