@@ -1841,9 +1841,10 @@ void MenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "text_size").ToLocalChecked(), Getelts, Setelts, v8::Integer::New(isolate,awaeex));
 //     local->SetAccessor(v8::String::NewFromUtf8(isolate, "font").ToLocalChecked(), Getelfont, Setelfont, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "text").ToLocalChecked(), Geteltext, Seteltext, v8::Integer::New(isolate,awaeex));
-    MenuElement_templ.Reset(isolate, inner.Escape(local));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "text_font").ToLocalChecked(), Getelfont, Setelfont, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "text_color").ToLocalChecked(), Getelcolor, Setelcolor, v8::Integer::New(isolate,awaeex));
+
+    MenuElement_templ.Reset(isolate, inner.Escape(local));
 
         v8::Local<v8::Object> MenuElement_obj =
       v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), MenuElement_templ)
@@ -2030,7 +2031,7 @@ void run_cmd(const v8::FunctionCallbackInfo<v8::Value>& args){
 void RayConstruct( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
     v8::HandleScope handle_scope(args.GetIsolate());
-    v8::Persistent<v8::ObjectTemplate> MenuElement_templ;
+    v8::Persistent<v8::ObjectTemplate> Raycast_templ;
 
     float xp1 = args[0]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
 
@@ -2044,7 +2045,9 @@ void RayConstruct( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
     float zp2 = args[1]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
 
-    dynamicWorld::ClosestRayResultCallback res(btVector3(xp1,yp1,zp1), btVector3(xp2,yp2,zp2));
+    btCollisionWorld::ClosestRayResultCallback res(btVector3(xp1,yp1,zp1), btVector3(xp2,yp2,zp2));
+
+    dynamicWorld->rayTest(btVector3(xp1,yp1,zp1), btVector3(xp2,yp2,zp2), res);
 
     if(res.hasHit()){
         printf("Collision at: <%.2f, %.2f, %.2f>\n", res.m_hitPointWorld.getX(), res.m_hitPointWorld.getY(), res.m_hitPointWorld.getZ());
@@ -2053,19 +2056,14 @@ void RayConstruct( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     v8::EscapableHandleScope inner(isolate);
     v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getelvec2, Setelvec2, v8::Integer::New(isolate,awaeex));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "text_size").ToLocalChecked(), Getelts, Setelts, v8::Integer::New(isolate,awaeex));
-//     local->SetAccessor(v8::String::NewFromUtf8(isolate, "font").ToLocalChecked(), Getelfont, Setelfont, v8::Integer::New(isolate,awaeex));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "text").ToLocalChecked(), Geteltext, Seteltext, v8::Integer::New(isolate,awaeex));
-    MenuElement_templ.Reset(isolate, inner.Escape(local));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "text_font").ToLocalChecked(), Getelfont, Setelfont, v8::Integer::New(isolate,awaeex));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "text_color").ToLocalChecked(), Getelcolor, Setelcolor, v8::Integer::New(isolate,awaeex));
+    Raycast_templ.Reset(isolate, inner.Escape(local));
 
-        v8::Local<v8::Object> MenuElement_obj =
-      v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), MenuElement_templ)
+        v8::Local<v8::Object> Raycast_obj =
+      v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), Raycast_templ)
           ->NewInstance(args.GetIsolate()->GetCurrentContext())
           .ToLocalChecked();
 
-        args.GetReturnValue().Set(MenuElement_obj);
+    args.GetReturnValue().Set(Raycast_obj);
 }
 
 v8::Local<v8::Context> load_wrap_functions(v8::Isolate* isolate) {
@@ -2091,7 +2089,7 @@ v8::Local<v8::Context> load_wrap_functions(v8::Isolate* isolate) {
     global->Set(isolate, "Prop", v8::FunctionTemplate::New(isolate, PropConstructor));
 
     //raycast
-    global->Set(isolate, "RayCast", v8::FunctionTemplate::New(isolate, RayConstruct));
+    //global->Set(isolate, "RayCast", v8::FunctionTemplate::New(isolate, RayConstruct));
 
     //Cameras
     global->Set(isolate, "Camera", v8::FunctionTemplate::New(isolate, CameraConstructor));
