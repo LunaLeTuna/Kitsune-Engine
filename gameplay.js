@@ -159,7 +159,7 @@ function tick(delta){ //called every frame (TODO: multi thread)
     create.position = new Vector3(0+Math.cos(time/2)*6, 1.56, 0+Math.sin(time/2)*6);
 
     fps.text = "screen | width: "+innerWidth+" | height: "+innerHeight+"\ncurser | x: "+xpos+" | y: "+ypos+"\nbox | y: "+bbbb.position.y;
-    //fps.position = new Vector2(xpos, -ypos+innerHeight);
+    fps.position = new Vector2(xpos, innerHeight/2);
 
     if(time>8&&bza==false){
         //

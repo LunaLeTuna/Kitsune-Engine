@@ -723,13 +723,13 @@ const char* ToCString(const v8::String::Utf8Value& value) {
 void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
     bool first = true;
     for (int i = 0; i < args.Length(); i++) {
-        v8::HandleScope handle_scope(args.GetIsolate());
+        v8::HandleScope handle_scope(isolate);
         if (first) {
         first = false;
         } else {
         printf(" ");
         }
-        v8::String::Utf8Value str(args.GetIsolate(), args[i]);
+        v8::String::Utf8Value str(isolate, args[i]);
         const char* cstr = ToCString(str);
         printf("%s", cstr);
     }
@@ -740,13 +740,13 @@ void Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
 void Win_title(const v8::FunctionCallbackInfo<v8::Value>& args) {
     bool first = true;
     for (int i = 0; i < args.Length(); i++) {
-        v8::HandleScope handle_scope(args.GetIsolate());
+        v8::HandleScope handle_scope(isolate);
         if (first) {
         first = false;
         } else {
         glfwSetWindowTitle(window, "Kitsune Engine");
         }
-        v8::String::Utf8Value str(args.GetIsolate(), args[i]);
+        v8::String::Utf8Value str(isolate, args[i]);
         const char* cstr = ToCString(str);
         glfwSetWindowTitle(window, cstr);
     }
@@ -754,30 +754,31 @@ void Win_title(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void Version(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    args.GetReturnValue().Set(v8::String::NewFromUtf8(args.GetIsolate(), v8::V8::GetVersion()).ToLocalChecked());
+    args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, v8::V8::GetVersion()).ToLocalChecked());
 }
 
 void Vector3Normalize(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
-    float tx = args.Holder()->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    float tx = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    float ty = args.Holder()->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    float ty = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    float tz = args.Holder()->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    float tz = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     float vedy = sqrtf(tx*tx+ty*ty+tz*tz);
 
-    args.Holder()->Set(args.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(args.GetIsolate(), "x").ToLocalChecked(), v8::Number::New(isolate,tx/vedy));
-    args.Holder()->Set(args.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(args.GetIsolate(), "y").ToLocalChecked(), v8::Number::New(isolate,ty/vedy));
-    args.Holder()->Set(args.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(args.GetIsolate(), "z").ToLocalChecked(), v8::Number::New(isolate,tz/vedy));
+    args.Holder()->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate,tx/vedy));
+    args.Holder()->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), v8::Number::New(isolate,ty/vedy));
+    args.Holder()->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "z").ToLocalChecked(), v8::Number::New(isolate,tz/vedy));
 
     args.GetReturnValue().Set(args.Holder());
 }
 
+
 v8::Persistent<v8::ObjectTemplate> vec3_templ;
-void Vector3Constructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+
+v8::Local<v8::Object> quick_create_vector3(glm::vec3 vvinput){
 
     if (vec3_templ.IsEmpty()) {
         v8::EscapableHandleScope inner(isolate);
@@ -790,24 +791,80 @@ void Vector3Constructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     }
 
     v8::Local<v8::Object> vec3_obj =
-      v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), vec3_templ)
-          ->NewInstance(args.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, vec3_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
-        if(!args[0].IsEmpty() && args[0]->IsNumber() &&
-           !args[1].IsEmpty() && args[1]->IsNumber() &&
-           !args[2].IsEmpty() && args[2]->IsNumber()) {
-            vec3_obj->Set(args.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(args.GetIsolate(), "x").ToLocalChecked(), args[0]);
-            vec3_obj->Set(args.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(args.GetIsolate(), "y").ToLocalChecked(), args[1]);
-            vec3_obj->Set(args.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(args.GetIsolate(), "z").ToLocalChecked(), args[2]);
-        }
+    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate, vvinput.x));
+    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), v8::Number::New(isolate, vvinput.y));
+    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "z").ToLocalChecked(), v8::Number::New(isolate, vvinput.z));
 
-        args.GetReturnValue().Set(vec3_obj);
+    return vec3_obj;
+}
+
+v8::Local<v8::Object> v8_vector3(const v8::FunctionCallbackInfo<v8::Value>& args){
+
+    if (vec3_templ.IsEmpty()) {
+        v8::EscapableHandleScope inner(isolate);
+        v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
+        local->Set(isolate, "x", v8::Number::New(isolate,0));
+        local->Set(isolate, "y", v8::Number::New(isolate,0));
+        local->Set(isolate, "z", v8::Number::New(isolate,0));
+        local->Set(isolate, "Normalize", v8::FunctionTemplate::New(isolate, Vector3Normalize));
+        vec3_templ.Reset(isolate, inner.Escape(local));
+    }
+
+    v8::Local<v8::Object> vec3_obj =
+      v8::Local<v8::ObjectTemplate>::New(isolate, vec3_templ)
+          ->NewInstance(isolate->GetCurrentContext())
+          .ToLocalChecked();
+
+    if(!args[0].IsEmpty() && args[0]->IsNumber() &&
+        !args[1].IsEmpty() && args[1]->IsNumber() &&
+        !args[2].IsEmpty() && args[2]->IsNumber()) {
+        vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), args[0]);
+        vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), args[1]);
+        vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "z").ToLocalChecked(), args[2]);
+    }
+
+    return vec3_obj;
+}
+
+void Vector3Constructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
+    v8::HandleScope handle_scope(isolate);
+
+
+    if(!args[0].IsEmpty() && args[0]->IsNumber() &&
+        !args[1].IsEmpty() && args[1]->IsNumber() &&
+        !args[2].IsEmpty() && args[2]->IsNumber()) {
+        args.GetReturnValue().Set(v8_vector3(args));
+    }
 }
 
 v8::Persistent<v8::ObjectTemplate> vec2_templ;
-void Vector2Constructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+
+v8::Local<v8::Object> quick_create_vector2(glm::vec2 vvinput){
+
+    if (vec2_templ.IsEmpty()) {
+        v8::EscapableHandleScope inner(isolate);
+        v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
+        local->Set(isolate, "x", v8::Number::New(isolate,0));
+        local->Set(isolate, "y", v8::Number::New(isolate,0));;
+        vec2_templ.Reset(isolate, inner.Escape(local));
+    }
+
+    v8::Local<v8::Object> vec2_obj =
+      v8::Local<v8::ObjectTemplate>::New(isolate, vec2_templ)
+          ->NewInstance(isolate->GetCurrentContext())
+          .ToLocalChecked();
+
+    vec2_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate, vvinput.x));
+    vec2_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), v8::Number::New(isolate, vvinput.y));
+
+    return vec2_obj;
+}
+
+v8::Local<v8::Object> v8_vector2(const v8::FunctionCallbackInfo<v8::Value>& args){
 
     if (vec2_templ.IsEmpty()) {
         v8::EscapableHandleScope inner(isolate);
@@ -818,17 +875,27 @@ void Vector2Constructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     }
 
     v8::Local<v8::Object> vec2_obj =
-      v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), vec2_templ)
-          ->NewInstance(args.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, vec2_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
-        if(!args[0].IsEmpty() && args[0]->IsNumber() &&
-           !args[1].IsEmpty() && args[1]->IsNumber()) {
-            vec2_obj->Set(args.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(args.GetIsolate(), "x").ToLocalChecked(), args[0]);
-            vec2_obj->Set(args.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(args.GetIsolate(), "y").ToLocalChecked(), args[1]);
-        }
+    if(!args[0].IsEmpty() && args[0]->IsNumber() &&
+        !args[1].IsEmpty() && args[1]->IsNumber()) {
+        vec2_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), args[0]);
+        vec2_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), args[1]);
+    }
 
-        args.GetReturnValue().Set(vec2_obj);
+    return vec2_obj;
+}
+
+void Vector2Constructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
+    v8::HandleScope handle_scope(isolate);
+
+
+    if(!args[0].IsEmpty() && args[0]->IsNumber() &&
+        !args[1].IsEmpty() && args[1]->IsNumber()) {
+        args.GetReturnValue().Set(v8_vector2(args));
+    }
 }
 
 glm::vec3 foo = glm::vec3( 0.0f,  0.0f,  0.0f);
@@ -837,19 +904,19 @@ int away = 0; //size
 vector<texture> ctextures;
 
 void SetTextureFile(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
-    int MID = args.Holder()->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     if(!args[0].IsEmpty() && args[0]->IsString()){
-        v8::String::Utf8Value str(args.GetIsolate(), args[0]);
+        v8::String::Utf8Value str(isolate, args[0]);
         const char* cstr = ToCString(str);
         ctextures[MID].load((char*)cstr);
     }
 }
 
 void TextureConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
     v8::Persistent<v8::ObjectTemplate> texture_templ;
 
     texture texturecl;
@@ -857,7 +924,7 @@ void TextureConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     texturecl.name = "texture_"+to_string(away);
 
     if(!args[0].IsEmpty() && args[0]->IsString()) {
-        v8::String::Utf8Value str(args.GetIsolate(), args[0]);
+        v8::String::Utf8Value str(isolate, args[0]);
         const char* cstr = ToCString(str);
         texturecl.load((char*)cstr);
     }
@@ -873,8 +940,8 @@ void TextureConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     texture_templ.Reset(isolate, inner.Escape(local));
 
         v8::Local<v8::Object> texture_obj =
-      v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), texture_templ)
-          ->NewInstance(args.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, texture_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
         args.GetReturnValue().Set(texture_obj);
@@ -884,14 +951,14 @@ int awaz = 0; //size
 vector<model> cmodels;
 
 void SetModelOBJ(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
-    int MID = args.Holder()->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     cout << "setted was the model " << MID << endl;
 
     if(!args[0].IsEmpty() && args[0]->IsString()){
-        v8::String::Utf8Value str(args.GetIsolate(), args[0]);
+        v8::String::Utf8Value str(isolate, args[0]);
         const char* cstr = ToCString(str);
         cmodels[MID].load_obj(get_file(cstr));
         cout << "fom model " << cmodels[MID].VBO << "\ndn "<< cstr << endl;
@@ -907,7 +974,7 @@ void SetModelOBJ(const v8::FunctionCallbackInfo<v8::Value>& args) {
  */
 
 void ModelConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
     v8::Persistent<v8::ObjectTemplate> model_templ;
 
     model modecl;
@@ -915,7 +982,7 @@ void ModelConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     modecl.name = "moodel "+to_string(awaz);
 
     if(!args[0].IsEmpty() && args[0]->IsString()) {
-        v8::String::Utf8Value str(args.GetIsolate(), args[0]);
+        v8::String::Utf8Value str(isolate, args[0]);
         const char* cstr = ToCString(str);
         modecl.load_obj(get_file(cstr));
         //cout << "wa " << cstr << endl;
@@ -933,8 +1000,8 @@ void ModelConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     model_templ.Reset(isolate, inner.Escape(local));
 
         v8::Local<v8::Object> model_obj =
-      v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), model_templ)
-          ->NewInstance(args.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, model_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
         args.GetReturnValue().Set(model_obj);
@@ -944,21 +1011,21 @@ int shadpogs = 0; //size
 vector<shader> cshaders;
 
 void SetShaderFile(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
-    int MID = args.Holder()->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     cout << "setted was the model " << MID << endl;
 
     if(!args[0].IsEmpty() && args[0]->IsString()){
-        v8::String::Utf8Value str(args.GetIsolate(), args[0]);
+        v8::String::Utf8Value str(isolate, args[0]);
         const char* cstr = ToCString(str);
         cshaders[MID].craft(cstr);
     }
 }
 
 void ShaderConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
     v8::Persistent<v8::ObjectTemplate> shader_templ;
 
     shader shadercl;
@@ -966,7 +1033,7 @@ void ShaderConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     shadercl.name = "shader_"+to_string(shadpogs);
 
     if(!args[0].IsEmpty() && args[0]->IsString()) {
-        v8::String::Utf8Value str(args.GetIsolate(), args[0]);
+        v8::String::Utf8Value str(isolate, args[0]);
         const char* cstr = ToCString(str);
         shadercl.craft(get_file(cstr));
         //cout << "wa " << cstr << endl;
@@ -984,8 +1051,8 @@ void ShaderConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     shader_templ.Reset(isolate, inner.Escape(local));
 
         v8::Local<v8::Object> shader_obj =
-      v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), shader_templ)
-          ->NewInstance(args.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, shader_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
         args.GetReturnValue().Set(shader_obj);
@@ -1003,7 +1070,7 @@ vector<prop> part;
 static void Getvec3p(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
     if (vec3_templ.IsEmpty()) {
         v8::EscapableHandleScope inner(isolate);
@@ -1015,15 +1082,15 @@ static void Getvec3p(v8::Local<v8::String> property,
     }
 
     v8::Local<v8::Object> vec3_obj =
-      v8::Local<v8::ObjectTemplate>::New(info.GetIsolate(), vec3_templ)
-          ->NewInstance(info.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, vec3_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].position.x));
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].position.y));
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "z").ToLocalChecked(), v8::Number::New(isolate,part[valueb].position.z));
+    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].position.x));
+    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].position.y));
+    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "z").ToLocalChecked(), v8::Number::New(isolate,part[valueb].position.z));
 
 
   info.GetReturnValue().Set(vec3_obj);
@@ -1036,11 +1103,11 @@ static void Setvec3p(v8::Local<v8::String> property,
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
 
-    part[valueb].position.x = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+    part[valueb].position.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    part[valueb].position.y = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+    part[valueb].position.y = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    part[valueb].position.z = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+    part[valueb].position.z = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     if(part[valueb].has_physbody){
         btTransform transform;
@@ -1056,7 +1123,7 @@ static void Setvec3p(v8::Local<v8::String> property,
 static void Getvec3sc(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
     if (vec3_templ.IsEmpty()) {
         v8::EscapableHandleScope inner(isolate);
@@ -1068,15 +1135,15 @@ static void Getvec3sc(v8::Local<v8::String> property,
     }
 
     v8::Local<v8::Object> vec3_obj =
-      v8::Local<v8::ObjectTemplate>::New(info.GetIsolate(), vec3_templ)
-          ->NewInstance(info.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, vec3_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.x));
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.y));
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "z").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.z));
+    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.x));
+    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.y));
+    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "z").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.z));
 
 
   info.GetReturnValue().Set(vec3_obj);
@@ -1089,17 +1156,17 @@ static void Setvec3sc(v8::Local<v8::String> property,
   int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
   int valueb = valuea;
 
-  part[valueb].scale.x = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  part[valueb].scale.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  part[valueb].scale.y = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  part[valueb].scale.y = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  part[valueb].scale.z = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  part[valueb].scale.z = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 }
 
 static void Getvec3r(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
     if (vec3_templ.IsEmpty()) {
         v8::EscapableHandleScope inner(isolate);
@@ -1111,15 +1178,15 @@ static void Getvec3r(v8::Local<v8::String> property,
     }
 
     v8::Local<v8::Object> vec3_obj =
-      v8::Local<v8::ObjectTemplate>::New(info.GetIsolate(), vec3_templ)
-          ->NewInstance(info.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, vec3_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.x));
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.y));
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "z").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.z));
+    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.x));
+    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.y));
+    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "z").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.z));
 
 
   info.GetReturnValue().Set(vec3_obj);
@@ -1132,17 +1199,17 @@ static void Setvec3r(v8::Local<v8::String> property,
   int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
   int valueb = valuea;
 
-  part[valueb].rotation.x = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  part[valueb].rotation.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  part[valueb].rotation.y = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  part[valueb].rotation.y = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  part[valueb].rotation.z = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  part[valueb].rotation.z = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 }
 
 static void Gettexture(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 }
 
 
@@ -1152,7 +1219,7 @@ static void Settexture(v8::Local<v8::String> property,
   int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
   int valueb = valuea;
 
-  int dock = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  int dock = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
   part[valueb].textures = &ctextures[dock];
 }
@@ -1160,7 +1227,7 @@ static void Settexture(v8::Local<v8::String> property,
 static void Getspecular(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 }
 
 
@@ -1170,7 +1237,7 @@ static void Setspecular(v8::Local<v8::String> property,
   int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
   int valueb = valuea;
 
-  int dock = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  int dock = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
   part[valueb].speculars = &ctextures[dock];
 }
@@ -1178,7 +1245,7 @@ static void Setspecular(v8::Local<v8::String> property,
 static void Getmodel(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
 //     if (vec3_templ.IsEmpty()) {
 //         v8::EscapableHandleScope inner(isolate);
@@ -1190,15 +1257,15 @@ static void Getmodel(v8::Local<v8::String> property,
 //     }
 //
 //     v8::Local<v8::Object> vec3_obj =
-//       v8::Local<v8::ObjectTemplate>::New(info.GetIsolate(), vec3_templ)
-//           ->NewInstance(info.GetIsolate()->GetCurrentContext())
+//       v8::Local<v8::ObjectTemplate>::New(isolate, vec3_templ)
+//           ->NewInstance(isolate->GetCurrentContext())
 //           .ToLocalChecked();
 //
 //     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
 //     int valueb = valuea;
-//     vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.x));
-//     vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.y));
-//     vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "z").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.z));
+//     vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.x));
+//     vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.y));
+//     vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "z").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.z));
 //
 //
 //   info.GetReturnValue().Set(vec3_obj);
@@ -1208,9 +1275,9 @@ static void Getmodel(v8::Local<v8::String> property,
 static void Setmodel(v8::Local<v8::String> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void>& info) {
-  int valueb = info.Holder()->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  int valueb = info.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  int dock = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  int dock = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
   part[valueb].models = &cmodels[dock];
 }
@@ -1232,9 +1299,9 @@ btRigidBody* create_physbox(glm::vec3 position, glm::vec3 size, float mass){
 
 void create_physbody(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
-    float valueb = args.Holder()->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    float valueb = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     part[valueb].phys_counterpart = create_physbox(part[valueb].position, glm::vec3(1,1,1), part[valueb].mass);
     part[valueb].has_physbody = 1;
@@ -1243,18 +1310,18 @@ void create_physbody(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void add_force(const v8::FunctionCallbackInfo<v8::Value>& args){
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
-    float valueb = args.Holder()->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    float valueb = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     if(part[valueb].has_physbody){
 
 
-        float xp = args[0]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+        float xp = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-        float yp = args[0]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+        float yp = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-        float zp = args[0]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+        float zp = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
         part[valueb].phys_counterpart->forceActivationState(ACTIVE_TAG);
         part[valueb].phys_counterpart->applyCentralImpulse(btVector3(xp,yp,zp));
@@ -1267,7 +1334,7 @@ void add_force(const v8::FunctionCallbackInfo<v8::Value>& args){
 static void Getpvl(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
     if (vec3_templ.IsEmpty()) {
         v8::EscapableHandleScope inner(isolate);
@@ -1279,8 +1346,8 @@ static void Getpvl(v8::Local<v8::String> property,
     }
 
     v8::Local<v8::Object> vec3_obj =
-      v8::Local<v8::ObjectTemplate>::New(info.GetIsolate(), vec3_templ)
-          ->NewInstance(info.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, vec3_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
@@ -1290,9 +1357,9 @@ static void Getpvl(v8::Local<v8::String> property,
     //getLinearVelocity
         btVector3 lva = part[valueb].phys_counterpart->getLinearVelocity();
 
-        vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "x").ToLocalChecked(), v8::Number::New(isolate,lva.getX()));
-        vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "y").ToLocalChecked(), v8::Number::New(isolate,lva.getY()));
-        vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "z").ToLocalChecked(), v8::Number::New(isolate,lva.getZ()));
+        vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate,lva.getX()));
+        vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), v8::Number::New(isolate,lva.getY()));
+        vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "z").ToLocalChecked(), v8::Number::New(isolate,lva.getZ()));
 
     }
 
@@ -1308,11 +1375,11 @@ static void Setpvl(v8::Local<v8::String> property,
     int valueb = valuea;
 
     if(part[valueb].has_physbody){
-        int xp = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+        int xp = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-        int yp = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+        int yp = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-        int zp = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+        int zp = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
         part[valueb].phys_counterpart->forceActivationState(ACTIVE_TAG);
         part[valueb].phys_counterpart->setLinearVelocity(btVector3(xp,yp,zp));
@@ -1325,13 +1392,13 @@ static void Setpmass(v8::Local<v8::String> property,
   int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
   int valueb = valuea;
 
-  part[valueb].mass = value->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  part[valueb].mass = value->NumberValue(isolate->GetCurrentContext()).FromJust();
 }
 
 static void Getpmass(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
@@ -1347,7 +1414,7 @@ static void Getpmass(v8::Local<v8::String> property,
 
 void PropConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
     v8::Persistent<v8::ObjectTemplate> prop_templ;
 
     prop zpart;
@@ -1379,8 +1446,8 @@ void PropConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     prop_templ.Reset(isolate, inner.Escape(local));
 
         v8::Local<v8::Object> prop_obj =
-      v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), prop_templ)
-          ->NewInstance(args.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, prop_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
         args.GetReturnValue().Set(prop_obj);
@@ -1401,30 +1468,13 @@ vector<cameras> cams;
 static void Getvec3pc(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
-
-    if (vec3_templ.IsEmpty()) {
-        v8::EscapableHandleScope inner(isolate);
-        v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
-        local->Set(isolate, "x", v8::Integer::New(isolate,0));
-        local->Set(isolate, "y", v8::Integer::New(isolate,0));
-        local->Set(isolate, "z", v8::Integer::New(isolate,0));
-        vec3_templ.Reset(isolate, inner.Escape(local));
-    }
-
-    v8::Local<v8::Object> vec3_obj =
-      v8::Local<v8::ObjectTemplate>::New(info.GetIsolate(), vec3_templ)
-          ->NewInstance(info.GetIsolate()->GetCurrentContext())
-          .ToLocalChecked();
+    v8::HandleScope handle_scope(isolate);
 
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "x").ToLocalChecked(), v8::Number::New(isolate,cams[valueb].position.x));
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "y").ToLocalChecked(), v8::Number::New(isolate,cams[valueb].position.y));
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "z").ToLocalChecked(), v8::Number::New(isolate,cams[valueb].position.z));
 
 
-  info.GetReturnValue().Set(vec3_obj);
+  info.GetReturnValue().Set(quick_create_vector3(cams[valueb].position));
 }
 
 
@@ -1434,11 +1484,11 @@ static void Setvec3pc(v8::Local<v8::String> property,
   int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
   int valueb = valuea;
 
-  cams[valueb].position.x = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  cams[valueb].position.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  cams[valueb].position.y = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  cams[valueb].position.y = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  cams[valueb].position.z = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  cams[valueb].position.z = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, cams[valueb].front.x, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -1451,30 +1501,13 @@ static void Setvec3pc(v8::Local<v8::String> property,
 static void Getvec3f(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
-
-    if (vec3_templ.IsEmpty()) {
-        v8::EscapableHandleScope inner(isolate);
-        v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
-        local->Set(isolate, "x", v8::Integer::New(isolate,0));
-        local->Set(isolate, "y", v8::Integer::New(isolate,0));
-        local->Set(isolate, "z", v8::Integer::New(isolate,0));
-        vec3_templ.Reset(isolate, inner.Escape(local));
-    }
-
-    v8::Local<v8::Object> vec3_obj =
-      v8::Local<v8::ObjectTemplate>::New(info.GetIsolate(), vec3_templ)
-          ->NewInstance(info.GetIsolate()->GetCurrentContext())
-          .ToLocalChecked();
+  v8::HandleScope handle_scope(isolate);
 
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "x").ToLocalChecked(), v8::Number::New(isolate,cams[valueb].front.x));
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "y").ToLocalChecked(), v8::Number::New(isolate,cams[valueb].front.y));
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "z").ToLocalChecked(), v8::Number::New(isolate,cams[valueb].front.z));
 
 
-  info.GetReturnValue().Set(vec3_obj);
+  info.GetReturnValue().Set(quick_create_vector3(cams[valueb].front));
 }
 
 double pi = 2 * acos(0.0);
@@ -1485,11 +1518,11 @@ static void Setvec3f(v8::Local<v8::String> property,
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
 
-    cams[valueb].front.x = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust()*(pi/180);
+    cams[valueb].front.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust()*(pi/180);
 
-    cams[valueb].front.y = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust()*(pi/180);
+    cams[valueb].front.y = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust()*(pi/180);
 
-    cams[valueb].front.z = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust()*(pi/180);
+    cams[valueb].front.z = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust()*(pi/180);
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, cams[valueb].front.x, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -1500,17 +1533,17 @@ static void Setvec3f(v8::Local<v8::String> property,
 }
 
 void CamLookAt(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
     if(!args[0].IsEmpty()){
-        int valueb = args.Holder()->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+        int valueb = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
 
-        float rxx = args[0]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+        float rxx = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-        float ryy = args[0]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+        float ryy = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-        float rzz = args[0]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+        float rzz = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
 
 //         glm::vec3 f = glm::normalize(glm::vec3(rxx, ryy, rzz) - cams[valueb].position);
@@ -1550,7 +1583,7 @@ void CamLookAt(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 void CameraConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
     v8::Persistent<v8::ObjectTemplate> camera_templ;
 
     cameras cpart;
@@ -1572,17 +1605,17 @@ void CameraConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     camera_templ.Reset(isolate, inner.Escape(local));
 
     v8::Local<v8::Object> camera_obj =
-    v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), camera_templ)
-        ->NewInstance(args.GetIsolate()->GetCurrentContext())
+    v8::Local<v8::ObjectTemplate>::New(isolate, camera_templ)
+        ->NewInstance(isolate->GetCurrentContext())
         .ToLocalChecked();
 
     args.GetReturnValue().Set(camera_obj);
 }
 
 void set_main_cam(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
-    int dock = args[0]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    int dock = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     main_cam = &cams[dock];
 }
@@ -1591,27 +1624,27 @@ int fontpogs = 0; //size
 vector<font> cfonts;
 
 void GetFontFile(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
-    int MID = args.Holder()->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     cout << "setted was the font " << MID << endl;
 
     if(!args[0].IsEmpty() && args[0]->IsString()){
-        v8::String::Utf8Value str(args.GetIsolate(), args[0]);
+        v8::String::Utf8Value str(isolate, args[0]);
         const char* cstr = ToCString(str);
         cfonts[MID].craft(cstr);
     }
 }
 
 void FontConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
     v8::Persistent<v8::ObjectTemplate> font_templ;
 
     font fontcl;
 
     if(!args[0].IsEmpty() && args[0]->IsString()) {
-        v8::String::Utf8Value str(args.GetIsolate(), args[0]);
+        v8::String::Utf8Value str(isolate, args[0]);
         const char* cstr = ToCString(str);
         fontcl.craft(get_file(cstr));
         //cout << "wa " << cstr << endl;
@@ -1629,8 +1662,8 @@ void FontConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     font_templ.Reset(isolate, inner.Escape(local));
 
         v8::Local<v8::Object> font_obj =
-      v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), font_templ)
-          ->NewInstance(args.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, font_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
         args.GetReturnValue().Set(font_obj);
@@ -1641,51 +1674,32 @@ vector<element> screen_elements;
 
 static void Getelvec2(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
-
-    v8::HandleScope handle_scope(info.GetIsolate());
-
-    if (vec2_templ.IsEmpty()) {
-        v8::EscapableHandleScope inner(isolate);
-        v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
-        local->Set(isolate, "x", v8::Integer::New(isolate,0));
-        local->Set(isolate, "y", v8::Integer::New(isolate,0));
-        vec3_templ.Reset(isolate, inner.Escape(local));
-    }
-
-    v8::Local<v8::Object> vec2_obj =
-      v8::Local<v8::ObjectTemplate>::New(info.GetIsolate(), vec3_templ)
-          ->NewInstance(info.GetIsolate()->GetCurrentContext())
-          .ToLocalChecked();
+    v8::HandleScope handle_scope(isolate);
 
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
-    vec2_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "x").ToLocalChecked(), v8::Number::New(isolate,screen_elements[valueb].position.x));
-    vec2_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "y").ToLocalChecked(), v8::Number::New(isolate,screen_elements[valueb].position.y));
 
-
-  info.GetReturnValue().Set(vec2_obj);
+    info.GetReturnValue().Set(quick_create_vector2(screen_elements[valueb].text.position));
 }
 
 
 static void Setelvec2(v8::Local<v8::String> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void>& info) {
-  int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
-  int valueb = valuea;
+    v8::HandleScope handle_scope(isolate);
 
-  screen_elements[valueb].position.x = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+    int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+    int valueb = valuea;
 
-  screen_elements[valueb].text.position.x = screen_elements[valueb].position.x;
+    screen_elements[valueb].text.position.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  screen_elements[valueb].position.y = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
-
-  screen_elements[valueb].text.position.y = screen_elements[valueb].position.y;
+    screen_elements[valueb].text.position.y = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 }
 
 static void Getelts(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
     if (vec2_templ.IsEmpty()) {
         v8::EscapableHandleScope inner(isolate);
@@ -1696,14 +1710,14 @@ static void Getelts(v8::Local<v8::String> property,
     }
 
     v8::Local<v8::Object> vec2_obj =
-      v8::Local<v8::ObjectTemplate>::New(info.GetIsolate(), vec3_templ)
-          ->NewInstance(info.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, vec3_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
-    vec2_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.x));
-    vec2_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.y));
+    vec2_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.x));
+    vec2_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.y));
 
 
   info.GetReturnValue().Set(vec2_obj);
@@ -1716,34 +1730,18 @@ static void Setelts(v8::Local<v8::String> property,
   int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
   int valueb = valuea;
 
-  screen_elements[valueb].text.scale = value->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  screen_elements[valueb].text.scale = value->NumberValue(isolate->GetCurrentContext()).FromJust();
 }
 
 static void Geteltext(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
-
-    if (vec2_templ.IsEmpty()) {
-        v8::EscapableHandleScope inner(isolate);
-        v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
-        local->Set(isolate, "x", v8::Integer::New(isolate,0));
-        local->Set(isolate, "y", v8::Integer::New(isolate,0));
-        vec3_templ.Reset(isolate, inner.Escape(local));
-    }
-
-    v8::Local<v8::Object> vec2_obj =
-      v8::Local<v8::ObjectTemplate>::New(info.GetIsolate(), vec3_templ)
-          ->NewInstance(info.GetIsolate()->GetCurrentContext())
-          .ToLocalChecked();
+    v8::HandleScope handle_scope(isolate);
 
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
-    vec2_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.x));
-    vec2_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.y));
 
-
-  info.GetReturnValue().Set(vec2_obj);
+    info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, screen_elements[valueb].text.text.c_str()).ToLocalChecked());
 }
 
 
@@ -1753,14 +1751,14 @@ static void Seteltext(v8::Local<v8::String> property,
   int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
   int valueb = valuea;
 
-  v8::String::Utf8Value str(info.GetIsolate(), value);
+  v8::String::Utf8Value str(isolate, value);
   screen_elements[valueb].set_text(ToCString(str));
 }
 
 static void Getelfont(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
 }
 
@@ -1771,7 +1769,7 @@ static void Setelfont(v8::Local<v8::String> property,
   int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
   int valueb = valuea;
 
-  int dock = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  int dock = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
   screen_elements[valueb].text.tfont = &cfonts[dock];
 }
@@ -1782,45 +1780,27 @@ static void Setelcolor(v8::Local<v8::String> property,
   int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
   int valueb = valuea;
 
-  screen_elements[valueb].text.color.x = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  screen_elements[valueb].text.color.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  screen_elements[valueb].text.color.y = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  screen_elements[valueb].text.color.y = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  screen_elements[valueb].text.color.z = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+  screen_elements[valueb].text.color.z = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 }
 
 static void Getelcolor(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
-
-    if (vec3_templ.IsEmpty()) {
-        v8::EscapableHandleScope inner(isolate);
-        v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
-        local->Set(isolate, "x", v8::Integer::New(isolate,0));
-        local->Set(isolate, "y", v8::Integer::New(isolate,0));
-        local->Set(isolate, "z", v8::Integer::New(isolate,0));
-        vec3_templ.Reset(isolate, inner.Escape(local));
-    }
-
-    v8::Local<v8::Object> vec3_obj =
-      v8::Local<v8::ObjectTemplate>::New(info.GetIsolate(), vec3_templ)
-          ->NewInstance(info.GetIsolate()->GetCurrentContext())
-          .ToLocalChecked();
+    v8::HandleScope handle_scope(isolate);
 
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "x").ToLocalChecked(), v8::Number::New(isolate,screen_elements[valueb].text.color.x));
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "y").ToLocalChecked(), v8::Number::New(isolate,screen_elements[valueb].text.color.y));
-    vec3_obj->Set(info.GetIsolate()->GetCurrentContext(), v8::String::NewFromUtf8(info.GetIsolate(), "z").ToLocalChecked(), v8::Number::New(isolate,screen_elements[valueb].text.color.z));
 
-
-  info.GetReturnValue().Set(vec3_obj);
+    info.GetReturnValue().Set(quick_create_vector3(cams[valueb].position));
 }
 
 void MenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
     v8::Persistent<v8::ObjectTemplate> MenuElement_templ;
 
     element elpt;
@@ -1847,8 +1827,8 @@ void MenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     MenuElement_templ.Reset(isolate, inner.Escape(local));
 
         v8::Local<v8::Object> MenuElement_obj =
-      v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), MenuElement_templ)
-          ->NewInstance(args.GetIsolate()->GetCurrentContext())
+      v8::Local<v8::ObjectTemplate>::New(isolate, MenuElement_templ)
+          ->NewInstance(isolate->GetCurrentContext())
           .ToLocalChecked();
 
         args.GetReturnValue().Set(MenuElement_obj);
@@ -1857,7 +1837,7 @@ void MenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 static void GetscreenWidth(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
   info.GetReturnValue().Set(v8::Integer::New(isolate, SCR_WIDTH));
 }
@@ -1869,13 +1849,13 @@ static void SetscreenWidth(v8::Local<v8::String> property,
   int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
   int valueb = valuea;
 
-//   part[valueb].rotation.x = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+//   part[valueb].rotation.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 }
 
 static void GetscreenHeight(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
-    v8::HandleScope handle_scope(info.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
   info.GetReturnValue().Set(v8::Integer::New(isolate, SCR_HEIGHT));
 }
@@ -1887,12 +1867,12 @@ static void SetscreenHeight(v8::Local<v8::String> property,
   int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
   int valueb = valuea;
 
-//   part[valueb].rotation.x = value->ToObject(info.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(info.GetIsolate()->GetCurrentContext()).FromJust();
+//   part[valueb].rotation.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 }
 
 void WindowManager( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
     v8::Persistent<v8::ObjectTemplate> WindowManager_templ;
 
 
@@ -1902,8 +1882,8 @@ void WindowManager( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "innerHeight").ToLocalChecked(), GetscreenHeight, SetscreenHeight);
 
     v8::Local<v8::Object> WindowManager_obj =
-    v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), WindowManager_templ)
-        ->NewInstance(args.GetIsolate()->GetCurrentContext())
+    v8::Local<v8::ObjectTemplate>::New(isolate, WindowManager_templ)
+        ->NewInstance(isolate->GetCurrentContext())
         .ToLocalChecked();
 
     args.GetReturnValue().Set(WindowManager_obj);
@@ -1962,17 +1942,17 @@ int one_box_please(char* name) { //but hold the functions
 }
 
 void AddInputEvent( const v8::FunctionCallbackInfo<v8::Value>& args ) {
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
     if (args[1]->IsFunction() && args[0]->IsString()) {
 
-        v8::String::Utf8Value str(args.GetIsolate(), args[0]);
+        v8::String::Utf8Value str(isolate, args[0]);
         const char* cstr = ToCString(str);
 
         int dex = find_inputevent((char*)cstr);
         if(dex != -1) {
             v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(args[1]);
-            event_calls[dex].func.push_back(v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>(args.GetIsolate(), callback));
+            event_calls[dex].func.push_back(v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>(isolate, callback));
         }else{
             //so we can't find a box with the lable, so we need a new one :3
             inputevent_feld newt; //make new box
@@ -1980,7 +1960,7 @@ void AddInputEvent( const v8::FunctionCallbackInfo<v8::Value>& args ) {
             newt.call_on = (char*)cstr; //lable new box
 
             v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(args[1]); //grab the function out of the arguments
-            newt.func.push_back(v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>(args.GetIsolate(), callback)); //plop the function in to the box we made, after converting it to persistent
+            newt.func.push_back(v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>(isolate, callback)); //plop the function in to the box we made, after converting it to persistent
 
             entvcount++;
             event_calls.push_back(newt); //then put the box up in to storage for later
@@ -1991,8 +1971,8 @@ void AddInputEvent( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
 void toggle_curser_pin(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
-    v8::HandleScope handle_scope(args.GetIsolate());
-    bool c = args[0]->BooleanValue(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
+    bool c = args[0]->BooleanValue(isolate);
 
     if(c){
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -2004,9 +1984,9 @@ void toggle_curser_pin(const v8::FunctionCallbackInfo<v8::Value>& args) {
 }
 
 void run_cmd(const v8::FunctionCallbackInfo<v8::Value>& args){
-    v8::HandleScope handle_scope(args.GetIsolate());
+    v8::HandleScope handle_scope(isolate);
 
-    v8::String::Utf8Value str(args.GetIsolate(), args[0]);
+    v8::String::Utf8Value str(isolate, args[0]);
 
     string c = ToCString(str);
 
@@ -2030,38 +2010,34 @@ void run_cmd(const v8::FunctionCallbackInfo<v8::Value>& args){
 
 void RayConstruct( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
-    v8::HandleScope handle_scope(args.GetIsolate());
-    v8::Persistent<v8::ObjectTemplate> Raycast_templ;
+    v8::HandleScope handle_scope(isolate);
 
-    float xp1 = args[0]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    float xp1 = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    float yp1 = args[0]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    float yp1 = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    float zp1 = args[0]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    float zp1 = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    float xp2 = args[1]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    float xp2 = args[1]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    float yp2 = args[1]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    float yp2 = args[1]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    float zp2 = args[1]->ToObject(args.GetIsolate()->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(args.GetIsolate()->GetCurrentContext()).FromJust();
+    float zp2 = args[1]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     btCollisionWorld::ClosestRayResultCallback res(btVector3(xp1,yp1,zp1), btVector3(xp2,yp2,zp2));
 
     dynamicWorld->rayTest(btVector3(xp1,yp1,zp1), btVector3(xp2,yp2,zp2), res);
+    v8::Local<v8::Object> Raycast_obj = v8::Object::New(isolate);
 
     if(res.hasHit()){
-        printf("Collision at: <%.2f, %.2f, %.2f>\n", res.m_hitPointWorld.getX(), res.m_hitPointWorld.getY(), res.m_hitPointWorld.getZ());
+//         printf("Collision at: <%.2f, %.2f, %.2f>\n", res.m_hitPointWorld.getX(), res.m_hitPointWorld.getY(), res.m_hitPointWorld.getZ());
+
+        Raycast_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "hasHit").ToLocalChecked(), v8::Boolean::New(isolate, 1));
+
+        Raycast_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), quick_create_vector3(glm::vec3(res.m_hitPointWorld.getX(), res.m_hitPointWorld.getY(), res.m_hitPointWorld.getZ())));
+    }else{
+        Raycast_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "hasHit").ToLocalChecked(), v8::Boolean::New(isolate, 0));
     }
-
-    v8::EscapableHandleScope inner(isolate);
-    v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getelvec2, Setelvec2, v8::Integer::New(isolate,awaeex));
-    Raycast_templ.Reset(isolate, inner.Escape(local));
-
-        v8::Local<v8::Object> Raycast_obj =
-      v8::Local<v8::ObjectTemplate>::New(args.GetIsolate(), Raycast_templ)
-          ->NewInstance(args.GetIsolate()->GetCurrentContext())
-          .ToLocalChecked();
 
     args.GetReturnValue().Set(Raycast_obj);
 }
@@ -2089,7 +2065,7 @@ v8::Local<v8::Context> load_wrap_functions(v8::Isolate* isolate) {
     global->Set(isolate, "Prop", v8::FunctionTemplate::New(isolate, PropConstructor));
 
     //raycast
-    //global->Set(isolate, "RayCast", v8::FunctionTemplate::New(isolate, RayConstruct));
+    global->Set(isolate, "RayCast", v8::FunctionTemplate::New(isolate, RayConstruct));
 
     //Cameras
     global->Set(isolate, "Camera", v8::FunctionTemplate::New(isolate, CameraConstructor));
