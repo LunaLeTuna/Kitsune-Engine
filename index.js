@@ -150,7 +150,10 @@ function tick(delta){ //called every frame (TODO: multi thread)
         bbbb.LinearVelocity = new Vector3(bbbb.LinearVelocity.x, bbbb.LinearVelocity.y, -maxspeed);
     }
 
-    var cc = RayCast(new Vector3(0,5,0),new Vector3(0,0,0));
+//     var cc = RayCast(new Vector3(0,5,0),new Vector3(0,0,0));
+//     if(cc.hasHit){
+//         print(cc.position.y);
+//     }
 
     var xsa = 0;
     var ysa = 0;
