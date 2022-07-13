@@ -1,4 +1,4 @@
-CFLAGS = -std=c++20 -O2
+CFLAGS = -std=c++17 -O2
 LDFLAGS = -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl -Wall -lfreetype
 FTFLAGS = -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/harfbuzz -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/sysprof-4
 V8FLAGS = -I/v8/ -I/v8/include  -L/v8/out.gn/x64.release.sample/obj/ -lv8_monolith -DV8_COMPRESS_POINTERS
