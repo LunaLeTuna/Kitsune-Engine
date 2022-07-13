@@ -1,0 +1,41 @@
+name: 🐧 create Linux build (x86)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: setting env
+      run: |
+        cd
+        sudo apt-get update
+        sudo apt-get -y install pkg-config git subversion curl wget build-essential python xz-utils zip p7zip-full python3 libfreetype6-dev
+
+        #https://github.com/StarCross-Tech/v8-action/blob/master/.github/workflows/v8.yml (THANKS!)
+    - name: getting depot_tools
+      run: |
+        git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+        echo export PATH=\"\$PATH:`pwd`/depot_tools/\" >> ~/.bash_profile
+
+    - name: fetching and building v8
+      run: |
+        cd
+        source ~/.bash_profile
+        fetch v8
+        cd v8
+        tools/dev/v8gen.py x64.release.sample
+        ninja -C out.gn/x64.release.sample v8_monolith
+
+    - name: checking out code
+      uses: actions/checkout@v3
+
+    - name: making
+      run: make
