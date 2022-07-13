@@ -15,19 +15,21 @@ jobs:
 
     - name: setting env
       run: |
-        cd
+        mkdir lib
         sudo apt-get update
-        sudo apt-get -y install pkg-config git subversion curl wget build-essential python xz-utils zip p7zip-full python3 libfreetype6-dev
+        sudo apt-get -y install pkg-config git subversion curl wget build-essential python xz-utils zip p7zip-full python3 libfreetype6-dev freeglut3-dev libegl1-mesa-dev libglfw3-dev libglm-dev
 
         #https://github.com/StarCross-Tech/v8-action/blob/master/.github/workflows/v8.yml (THANKS!)
     - name: getting depot_tools
       run: |
+        cd lib
         git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
         echo export PATH=\"\$PATH:`pwd`/depot_tools/\" >> ~/.bash_profile
+        cd ..
 
     - name: fetching and building v8
       run: |
-        cd
+        cd lib
         source ~/.bash_profile
         fetch v8
         cd v8
@@ -38,4 +40,15 @@ jobs:
       uses: actions/checkout@v3
 
     - name: making
-      run: make
+      run: |
+        mkdir /pog
+        cd /pog
+        make
+        mkdir /KE
+        cp * /KE
+
+    - name: uploading artifact
+        uses: actions/upload-artifact@v2
+        with:
+            name: Kitsune-Engine
+            path: /KE
