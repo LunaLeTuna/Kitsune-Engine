@@ -16,51 +16,56 @@ jobs:
     - name: setting env
       run: |
         mkdir liba
-        sudo apt-get update
-        sudo apt-get -y install libc6-dev pkg-config git subversion curl wget build-essential xz-utils zip p7zip-full python3 libfreetype6-dev freeglut3-dev libegl1-mesa-dev libglm-dev libbullet-dev premake4 libx11-dev libxi-dev libglfw3-dev
+        echo `pwd`
 
-    - name: gitting bullet
-      run: |
-        cd liba
-        git clone https://github.com/bulletphysics/bullet3
-        cd ..
+    #- name: setting env
+      #run: |
+        #mkdir liba
+        #sudo apt-get update
+        #sudo apt-get -y install libc6-dev pkg-config git subversion curl wget build-essential xz-utils zip p7zip-full python3 libfreetype6-dev freeglut3-dev libegl1-mesa-dev libglm-dev libbullet-dev premake4 libx11-dev libxi-dev libglfw3-dev
 
-        #https://github.com/StarCross-Tech/v8-action/blob/master/.github/workflows/v8.yml (THANKS!)
-    - name: getting depot_tools
-      run: |
-        cd liba
-        git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-        echo export PATH=\"\$PATH:`pwd`/depot_tools/\" >> ~/.bash_profile
-        cd ..
+    #- name: gitting bullet
+      #run: |
+        #cd liba
+        #git clone https://github.com/bulletphysics/bullet3
+        #cd ..
 
-    - name: fetching and building v8
-      run: |
-        cd liba
-        source ~/.bash_profile
-        fetch v8
-        cd v8
-        tools/dev/v8gen.py x64.release.sample
-        ninja -C out.gn/x64.release.sample v8_monolith
-        cd ..
-        cd ..
+        ##https://github.com/StarCross-Tech/v8-action/blob/master/.github/workflows/v8.yml (THANKS!)
+    #- name: getting depot_tools
+      #run: |
+        #cd liba
+        #git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+        #echo export PATH=\"\$PATH:`pwd`/depot_tools/\" >> ~/.bash_profile
+        #cd ..
 
-    - name: checking out code
-      uses: actions/checkout@v3
+    #- name: fetching and building v8
+      #run: |
+        #cd liba
+        #source ~/.bash_profile
+        #fetch v8
+        #cd v8
+        #tools/dev/v8gen.py x64.release.sample
+        #ninja -C out.gn/x64.release.sample v8_monolith
+        #cd ..
+        #cd ..
 
-    - name: making
-      run: |
-        make
-        mkdir KE
-        cp -r KitsuneEngine KE
-        cp -r engine_dependent KE
-        cp -r fonts KE
-        cp -r create KE
-        cp -r shaders KE
-        cp -r textures KE
-        cp -r *.js KE
+    #- name: checking out code
+      #uses: actions/checkout@v3
 
-    - name: uploading artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: Kitsune-Engine
-        path: KE
+    #- name: making
+      #run: |
+        #make
+        #mkdir KE
+        #cp -r KitsuneEngine KE
+        #cp -r engine_dependent KE
+        #cp -r fonts KE
+        #cp -r create KE
+        #cp -r shaders KE
+        #cp -r textures KE
+        #cp -r *.js KE
+
+    #- name: uploading artifact
+      #uses: actions/upload-artifact@v2
+      #with:
+        #name: Kitsune-Engine
+        #path: /KE
