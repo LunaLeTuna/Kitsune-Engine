@@ -13,4 +13,5 @@ class cameras{
     float near = 0.1f;
     float far = 100.0f;
     float fov = 45.0f;
+    float aspect = 0;
 };

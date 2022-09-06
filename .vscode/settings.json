@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "regex": "cpp",
+        "__node_handle": "cpp",
+        "ranges": "cpp",
+        "random": "cpp"
+    }
+}

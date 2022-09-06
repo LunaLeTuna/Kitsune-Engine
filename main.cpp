@@ -85,9 +85,17 @@ float fov   =  45.0f;
 
 class plane {
 public:
-    glm::vec3 rotation;
-    glm::vec3 position;
-    glm::vec3 normal;
+    glm::vec3 normal = { 1.0f, 0.0f, 0.0f };
+    float distance = 0; 
+
+    bool isInFrontOfPlane(glm::vec3 position) {
+        // Get the dot product of the normal and the position vector
+        const float dot = glm::dot(normal, position);
+
+        // If the dot product is greater than the distance, then the position is in front of the plane
+        return (dot > distance);
+    }  
+    //asked gpt to "write a c++ function detect if a givin position in in front of a plain. The plain is givin by a class with a position and rotation."
 };
 
 class frustum {
@@ -103,17 +111,33 @@ public:
 frustum craftFrustum(cameras* cam){
     frustum based;
     
-    //front
-    based.farFace.position.x = cam->far;
-    based.farFace.rotation.x = 0.5;
-    
+    based.topFace.normal = {0.0f, 1.0f, 0.0f};
+    based.topFace.distance = 1.0f;
+
+    based.bottomFace.normal = {0.0f, -1.0f, 0.0f};
+    based.bottomFace.distance = -1.0f;
+
+    based.leftFace.normal = {-1.0f, 0.0f, 0.0f};
+    based.leftFace.distance = -1.0f;
+
+    based.rightFace.normal = {1.0f, 0.0f, 0.0f};
+    based.rightFace.distance = 1.0f;
+
+    based.nearFace.normal = {0.0f, 0.0f, 1.0f};
+    based.nearFace.distance = 1;
+
+    based.farFace.normal = {0.f, 0.f, -1.f};
+    based.farFace.distance = 100.;
+
     return based;
 }
 
+plane nya;
+
 bool check_cull(cameras* cam, prop* thprop){
     if(thprop->skipCull) return 0;
-    if(thprop->position.x >= 0) return 0;
-    
+    //if(nya.isInFrontOfPlane(thprop->position)) return 0;
+
     return 1;
 }
 
