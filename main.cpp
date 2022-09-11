@@ -108,35 +108,47 @@ public:
   plane rightFace;
 };
 
-frustum craftFrustum(cameras* cam){
+frustum craftFrustum(/*cameras* cam*/){
     frustum based;
     
     based.topFace.normal = {0.0f, 1.0f, 0.0f};
-    based.topFace.distance = 1.0f;
+    based.topFace.distance = -5.0f;
 
     based.bottomFace.normal = {0.0f, -1.0f, 0.0f};
-    based.bottomFace.distance = -1.0f;
+    based.bottomFace.distance = -5.0f;
 
     based.leftFace.normal = {-1.0f, 0.0f, 0.0f};
-    based.leftFace.distance = -1.0f;
+    based.leftFace.distance = -5.0f;
 
     based.rightFace.normal = {1.0f, 0.0f, 0.0f};
-    based.rightFace.distance = 1.0f;
+    based.rightFace.distance = -5.0f;
 
     based.nearFace.normal = {0.0f, 0.0f, 1.0f};
-    based.nearFace.distance = 1;
+    based.nearFace.distance = -5.0f;
 
-    based.farFace.normal = {0.f, 0.f, -1.f};
-    based.farFace.distance = 100.;
+    based.farFace.normal = {0.0f, 0.0f, -1.0f};
+    based.farFace.distance = -100.0f;
 
     return based;
 }
 
-plane nya;
+frustum nya = craftFrustum();
 
 bool check_cull(cameras* cam, prop* thprop){
-    if(thprop->skipCull) return 0;
-    //if(nya.isInFrontOfPlane(thprop->position)) return 0;
+    if(thprop->skipCull) return 1;
+
+    //I really really really don't want to figure out how to move a frustrm around space
+    //so instead of moving it, i'm going to move objects around it
+    glm::vec3 globpos =  thprop->position-cam->position;
+
+    // if(!nya.topFace.isInFrontOfPlane(thprop->position)) return 0;
+    // if(!nya.bottomFace.isInFrontOfPlane(thprop->position)) return 0;
+
+    if(!nya.leftFace.isInFrontOfPlane(globpos)) return 0;
+    if(!nya.rightFace.isInFrontOfPlane(globpos)) return 0;
+
+    if(!nya.nearFace.isInFrontOfPlane(globpos)) return 0;
+    if(!nya.farFace.isInFrontOfPlane(globpos)) return 0;
 
     return 1;
 }
