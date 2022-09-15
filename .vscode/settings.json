@@ -3,6 +3,7 @@
         "regex": "cpp",
         "__node_handle": "cpp",
         "ranges": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "cmath": "cpp"
     }
 }

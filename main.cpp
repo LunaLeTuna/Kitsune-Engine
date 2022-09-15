@@ -132,6 +132,22 @@ frustum craftFrustum(/*cameras* cam*/){
     return based;
 }
 
+
+glm::vec3 RotateAroundPoint(glm::vec3 point, glm::vec3 axis, float angle){
+  glm::vec3 rotatedPoint;
+  float x = point.x;
+  float y = point.y;
+  float z = point.z;
+  float a = axis.x;
+  float b = axis.y;
+  float c = axis.z;
+  float radians = angle*(M_PI/180.0);
+  rotatedPoint.x = (a*(a*x+b*y+c*z)*(1-cos(radians))+x*cos(radians)+(-c*y+b*z)*sin(radians));
+  rotatedPoint.y = (b*(a*x+b*y+c*z)*(1-cos(radians))+y*cos(radians)+(c*x-a*z)*sin(radians));
+  rotatedPoint.z = (c*(a*x+b*y+c*z)*(1-cos(radians))+z*cos(radians)+(-b*x+a*y)*sin(radians));
+  return rotatedPoint;
+}
+
 frustum nya = craftFrustum();
 
 bool check_cull(cameras* cam, prop* thprop){
@@ -140,6 +156,10 @@ bool check_cull(cameras* cam, prop* thprop){
     //I really really really don't want to figure out how to move a frustrm around space
     //so instead of moving it, i'm going to move objects around it
     glm::vec3 globpos =  thprop->position-cam->position;
+
+    globpos = RotateAroundPoint(globpos, glm::vec3(1.0f, 0.0f, 0.0f), -cam->front.x*2);
+    globpos = RotateAroundPoint(globpos, glm::vec3(0.0f, 1.0f, 0.0f), cam->front.y*2);
+    globpos = RotateAroundPoint(globpos, glm::vec3(0.0f, 0.0f, 1.0f), cam->front.z*2);
 
     // if(!nya.topFace.isInFrontOfPlane(thprop->position)) return 0;
     // if(!nya.bottomFace.isInFrontOfPlane(thprop->position)) return 0;
@@ -655,6 +675,7 @@ static void Gettexture(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
     v8::HandleScope handle_scope(isolate);
+    //TODO: make return texture
 }
 
 
@@ -673,6 +694,8 @@ static void Getspecular(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
     v8::HandleScope handle_scope(isolate);
+
+    //TODO: make return texture
 }
 
 
@@ -692,28 +715,7 @@ static void Getmodel(v8::Local<v8::String> property,
 
     v8::HandleScope handle_scope(isolate);
 
-//     if (vec3_templ.IsEmpty()) {
-//         v8::EscapableHandleScope inner(isolate);
-//         v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
-//         local->Set(isolate, "x", v8::Integer::New(isolate,0));
-//         local->Set(isolate, "y", v8::Integer::New(isolate,0));
-//         local->Set(isolate, "z", v8::Integer::New(isolate,0));
-//         vec3_templ.Reset(isolate, inner.Escape(local));
-//     }
-//
-//     v8::Local<v8::Object> vec3_obj =
-//       v8::Local<v8::ObjectTemplate>::New(isolate, vec3_templ)
-//           ->NewInstance(isolate->GetCurrentContext())
-//           .ToLocalChecked();
-//
-//     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
-//     int valueb = valuea;
-//     vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.x));
-//     vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.y));
-//     vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "z").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.z));
-//
-//
-//   info.GetReturnValue().Set(vec3_obj);
+    //TODO: make return model
 }
 
 
