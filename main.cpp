@@ -112,28 +112,28 @@ frustum craftFrustum(/*cameras* cam*/){
     frustum based;
     
     based.topFace.normal = {0.0f, 1.0f, 0.0f};
-    based.topFace.distance = -5.0f;
+    based.topFace.distance = -70.0f;
 
     based.bottomFace.normal = {0.0f, -1.0f, 0.0f};
-    based.bottomFace.distance = -5.0f;
+    based.bottomFace.distance = -70.0f;
 
     based.leftFace.normal = {-1.0f, 0.0f, 0.0f};
-    based.leftFace.distance = -5.0f;
+    based.leftFace.distance = -70.0f;
 
     based.rightFace.normal = {1.0f, 0.0f, 0.0f};
-    based.rightFace.distance = -5.0f;
+    based.rightFace.distance = -70.0f;
 
     based.nearFace.normal = {0.0f, 0.0f, 1.0f};
-    based.nearFace.distance = -5.0f;
+    based.nearFace.distance = -70.0f;
 
     based.farFace.normal = {0.0f, 0.0f, -1.0f};
-    based.farFace.distance = -100.0f;
+    based.farFace.distance = -70.0f;
 
     return based;
 }
 
 
-glm::vec3 RotateAroundPoint(glm::vec3 point, glm::vec3 axis, float angle){
+glm::vec3 RotateAroundPoint(glm::vec3 point, glm::vec3 axis, float radians){
   glm::vec3 rotatedPoint;
   float x = point.x;
   float y = point.y;
@@ -141,7 +141,6 @@ glm::vec3 RotateAroundPoint(glm::vec3 point, glm::vec3 axis, float angle){
   float a = axis.x;
   float b = axis.y;
   float c = axis.z;
-  float radians = angle*(M_PI/180.0);
   rotatedPoint.x = (a*(a*x+b*y+c*z)*(1-cos(radians))+x*cos(radians)+(-c*y+b*z)*sin(radians));
   rotatedPoint.y = (b*(a*x+b*y+c*z)*(1-cos(radians))+y*cos(radians)+(c*x-a*z)*sin(radians));
   rotatedPoint.z = (c*(a*x+b*y+c*z)*(1-cos(radians))+z*cos(radians)+(-b*x+a*y)*sin(radians));
@@ -157,9 +156,7 @@ bool check_cull(cameras* cam, prop* thprop){
     //so instead of moving it, i'm going to move objects around it
     glm::vec3 globpos =  thprop->position-cam->position;
 
-    globpos = RotateAroundPoint(globpos, glm::vec3(1.0f, 0.0f, 0.0f), -cam->front.x*2);
-    globpos = RotateAroundPoint(globpos, glm::vec3(0.0f, 1.0f, 0.0f), cam->front.y*2);
-    globpos = RotateAroundPoint(globpos, glm::vec3(0.0f, 0.0f, 1.0f), cam->front.z*2);
+    // globpos = RotateAroundPoint(globpos, glm::vec3(1.0f, 0.0f, 0.0f), cam->front.x);
 
     // if(!nya.topFace.isInFrontOfPlane(thprop->position)) return 0;
     // if(!nya.bottomFace.isInFrontOfPlane(thprop->position)) return 0;
@@ -169,6 +166,8 @@ bool check_cull(cameras* cam, prop* thprop){
 
     if(!nya.nearFace.isInFrontOfPlane(globpos)) return 0;
     if(!nya.farFace.isInFrontOfPlane(globpos)) return 0;
+
+    //cout << thprop->name << -cam->front.x << " " << cam->front.y << " " << cam->front.z << endl;
 
     return 1;
 }
@@ -633,42 +632,26 @@ static void Getvec3r(v8::Local<v8::String> property,
 
     v8::HandleScope handle_scope(isolate);
 
-    if (vec3_templ.IsEmpty()) {
-        v8::EscapableHandleScope inner(isolate);
-        v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
-        local->Set(isolate, "x", v8::Integer::New(isolate,0));
-        local->Set(isolate, "y", v8::Integer::New(isolate,0));
-        local->Set(isolate, "z", v8::Integer::New(isolate,0));
-        vec3_templ.Reset(isolate, inner.Escape(local));
-    }
-
-    v8::Local<v8::Object> vec3_obj =
-      v8::Local<v8::ObjectTemplate>::New(isolate, vec3_templ)
-          ->NewInstance(isolate->GetCurrentContext())
-          .ToLocalChecked();
-
-    int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
-    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.x));
-    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.y));
-    vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "z").ToLocalChecked(), v8::Number::New(isolate,part[valueb].rotation.z));
 
 
-  info.GetReturnValue().Set(vec3_obj);
+  info.GetReturnValue().Set(quick_create_vector3(part[valueb].rotation));
 }
 
 
 static void Setvec3r(v8::Local<v8::String> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void>& info) {
-  int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
-  int valueb = valuea;
+    int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+    int valueb = valuea;
 
-  part[valueb].rotation.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+    part[valueb].rotation.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  part[valueb].rotation.y = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+    part[valueb].rotation.y = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  part[valueb].rotation.z = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+    part[valueb].rotation.z = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
 }
 
 static void Gettexture(v8::Local<v8::String> property,
@@ -961,7 +944,7 @@ static void Getvec3f(v8::Local<v8::String> property,
   info.GetReturnValue().Set(quick_create_vector3(cams[valueb].front));
 }
 
-double pi = 2 * acos(0.0);
+double pi = M_PI;
 
 static void Setvec3f(v8::Local<v8::String> property,
                         v8::Local<v8::Value> value,
@@ -969,18 +952,17 @@ static void Setvec3f(v8::Local<v8::String> property,
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
 
-    cams[valueb].front.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust()*(pi/180);
+    glm::vec3 tvec;
 
-    cams[valueb].front.y = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust()*(pi/180);
+    tvec.x = (value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust()/180)*pi;
 
-    cams[valueb].front.z = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust()*(pi/180);
+    tvec.y = (value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust()/180)*pi;
 
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, cams[valueb].front.x, glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, cams[valueb].front.y, glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, cams[valueb].front.z, glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::translate(model, glm::vec3(-cams[valueb].position.x, -cams[valueb].position.y, -cams[valueb].position.z));
-    cams[valueb].view = model;
+    tvec.z = (value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust()/180)*pi;
+
+
+    cams[valueb].set_rotation(tvec);
+
 }
 
 void CamLookAt(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -1049,7 +1031,7 @@ void CameraConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     v8::EscapableHandleScope inner(isolate);
     v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
     local->Set(isolate, "_id", v8::Integer::New(isolate, awac));
-    local->Set(isolate, "LookAt", v8::FunctionTemplate::New(isolate, CamLookAt));
+    // local->Set(isolate, "LookAt", v8::FunctionTemplate::New(isolate, CamLookAt));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getvec3pc, Setvec3pc, v8::Integer::New(isolate,awac));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "rotation").ToLocalChecked(), Getvec3f, Setvec3f, v8::Integer::New(isolate,awac));
     awac++;
@@ -1069,6 +1051,60 @@ void set_main_cam(const v8::FunctionCallbackInfo<v8::Value>& args) {
     int dock = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     main_cam = &cams[dock];
+}
+
+int NR_POINT_LIGHTS = 0; //size
+vector<pointLight> pointLights;
+
+static void Setvec3pls(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void>& info) {
+  int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+  int valueb = valuea;
+
+  pointLights[valueb].position.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+  pointLights[valueb].position.y = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+  pointLights[valueb].position.z = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+}
+
+static void Getvec3pls(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value>& info) {
+
+    v8::HandleScope handle_scope(isolate);
+
+     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+    int valueb = valuea;
+
+
+  info.GetReturnValue().Set(quick_create_vector3(pointLights[valueb].position));
+}
+
+void PointLightConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
+
+    v8::HandleScope handle_scope(isolate);
+    v8::Persistent<v8::ObjectTemplate> point_light_templ;
+
+    pointLight zlight;
+
+    pointLights.push_back(zlight);
+
+
+    v8::EscapableHandleScope inner(isolate);
+    v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getvec3pls, Setvec3pls, v8::Integer::New(isolate,NR_POINT_LIGHTS));
+    NR_POINT_LIGHTS++;
+
+    
+    point_light_templ.Reset(isolate, inner.Escape(local));
+
+        v8::Local<v8::Object> point_light_obj =
+      v8::Local<v8::ObjectTemplate>::New(isolate, point_light_templ)
+          ->NewInstance(isolate->GetCurrentContext())
+          .ToLocalChecked();
+
+        args.GetReturnValue().Set(point_light_obj);
 }
 
 int fontpogs = 0; //size
@@ -1522,6 +1558,9 @@ v8::Local<v8::Context> load_wrap_functions(v8::Isolate* isolate) {
     global->Set(isolate, "Camera", v8::FunctionTemplate::New(isolate, CameraConstructor));
     global->Set(isolate, "SetMainCam", v8::FunctionTemplate::New(isolate, set_main_cam));
 
+    //Point Lights
+    global->Set(isolate, "PointLight", v8::FunctionTemplate::New(isolate, PointLightConstructor));
+
     //fonts
     global->Set(isolate, "Font", v8::FunctionTemplate::New(isolate, FontConstructor));
 
@@ -1799,23 +1838,6 @@ int main(int argc, char* argv[]) {
 
 //         pogger.view = glm::lookAt(pogger.position, pogger.position + pogger.front, pogger.up);
 
-
-        int NR_POINT_LIGHTS = 4; //size
-        vector<pointLight> pointLights;
-
-        glm::vec3 pointposes[] = {
-            glm::vec3( 0.7f,  0.2f,  2.0f),
-            glm::vec3( 2.3f, -3.3f, -4.0f),
-            glm::vec3(-4.0f,  2.0f, -12.0f),
-            glm::vec3( 0.0f,  0.0f, -3.0f)
-        };
-
-        for(int liwak = 0; liwak < NR_POINT_LIGHTS; liwak++){
-            pointLight temp;
-            temp.position = pointposes[liwak];
-            pointLights.push_back(temp);
-        }
-
         main_cam->projection = glm::perspective(glm::radians(main_cam->fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, main_cam->near, main_cam->far);
 
         //dynamicWorld->stepSimulation(1.f / 60.f ,10);
@@ -1880,7 +1902,7 @@ int main(int argc, char* argv[]) {
             //to render
             if(i.models != NULL)
             if(i.allow_render)
-            if(check_cull(main_cam, &i))
+            //if(check_cull(main_cam, &i))
             i.use(&waffle);
         }
 
