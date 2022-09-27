@@ -1,22 +1,23 @@
+Win_title("Fall"); //names title
+
+
 var room_size = 0;
 var room = [];
 
+
+var room_texture = new Texture("./devb.png");
+
 //side
 var wall1 = new Model("./map_objects/wall1.obj");
-var room_texture = new Texture("./dev.png");
 
 //corner
 var corner1 = new Model("./map_objects/corner1.obj");
-var room_texture = new Texture("./dev.png");
-
 
 //door
 var door1 = new Model("./map_objects/the_hole.obj");
-var room_texture = new Texture("./dev.png");
 
 //floor
 var floor1 = new Model("./map_objects/floor1.obj");
-var room_texture = new Texture("./dev.png");
 
 function create_map_element(type, position, r) {
     if(!type) type = "floor";
@@ -32,6 +33,7 @@ function create_map_element(type, position, r) {
         room[room_size] = new Prop();
         room[room_size].model = wall1;
         room[room_size].texture = room_texture;
+        room[room_size].specular = room_texture;
         room[room_size].scale = new Vector3(10,10,10);
         room[room_size].position = position;
         room[room_size].rotation = rotationc;
@@ -119,6 +121,15 @@ SetMainCam(p_cam);
 var p_torch = new PointLight();
 
 
+var ellie = new Prop();
+ellie.position = new Vector3(0,1,0);
+ellie.scale = new Vector3(.5,.5,.5)
+// ellie.model = cube_model;
+// ellie.texture = albido_create;
+// ellie.specular = specular_create;
+var el = new PointLight();
+el.position = new Vector3(2,1.5,2);
+
 //
 //player movement
 //
@@ -132,41 +143,47 @@ var p_torch = new PointLight();
   var s = false;
   var a = false;
   var d = false;
+  var space = false;
   
   function buttonpushedpog(event){
     var keyCode = event;
 
-    if (keyCode == 87) {
+    if (keyCode == 87) 
         w=true;
-    } else if (keyCode == 83) {
+    
+    if (keyCode == 83) 
         s=true;
-    } else if (keyCode == 65){
+
+    if (keyCode == 65)
         a=true;
-    } else if (keyCode == 68){
+
+    if (keyCode == 68)
         d=true;
-    }
-    //awaowo.position = new Vector3(0, 2, wobbo);
+
+    if (keyCode == 32)
+        space=true;
+
+    // print(keyCode);
 }
 
 function buttonthedpog(event){
     var keyCode = event;
 
-    if (keyCode == 87) {
+    if (keyCode == 87) 
         w=false;
-    }
 
-    if (keyCode == 83) {
+    if (keyCode == 83) 
         s=false;
-    }
 
-    if (keyCode == 65){
+    if (keyCode == 65)
         a=false;
-    }
 
-    if (keyCode == 68){
+    if (keyCode == 68)
         d=false;
-    }
-    //awaowo.position = new Vector3(0, 2, wobbo);
+
+    if (keyCode == 32)
+        space=false;
+
 }
 
 Input.addEventListener("keypress", buttonpushedpog);
@@ -230,6 +247,23 @@ CursorPin(true);
 var speed = 0.2;
 var maxspeed = 4;
 
+var player_max_health = 10;
+var player_health = 10;
+
+var hack = new Font();
+hack.GetFontFile("./fonts/SF.ttf");
+
+var health = new TextElement();
+health.position = new Vector2(25.0, 70.0);
+health.scale = 0.5;
+health.font = hack;
+health.text = "Health: 10/10";
+
+var nyanometer = new ImageElement();
+nyanometer.position = new Vector2(40.0, 70.0);
+nyanometer.scale = new Vector2(100.0, 100.0);
+nyanometer.texture = albido_create;
+
 var monark = false;
 
 var sxsss = 0;
@@ -262,6 +296,10 @@ function tick(delta){
     if (d){
         temp.x+=speed;
     }
+    if (space){
+        let ray = new RayCast(player.position, new Vector3(player.position.x,player.position.y-1.3,player.position.z));
+        if(ray.hasHit)player.AddForce(new Vector3(0,0.5,0));
+    }
 
     if((player.LinearVelocity.x < maxspeed || player.LinearVelocity.z < maxspeed))
     if((player.LinearVelocity.x > -maxspeed || player.LinearVelocity.z > -maxspeed))
@@ -270,6 +308,6 @@ function tick(delta){
         player.AddForce(new Vector3(new_place.x,0,new_place.y));
     }
 
-    //print("x:"+player.position.x+" y:"+ player.position.y+" z:"+ player.position.z);
-    //print("x:"+p_torch.position.x+" y:"+ p_torch.position.y+" z:"+ p_torch.position.z);
+    ellie.rotation = new Vector3(0,-p_cam.rotation.y,0);
+    // print("x:"+player.rotation.x+" y:"+ player.rotation.y+" z:"+ player.rotation.z);
 }

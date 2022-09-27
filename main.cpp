@@ -1178,36 +1178,50 @@ static void Setelvec2(v8::Local<v8::String> property,
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
 
-    screen_elements[valueb].text.position.x = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+    float letx = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+    screen_elements[valueb].text.position.x = letx;
+    screen_elements[valueb].image.position.x = letx;
 
-    screen_elements[valueb].text.position.y = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+    float lety = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+    screen_elements[valueb].text.position.y = lety;
+    screen_elements[valueb].image.position.y = lety;
+}
+
+static void Getimscal2(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value>& info) {
+    v8::HandleScope handle_scope(isolate);
+
+    int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+    int valueb = valuea;
+
+    info.GetReturnValue().Set(quick_create_vector2(screen_elements[valueb].image.scale));
+}
+
+
+static void Setimscal2(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void>& info) {
+    v8::HandleScope handle_scope(isolate);
+
+    int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+    int valueb = valuea;
+
+    float letx = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+    screen_elements[valueb].image.scale.x = letx;
+
+    float lety = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+    screen_elements[valueb].image.scale.y = lety;
 }
 
 static void Getelts(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
-
     v8::HandleScope handle_scope(isolate);
-
-    if (vec2_templ.IsEmpty()) {
-        v8::EscapableHandleScope inner(isolate);
-        v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
-        local->Set(isolate, "x", v8::Integer::New(isolate,0));
-        local->Set(isolate, "y", v8::Integer::New(isolate,0));
-        vec3_templ.Reset(isolate, inner.Escape(local));
-    }
-
-    v8::Local<v8::Object> vec2_obj =
-      v8::Local<v8::ObjectTemplate>::New(isolate, vec3_templ)
-          ->NewInstance(isolate->GetCurrentContext())
-          .ToLocalChecked();
 
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
-    vec2_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.x));
-    vec2_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "y").ToLocalChecked(), v8::Number::New(isolate,part[valueb].scale.y));
 
 
-  info.GetReturnValue().Set(vec2_obj);
+    info.GetReturnValue().Set(v8::Number::New(isolate, screen_elements[valueb].text.scale));
 }
 
 
@@ -1219,6 +1233,8 @@ static void Setelts(v8::Local<v8::String> property,
 
   screen_elements[valueb].text.scale = value->NumberValue(isolate->GetCurrentContext()).FromJust();
 }
+
+
 
 static void Geteltext(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
@@ -1282,16 +1298,28 @@ static void Getelcolor(v8::Local<v8::String> property,
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
 
-    info.GetReturnValue().Set(quick_create_vector3(cams[valueb].position));
+    info.GetReturnValue().Set(quick_create_vector3(screen_elements[valueb].text.color));
 }
 
-void MenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
+static void Setimagetexture(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void>& info) {
+  int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+  int valueb = valuea;
+
+  int dock = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+  screen_elements[valueb].image.imbase = &ctextures[dock];
+}
+
+void TextMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
     v8::HandleScope handle_scope(isolate);
     v8::Persistent<v8::ObjectTemplate> MenuElement_templ;
 
     element elpt;
 
+    elpt.has_text = 1;
     elpt.text.tfont = &base_font;
     elpt.text.shaderz = &text_base_shader;
     elpt.text.position = glm::vec2(25.0f, 25.0f);
@@ -1305,11 +1333,45 @@ void MenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     v8::EscapableHandleScope inner(isolate);
     v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getelvec2, Setelvec2, v8::Integer::New(isolate,awaeex));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "text_size").ToLocalChecked(), Getelts, Setelts, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "scale").ToLocalChecked(), Getelts, Setelts, v8::Integer::New(isolate,awaeex));
 //     local->SetAccessor(v8::String::NewFromUtf8(isolate, "font").ToLocalChecked(), Getelfont, Setelfont, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "text").ToLocalChecked(), Geteltext, Seteltext, v8::Integer::New(isolate,awaeex));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "text_font").ToLocalChecked(), Getelfont, Setelfont, v8::Integer::New(isolate,awaeex));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "text_color").ToLocalChecked(), Getelcolor, Setelcolor, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "font").ToLocalChecked(), Getelfont, Setelfont, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "color").ToLocalChecked(), Getelcolor, Setelcolor, v8::Integer::New(isolate,awaeex));
+    awaeex++;
+
+    MenuElement_templ.Reset(isolate, inner.Escape(local));
+
+        v8::Local<v8::Object> MenuElement_obj =
+      v8::Local<v8::ObjectTemplate>::New(isolate, MenuElement_templ)
+          ->NewInstance(isolate->GetCurrentContext())
+          .ToLocalChecked();
+
+        args.GetReturnValue().Set(MenuElement_obj);
+}
+
+void ImageMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
+
+    v8::HandleScope handle_scope(isolate);
+    v8::Persistent<v8::ObjectTemplate> MenuElement_templ;
+
+    element elpt;
+
+    elpt.has_image = 1;
+    elpt.image.shaderz = &image_base_shader;
+    elpt.image.position = glm::vec2(20.0f, 20.0f);
+    elpt.image.scale = glm::vec2(100.0f, 100.0f);
+    elpt.image.imbase = &tex;
+
+    screen_elements.push_back(elpt);
+
+
+    v8::EscapableHandleScope inner(isolate);
+    v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getelvec2, Setelvec2, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "scale").ToLocalChecked(), Getimscal2, Setimscal2, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "texture").ToLocalChecked(), Gettexture, Setimagetexture, v8::Integer::New(isolate,awaeex));
+    awaeex++;
 
     MenuElement_templ.Reset(isolate, inner.Escape(local));
 
@@ -1565,7 +1627,8 @@ v8::Local<v8::Context> load_wrap_functions(v8::Isolate* isolate) {
     global->Set(isolate, "Font", v8::FunctionTemplate::New(isolate, FontConstructor));
 
     //Menu Elements
-    global->Set(isolate, "element", v8::FunctionTemplate::New(isolate, MenuElementConstructor));
+    global->Set(isolate, "TextElement", v8::FunctionTemplate::New(isolate, TextMenuElementConstructor));
+    global->Set(isolate, "ImageElement", v8::FunctionTemplate::New(isolate, ImageMenuElementConstructor));
 
     //input
     v8::Local<v8::ObjectTemplate> input_b = v8::ObjectTemplate::New(isolate);
@@ -1715,6 +1778,7 @@ int main(int argc, char* argv[]) {
 
     //setup defalt assets
     
+    image_base_shader.craft("./engine_dependent/menu_image/shader/base");
     text_base_shader.craft("./engine_dependent/text_fonts/shader/base");
 
     base_font.craft("./fonts/ComicSans.ttf");
@@ -1750,6 +1814,7 @@ int main(int argc, char* argv[]) {
     btMotionState* motion = new btDefaultMotionState(t);
     btRigidBody::btRigidBodyConstructionInfo info(0.f,motion,plane);
     btRigidBody* body = new btRigidBody(info);
+    body->setFriction(1.0f);
     dynamicWorld->addRigidBody(body);
     bodies.push_back(body);
 

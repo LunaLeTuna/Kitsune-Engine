@@ -2,11 +2,13 @@
 
 class element{
 public:
-    bool has_text = 0;
-    bool has_background = 0;
     glm::vec2 position;
     glm::vec2 size;
 
+    bool has_image = 1;
+    image_element image;
+
+    bool has_text = 0;
     text_element text;
 
     bool allow_render = 1;
@@ -17,11 +19,11 @@ public:
     }
 
     void render(){
-//         if(has_background == 1){
-//
-//         }
         if(has_text == 1){
             text.Render();
+        }
+        if(has_image == 1){
+            image.Render();
         }
     }
 
