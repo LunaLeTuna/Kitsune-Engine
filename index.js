@@ -268,7 +268,23 @@ var monark = false;
 
 var sxsss = 0;
 
+//random box
+var bbbbb = new Prop();
+    bbbbb.model = cube_model;
+    bbbbb.texture = albido_create;
+    bbbbb.specular = specular_create;
+    bbbbb.position = new Vector3(20,6,3);
+    bbbbb.mass = 1;
+
+    bbbbb.create_physbody();
+
+var time = 0;
 function tick(delta){
+    time = time+0.01;
+
+    let beet = (Math.sin(time*3)*30)+120;
+    nyanometer.position = new Vector2(100.0-(beet/2), 100.0-(beet/2));
+    nyanometer.scale = new Vector2(beet, beet);
 
     if(monark==false){
         genmap();
@@ -298,7 +314,7 @@ function tick(delta){
     }
     if (space){
         let ray = new RayCast(player.position, new Vector3(player.position.x,player.position.y-1.3,player.position.z));
-        if(ray.hasHit)player.AddForce(new Vector3(0,0.5,0));
+        if(ray.hasHit)player.AddForce(new Vector3(0,1,0));
     }
 
     if((player.LinearVelocity.x < maxspeed || player.LinearVelocity.z < maxspeed))

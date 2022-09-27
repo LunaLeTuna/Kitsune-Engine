@@ -11,7 +11,7 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "stb_image.h"
+#include "stb_image.hpp"
  
  
 #include <assert.h>

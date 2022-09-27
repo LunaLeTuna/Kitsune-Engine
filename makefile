@@ -5,7 +5,7 @@ V8FLAGS = -I/v8/ -I/v8/include  -L/v8/out.gn/x64.release.sample/obj/ -lv8_monoli
 BulletFLAGS = -lBulletSoftBody -lBulletDynamics -lBulletCollision -lLinearMath -I/usr/include/bullet
 
 KitsuneEngine: main.cpp
-	g++ $(CFLAGS) -o KitsuneEngine main.cpp stb_image.h ft2build.h $(LDFLAGS) $(FTFLAGS) $(V8FLAGS) $(BulletFLAGS)
+	g++ $(CFLAGS) -o KitsuneEngine main.cpp stb_image.hpp ft2build.hpp $(LDFLAGS) $(FTFLAGS) $(V8FLAGS) $(BulletFLAGS)
 
 .PHONY: test clean
 
