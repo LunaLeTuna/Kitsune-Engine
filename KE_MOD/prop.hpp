@@ -4,7 +4,9 @@ class prop{
     public:
     //render
     bool allow_render = 1;
+    bool default_shader = 1;
     string name;
+    shader* shaders;
     model* models;
     texture* textures;
     texture* speculars;

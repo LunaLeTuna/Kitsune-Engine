@@ -9,9 +9,52 @@ class shader{
     unsigned int fragment;
     unsigned int program; //id or what
 
+    // uint8_t settings;
+    // // 00000000
+    // //first bit is give time
+    // //second bit is give lights
+
+    // void shader_info_handler(string location){
+    //     //kitsune engine shader info B3
+    //     string code = get_file(location+".kesi");
+
+    //     uint8_t tempside = 0;
+    //     string loadtemp = "";
+
+    //     uint8_t temp_setting = 0;
+
+    //     stringstream ss;
+    //     stringstream src(code);
+    //     string line;
+    //     string prefix;
+    //     while(getline(src,line)){
+    //         ss.clear();
+    //         ss.str(line);
+    //         ss >> prefix;
+
+    //         if(prefix == "#"){
+
+    //         }else if(prefix == "give_time"){
+    //             ss >> temp_setting;
+    //             if(temp_setting) settings += 1;
+    //         }else if(prefix == "load_lights"){
+    //             ss >> temp_setting;
+    //             if(temp_setting) settings += 2;
+    //         }else if(prefix == "load_screen"){
+    //             ss >> temp_setting;
+    //             if(temp_setting) settings += 4;
+    //         }else{
+                
+    //         }
+    //     }
+    //     cout << "nya nya mf: " << settings << endl;
+    // }
+
     void craft(string location){
 
         char infoLog[621];
+
+        // shader_info_handler(location);
 
         string va = get_file(location+".vert");
 

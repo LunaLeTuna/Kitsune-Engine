@@ -21,6 +21,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 #include <vector>
 #include <cmath>
 #include <map>
@@ -1912,42 +1913,46 @@ int main(int argc, char* argv[]) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glUseProgram(waffle.program);
+        shader* current_shader = &waffle;
 
-        waffle.setVec3("viewPos", main_cam->position);
-        waffle.setInt("material.diffuse", 0);
-        waffle.setInt("material.specular", 1);
-        waffle.setFloat("material.shininess", 32.0f);
+        glUseProgram(current_shader->program);
+
+        current_shader->setVec3("viewPos", main_cam->position);
+        current_shader->setInt("material.diffuse", 0);
+        current_shader->setInt("material.specular", 1);
+        current_shader->setFloat("material.shininess", 32.0f);
 
         // directional light
-        waffle.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
-        waffle.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
-        waffle.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
-        waffle.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+        current_shader->setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+        current_shader->setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+        current_shader->setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+        current_shader->setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
 
-        waffle.setInt("NR_POINT_LIGHTS", NR_POINT_LIGHTS);
+        current_shader->setInt("NR_POINT_LIGHTS", NR_POINT_LIGHTS);
 
         for(int liwack = 0; liwack < NR_POINT_LIGHTS; liwack++){
             string a = "pointLights[" + std::to_string(liwack);
             string po = a+"].position";
-            glUniform3fv(glGetUniformLocation(waffle.program, po.c_str()), 1, &pointLights[liwack].position[0]);
+            glUniform3fv(glGetUniformLocation(current_shader->program, po.c_str()), 1, &pointLights[liwack].position[0]);
             string am = a+"].ambient";
-            glUniform3fv(glGetUniformLocation(waffle.program, am.c_str()), 1, &pointLights[liwack].ambient[0]);
+            glUniform3fv(glGetUniformLocation(current_shader->program, am.c_str()), 1, &pointLights[liwack].ambient[0]);
             string di = a+"].diffuse";
-            glUniform3fv(glGetUniformLocation(waffle.program, di.c_str()), 1, &pointLights[liwack].diffuse[0]);
+            glUniform3fv(glGetUniformLocation(current_shader->program, di.c_str()), 1, &pointLights[liwack].diffuse[0]);
             string sp = a+"].specular";
-            glUniform3fv(glGetUniformLocation(waffle.program, sp.c_str()), 1, &pointLights[liwack].specular[0]);
+            glUniform3fv(glGetUniformLocation(current_shader->program, sp.c_str()), 1, &pointLights[liwack].specular[0]);
             string co = a+"].constant";
-            glUniform1f(glGetUniformLocation(waffle.program, co.c_str()), pointLights[liwack].constant);
+            glUniform1f(glGetUniformLocation(current_shader->program, co.c_str()), pointLights[liwack].constant);
             string li = a+"].linear";
-            glUniform1f(glGetUniformLocation(waffle.program, li.c_str()), pointLights[liwack].linear);
+            glUniform1f(glGetUniformLocation(current_shader->program, li.c_str()), pointLights[liwack].linear);
             string qu = a+"].quadratic";
-            glUniform1f(glGetUniformLocation(waffle.program, qu.c_str()), pointLights[liwack].quadratic);
+            glUniform1f(glGetUniformLocation(current_shader->program, qu.c_str()), pointLights[liwack].quadratic);
         }
 
 
-        waffle.setMat4("projection", main_cam->projection);
-        waffle.setMat4("view", main_cam->view);
+        current_shader->setMat4("projection", main_cam->projection);
+        current_shader->setMat4("view", main_cam->view);
+
+        unsigned int last_shader = current_shader->program;
 
         for (prop& i : part) {
             //parody prop physics counterpart
@@ -1964,11 +1969,57 @@ int main(int argc, char* argv[]) {
 
             }
 
+            if(i.default_shader) {
+                i.shaders = &waffle;
+                i.default_shader = 0;
+            }
+
+            if(i.shaders->program != last_shader) {
+                last_shader = i.shaders->program;
+                current_shader = i.shaders;
+                glUseProgram(current_shader->program);
+
+                current_shader->setVec3("viewPos", main_cam->position);
+                current_shader->setInt("material.diffuse", 0);
+                current_shader->setInt("material.specular", 1);
+                current_shader->setFloat("material.shininess", 32.0f);
+
+                // directional light
+                current_shader->setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+                current_shader->setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+                current_shader->setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+                current_shader->setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+
+                current_shader->setInt("NR_POINT_LIGHTS", NR_POINT_LIGHTS);
+
+                for(int liwack = 0; liwack < NR_POINT_LIGHTS; liwack++){
+                    string a = "pointLights[" + std::to_string(liwack);
+                    string po = a+"].position";
+                    glUniform3fv(glGetUniformLocation(current_shader->program, po.c_str()), 1, &pointLights[liwack].position[0]);
+                    string am = a+"].ambient";
+                    glUniform3fv(glGetUniformLocation(current_shader->program, am.c_str()), 1, &pointLights[liwack].ambient[0]);
+                    string di = a+"].diffuse";
+                    glUniform3fv(glGetUniformLocation(current_shader->program, di.c_str()), 1, &pointLights[liwack].diffuse[0]);
+                    string sp = a+"].specular";
+                    glUniform3fv(glGetUniformLocation(current_shader->program, sp.c_str()), 1, &pointLights[liwack].specular[0]);
+                    string co = a+"].constant";
+                    glUniform1f(glGetUniformLocation(current_shader->program, co.c_str()), pointLights[liwack].constant);
+                    string li = a+"].linear";
+                    glUniform1f(glGetUniformLocation(current_shader->program, li.c_str()), pointLights[liwack].linear);
+                    string qu = a+"].quadratic";
+                    glUniform1f(glGetUniformLocation(current_shader->program, qu.c_str()), pointLights[liwack].quadratic);
+                }
+
+
+                current_shader->setMat4("projection", main_cam->projection);
+                current_shader->setMat4("view", main_cam->view);
+            }
+
             //to render
             if(i.models != NULL)
             if(i.allow_render)
             //if(check_cull(main_cam, &i))
-            i.use(&waffle);
+            i.use(current_shader);
         }
 
         for (element& s : screen_elements) {

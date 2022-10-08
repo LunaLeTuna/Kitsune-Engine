@@ -245,7 +245,7 @@ Input.addEventListener("mousemove", mousty);
 CursorPin(true);
 
 var speed = 0.2;
-var maxspeed = 4;
+var maxspeed = 1;
 
 var player_max_health = 10;
 var player_health = 10;
@@ -317,8 +317,11 @@ function tick(delta){
         if(ray.hasHit)player.AddForce(new Vector3(0,1,0));
     }
 
-    if((player.LinearVelocity.x < maxspeed || player.LinearVelocity.z < maxspeed))
-    if((player.LinearVelocity.x > -maxspeed || player.LinearVelocity.z > -maxspeed))
+    if(player.LinearVelocity.z < maxspeed)  player.LinearVelocity.z = maxspeed;
+    if(player.LinearVelocity.z > -maxspeed)  player.LinearVelocity.z = -maxspeed;
+    if(player.LinearVelocity.x < maxspeed) player.LinearVelocity.x = maxspeed;
+    if(player.LinearVelocity.x > -maxspeed) player.LinearVelocity.x = -maxspeed;
+
     if(((w||s)||(a||d))){
         var new_place = pivot_point(temp, current, cam_rot);
         player.AddForce(new Vector3(new_place.x,0,new_place.y));
