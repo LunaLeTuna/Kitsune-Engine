@@ -19,10 +19,12 @@ class prop{
     bool skipCull = 0;
     float CullSize = 1;
     
+#ifdef Include_physics
     //phys
     float mass = 0.0f;
     bool has_physbody = 0;
     btRigidBody* phys_counterpart;
+#endif
 
     void use(shader* shader_program){
         glBindVertexArray(models->VAO);

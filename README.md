@@ -18,10 +18,10 @@ Another problem is that some computers may not load all the props, bigger oof
 - [Bullet Physics](https://pybullet.org/)
 - [GLFW](https://www.glfw.org/)
 - [GLM](https://github.com/g-truc/glm)
+- [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h)
 - [FreeType](https://freetype.org/)
 - [learnopengl for lots of opengl code](https://learnopengl.com/)
 - [Ty for pig "Ellie Pig" model](https://github.com/TyThePotato)
-
 
 ## Roadmap
 
@@ -29,9 +29,7 @@ Another problem is that some computers may not load all the props, bigger oof
 
 - Make robust obj importer, allowing for bones and auto triangulation
 
-- RayCast
-
-- Make Map/Scene editor (probably made engine)
+- Make Map/Scene editor (probably made in engine)
 
 - Revamp input system
 
@@ -39,6 +37,6 @@ Another problem is that some computers may not load all the props, bigger oof
 
 - Make better demos
 
-- Allow for scripts to call other scripts (like require in node.js)
+- Allow for scripts to call other scripts (like "require" in node.js)
 
-- Port to vulkan (long time before that)
+- Port to vulkan and jolt physics (long time before that)

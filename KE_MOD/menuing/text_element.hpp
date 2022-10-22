@@ -133,7 +133,48 @@ public:
     glm::vec2 position;
     float scale;
 
+    uint8_t alignmentX = 1; //0=left,1=center,2=right
+    uint8_t alignmentY = 1; //0=top,1=center,2=bottom
+    float total_size_X = 0;
+    float total_size_Y = 0;
+
     bool overflow = -1; //-1 means off, -2 cuts off size, 0 and up cut off string
+
+    void setalignmentX(string post){
+        if(post.compare("left") == 0)
+            alignmentX=0;
+        if(post.compare("center") == 0)
+            alignmentX=1;
+        if(post.compare("right") == 0)
+            alignmentX=2;
+    }
+
+    string getalignmentX(){
+        if(alignmentX==0)
+            return "left";
+        if(alignmentX==1)
+            return "center";
+        if(alignmentX==2)
+            return "right";
+    }
+
+    void setalignmentY(string post){
+        if(post.compare("top") == 0)
+            alignmentY=0;
+        if(post.compare("center") == 0)
+            alignmentY=1;
+        if(post.compare("bottom") == 0)
+            alignmentY=2;
+    }
+
+    string getalignmentY(){
+        if(alignmentY==0)
+            return "top";
+        if(alignmentY==1)
+            return "center";
+        if(alignmentY==2)
+            return "bottom";
+    }
 
     void Render(){
         // activate corresponding render state
@@ -161,8 +202,14 @@ public:
                 continue;
             }
 
-            float xpos = tx + ch.Bearing.x * scale;
-            float ypos = ty - (ch.Size.y - ch.Bearing.y) * scale;
+            float offcenterX = 0;
+            float offcenterY = 0;
+            if(alignmentX==1) offcenterX-=total_size_X/2;
+            if(alignmentX==2) offcenterX-=total_size_X;
+            if(alignmentY==1) offcenterY-=total_size_Y/2;
+            if(alignmentY==2) offcenterY-=total_size_Y;
+            float xpos = (tx + ch.Bearing.x * scale)+offcenterX;
+            float ypos = (ty - (ch.Size.y - ch.Bearing.y) * scale)+offcenterY;
 
             float w = ch.Size.x * scale;
             float h = ch.Size.y * scale;
@@ -188,6 +235,8 @@ public:
             // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
             tx += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
         }
+        total_size_X = tx-position.x;
+        total_size_Y = ty-position.y;
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     }

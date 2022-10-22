@@ -2,6 +2,8 @@
 
 class element{
 public:
+    bool not_used = 0;
+
     glm::vec2 position;
     glm::vec2 size;
 

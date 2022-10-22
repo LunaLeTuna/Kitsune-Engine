@@ -2,6 +2,9 @@
 #define GL_GLEXT_PROTOTYPES
 #define STB_IMAGE_IMPLEMENTATION
 
+//#define Include_physics
+//#define Include_console_interaction
+
 #include <stdio.h>
 
 #include <GL/gl.h>
@@ -27,7 +30,9 @@
 #include <map>
 #include <pthread.h>
 
+#ifdef Include_physics
 #include <btBulletDynamicsCommon.h>
+#endif
 
 #include <include/v8.h>
 
@@ -43,6 +48,7 @@ float lastFrame = 0.0f;
 
 GLFWwindow* window;
 
+#ifdef Include_physics
 btDefaultCollisionConfiguration* collisionConfiguration;
 
 btCollisionDispatcher* dispatcher;
@@ -52,6 +58,7 @@ btBroadphaseInterface* overlappingPairCache;
 btSequentialImpulseConstraintSolver* solver;
 
 btDiscreteDynamicsWorld* dynamicWorld;
+#endif
 
 string get_file(string location){
 
@@ -386,6 +393,10 @@ void TextureConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
     texture texturecl;
 
+    texturecl.flipped = false;
+
+    texturecl.filtering = 1;
+
     texturecl.name = "texture_"+to_string(away);
 
     if(!args[0].IsEmpty() && args[0]->IsString()) {
@@ -435,7 +446,7 @@ void SetModelOBJ(const v8::FunctionCallbackInfo<v8::Value>& args) {
  * TODO:
  * multi vertex poly to 3 vertex poly inator
  * giv'm bones
- * allow models to be genorated and modified through Script
+ * allow models to be generated and modified through Script
  */
 
 void ModelConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
@@ -574,6 +585,7 @@ static void Setvec3p(v8::Local<v8::String> property,
 
     part[valueb].position.z = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
+#ifdef Include_physics
     if(part[valueb].has_physbody){
         btTransform transform;
         transform.setIdentity();
@@ -583,6 +595,7 @@ static void Setvec3p(v8::Local<v8::String> property,
         part[valueb].phys_counterpart->setWorldTransform(transform);
         part[valueb].phys_counterpart->getMotionState()->setWorldTransform(transform);
     }
+#endif
 }
 
 static void Getvec3sc(v8::Local<v8::String> property,
@@ -694,6 +707,25 @@ static void Setspecular(v8::Local<v8::String> property,
   part[valueb].speculars = &ctextures[dock];
 }
 
+static void Getshader(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value>& info) {
+
+    v8::HandleScope handle_scope(isolate);
+    //TODO: make return texture
+}
+
+
+static void Setshader(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void>& info) {
+  int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+  int valueb = valuea;
+
+  int dock = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+  part[valueb].shaders = &cshaders[dock];
+}
+
 static void Getmodel(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
@@ -713,6 +745,7 @@ static void Setmodel(v8::Local<v8::String> property,
   part[valueb].models = &cmodels[dock];
 }
 
+#ifdef Include_physics
 vector<btRigidBody*> bodies;
 
 btRigidBody* create_physbox(glm::vec3 position, glm::vec3 size, float mass){
@@ -773,6 +806,7 @@ void add_force(const v8::FunctionCallbackInfo<v8::Value>& args){
 
     fflush(stdout);
 }
+#endif
 
 
 static void Getpvl(v8::Local<v8::String> property,
@@ -797,6 +831,7 @@ static void Getpvl(v8::Local<v8::String> property,
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
 
+    #ifdef Include_physics
     if(part[valueb].has_physbody){
     //getLinearVelocity
         btVector3 lva = part[valueb].phys_counterpart->getLinearVelocity();
@@ -806,6 +841,7 @@ static void Getpvl(v8::Local<v8::String> property,
         vec3_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "z").ToLocalChecked(), v8::Number::New(isolate,lva.getZ()));
 
     }
+    #endif
 
 
   info.GetReturnValue().Set(vec3_obj);
@@ -818,6 +854,7 @@ static void Setpvl(v8::Local<v8::String> property,
     int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
     int valueb = valuea;
 
+    #ifdef Include_physics
     if(part[valueb].has_physbody){
         int xp = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
@@ -828,8 +865,10 @@ static void Setpvl(v8::Local<v8::String> property,
         part[valueb].phys_counterpart->forceActivationState(ACTIVE_TAG);
         part[valueb].phys_counterpart->setLinearVelocity(btVector3(xp,yp,zp));
     }
+    #endif
 }
 
+#ifdef Include_physics
 static void Setpmass(v8::Local<v8::String> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void>& info) {
@@ -849,6 +888,7 @@ static void Getpmass(v8::Local<v8::String> property,
 
     info.GetReturnValue().Set(v8::Integer::New(isolate,part[valueb].mass));
 }
+#endif
 
 /*
  * prop is just a frick ton of pointers to other resources
@@ -880,11 +920,14 @@ void PropConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "rotation").ToLocalChecked(), Getvec3r, Setvec3r, v8::Integer::New(isolate,awax));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "texture").ToLocalChecked(), Gettexture, Settexture, v8::Integer::New(isolate,awax));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "specular").ToLocalChecked(), Getspecular, Setspecular, v8::Integer::New(isolate,awax));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "shader").ToLocalChecked(), Getshader, Setshader, v8::Integer::New(isolate,awax));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "model").ToLocalChecked(), Getmodel, Setmodel, v8::Integer::New(isolate,awax));
+#ifdef Include_physics
     local->Set(v8::String::NewFromUtf8(isolate, "create_physbody").ToLocalChecked(), v8::FunctionTemplate::New(isolate, create_physbody));
     local->Set(v8::String::NewFromUtf8(isolate, "AddForce").ToLocalChecked(), v8::FunctionTemplate::New(isolate, add_force));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "LinearVelocity").ToLocalChecked(), Getpvl, Setpvl, v8::Integer::New(isolate,awax));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "mass").ToLocalChecked(), Getpmass, Setpmass, v8::Integer::New(isolate,awax));
+#endif
 
     awax++;
     prop_templ.Reset(isolate, inner.Escape(local));
@@ -1116,7 +1159,7 @@ void GetFontFile(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
     int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    cout << "setted was the font " << MID << endl;
+    // cout << "setted was the font " << MID << endl;
 
     if(!args[0].IsEmpty() && args[0]->IsString()){
         v8::String::Utf8Value str(isolate, args[0]);
@@ -1157,7 +1200,6 @@ void FontConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
         args.GetReturnValue().Set(font_obj);
 }
 
-int awaeex = 0; //size
 vector<element> screen_elements;
 
 static void Getelvec2(v8::Local<v8::String> property,
@@ -1313,6 +1355,110 @@ static void Setimagetexture(v8::Local<v8::String> property,
   screen_elements[valueb].image.imbase = &ctextures[dock];
 }
 
+static void Setimflipx(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void>& info) {
+  int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+  int valueb = valuea;
+
+  bool dock = value->BooleanValue(isolate);
+
+  screen_elements[valueb].image.flipx = dock;
+}
+
+static void Getimflipx(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value>& info) {
+
+    v8::HandleScope handle_scope(isolate);
+
+    int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+    int valueb = valuea;
+
+    info.GetReturnValue().Set(screen_elements[valueb].image.flipx);
+}
+
+static void Setimflipy(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void>& info) {
+  int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+  int valueb = valuea;
+
+  bool dock = value->BooleanValue(isolate);
+
+  screen_elements[valueb].image.flipy = dock;
+}
+
+static void Getimflipy(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value>& info) {
+
+    v8::HandleScope handle_scope(isolate);
+
+    int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+    int valueb = valuea;
+
+    info.GetReturnValue().Set(screen_elements[valueb].image.flipy);
+}
+
+static void SetelalignX(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void>& info) {
+  int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+  int valueb = valuea;
+
+  v8::String::Utf8Value str(isolate, value);
+  
+
+
+  screen_elements[valueb].text.setalignmentX(ToCString(str));
+}
+
+static void GetelalignX(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value>& info) {
+
+    v8::HandleScope handle_scope(isolate);
+
+    int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+    int valueb = valuea;
+
+    info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, screen_elements[valueb].text.getalignmentX().c_str()).ToLocalChecked());
+}
+
+static void SetelalignY(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void>& info) {
+  int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+  int valueb = valuea;
+
+  v8::String::Utf8Value str(isolate, value);
+  
+
+
+  screen_elements[valueb].text.setalignmentY(ToCString(str));
+}
+
+static void GetelalignY(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value>& info) {
+
+    v8::HandleScope handle_scope(isolate);
+
+    int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+    int valueb = valuea;
+
+    info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, screen_elements[valueb].text.getalignmentY().c_str()).ToLocalChecked());
+}
+
+vector<int> element_available;
+int element_available_size = 0;
+
+void elDelete(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    v8::HandleScope handle_scope(isolate);
+
+    int idthinh = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    screen_elements[idthinh].not_used = true;
+    element_available.push_back(idthinh);
+}
+
 void TextMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
     v8::HandleScope handle_scope(isolate);
@@ -1328,7 +1474,18 @@ void TextMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args
     elpt.text.color = glm::vec3(1.0, 1.0f, 1.0f);
     elpt.text.text = "";
 
-    screen_elements.push_back(elpt);
+    int awaeex = 0;
+
+    if(element_available.empty()){
+        screen_elements.push_back(elpt);
+        awaeex = screen_elements.size()-1;
+    }else{
+        cout << element_available.back() <<  endl;
+        awaeex = element_available.back();
+        screen_elements[element_available.back()] = elpt;
+        element_available.pop_back();
+        element_available_size--;
+    }
 
 
     v8::EscapableHandleScope inner(isolate);
@@ -1339,6 +1496,8 @@ void TextMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "text").ToLocalChecked(), Geteltext, Seteltext, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "font").ToLocalChecked(), Getelfont, Setelfont, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "color").ToLocalChecked(), Getelcolor, Setelcolor, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "alignX").ToLocalChecked(), GetelalignX, SetelalignX, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "alignY").ToLocalChecked(), GetelalignY, SetelalignY, v8::Integer::New(isolate,awaeex));
     awaeex++;
 
     MenuElement_templ.Reset(isolate, inner.Escape(local));
@@ -1364,14 +1523,29 @@ void ImageMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& arg
     elpt.image.scale = glm::vec2(100.0f, 100.0f);
     elpt.image.imbase = &tex;
 
-    screen_elements.push_back(elpt);
+    int awaeex = 0;
+
+    if(element_available.empty()){
+        screen_elements.push_back(elpt);
+        awaeex = screen_elements.size()-1;
+    }else{
+        cout << element_available.back() <<  endl;
+        awaeex = element_available.back();
+        screen_elements[element_available.back()] = elpt;
+        element_available.pop_back();
+        element_available_size--;
+    }
 
 
     v8::EscapableHandleScope inner(isolate);
     v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
+    local->Set(isolate, "_id", v8::Integer::New(isolate, awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getelvec2, Setelvec2, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "scale").ToLocalChecked(), Getimscal2, Setimscal2, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "texture").ToLocalChecked(), Gettexture, Setimagetexture, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "flipped_x").ToLocalChecked(), Getimflipx, Setimflipx, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "flipped_y").ToLocalChecked(), Getimflipy, Setimflipy, v8::Integer::New(isolate,awaeex));
+    local->Set(isolate, "Delete", v8::FunctionTemplate::New(isolate, elDelete));
     awaeex++;
 
     MenuElement_templ.Reset(isolate, inner.Escape(local));
@@ -1533,6 +1707,7 @@ void toggle_curser_pin(const v8::FunctionCallbackInfo<v8::Value>& args) {
     fflush(stdout);
 }
 
+#ifdef Include_console_interaction
 void run_cmd(const v8::FunctionCallbackInfo<v8::Value>& args){
     v8::HandleScope handle_scope(isolate);
 
@@ -1557,7 +1732,9 @@ void run_cmd(const v8::FunctionCallbackInfo<v8::Value>& args){
 
     fflush(stdout);
 }
+#endif
 
+#ifdef Include_physics
 void RayConstruct( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
     v8::HandleScope handle_scope(isolate);
@@ -1591,6 +1768,7 @@ void RayConstruct( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
     args.GetReturnValue().Set(Raycast_obj);
 }
+#endif
 
 v8::Local<v8::Context> load_wrap_functions(v8::Isolate* isolate) {
     // Create a template for the global object.
@@ -1614,8 +1792,10 @@ v8::Local<v8::Context> load_wrap_functions(v8::Isolate* isolate) {
     //props
     global->Set(isolate, "Prop", v8::FunctionTemplate::New(isolate, PropConstructor));
 
+#ifdef Include_physics
     //raycast
     global->Set(isolate, "RayCast", v8::FunctionTemplate::New(isolate, RayConstruct));
+#endif
 
     //Cameras
     global->Set(isolate, "Camera", v8::FunctionTemplate::New(isolate, CameraConstructor));
@@ -1636,7 +1816,9 @@ v8::Local<v8::Context> load_wrap_functions(v8::Isolate* isolate) {
     input_b->Set(isolate, "addEventListener", v8::FunctionTemplate::New(isolate, AddInputEvent));
     global->Set(isolate, "Input", input_b);
 
+#ifdef Include_console_interaction
     global->Set(isolate, "cmd", v8::FunctionTemplate::New(isolate, run_cmd));
+#endif
 
     global->Set(isolate, "print", v8::FunctionTemplate::New(isolate, Print));
     global->Set(isolate, "Win_title", v8::FunctionTemplate::New(isolate, Win_title));
@@ -1795,6 +1977,7 @@ int main(int argc, char* argv[]) {
     glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 
+#ifdef Include_physics
     //physics - bullet phys world setup
     collisionConfiguration = new btDefaultCollisionConfiguration();
 
@@ -1818,6 +2001,7 @@ int main(int argc, char* argv[]) {
     body->setFriction(1.0f);
     dynamicWorld->addRigidBody(body);
     bodies.push_back(body);
+#endif
 
     //js - v8 env setup
     v8::V8::InitializeICUDefaultLocation("");
@@ -1887,8 +2071,6 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        dynamicWorld->stepSimulation(1.f / 60.f ,10);
-
 //         for(int v=dynamicWorld->getNumCollisionObjects()-1; v>=0;v--){
 //             btCollisionObject* obj = dynamicWorld->getCollisionObjectArray()[v];
 //             btRigidBody* body = btRigidBody::upcast(obj);
@@ -1955,6 +2137,9 @@ int main(int argc, char* argv[]) {
         unsigned int last_shader = current_shader->program;
 
         for (prop& i : part) {
+#ifdef Include_physics
+            dynamicWorld->stepSimulation(1.f / 60.f ,10);
+
             //parody prop physics counterpart
             if(i.has_physbody && i.mass != 0){
                 btTransform trans; // :3
@@ -1968,6 +2153,7 @@ int main(int argc, char* argv[]) {
                 }
 
             }
+#endif
 
             if(i.default_shader) {
                 i.shaders = &waffle;
@@ -2023,6 +2209,7 @@ int main(int argc, char* argv[]) {
         }
 
         for (element& s : screen_elements) {
+            if(!s.not_used)
             if(s.allow_render)
                 s.render();
         }
@@ -2033,6 +2220,7 @@ int main(int argc, char* argv[]) {
         glfwPollEvents();
     }
 
+#ifdef Include_physics
     for(int dc=dynamicWorld->getNumCollisionObjects()-1; dc>0; dc--){
         btCollisionObject* obj = dynamicWorld->getCollisionObjectArray()[dc];
         btRigidBody* body = btRigidBody::upcast(obj);
@@ -2058,6 +2246,7 @@ int main(int argc, char* argv[]) {
     delete dispatcher;
 
     delete collisionConfiguration;
+    #endif
 
     //     collisionShapes.clear();
 

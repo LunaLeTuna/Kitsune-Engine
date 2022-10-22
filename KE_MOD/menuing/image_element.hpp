@@ -6,6 +6,9 @@ public:
 
     glm::vec2 position;
     glm::vec2 scale;
+    
+    bool flipx = false;
+    bool flipy = false;
 
     texture* imbase;
 
@@ -19,14 +22,16 @@ public:
         
         glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
         glUniformMatrix4fv(glGetUniformLocation(shaderz->program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        shaderz->setBool("FlipX",flipx);
+        shaderz->setBool("FlipY",flipy);
         
         glBindVertexArray(VAO);
 
-        float xpos = position.x;
-        float ypos = position.y;
-
         float w = scale.x;
         float h = scale.y;
+
+        float xpos = position.x-(scale.x/2);
+        float ypos = position.y-(scale.y/2);
 
         float vertices[] = {
             xpos,     ypos + h,   0.0f, 0.0f ,
