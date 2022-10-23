@@ -12,13 +12,28 @@ public:
 
     texture* imbase;
 
+    texture* imbase2;
+    bool has2 = false;
+
+    GLuint text0, text1;
+    bool textset = false;
+
     unsigned int VAO, VBO;
 
     bool loaded = 0;
 
     void Render(){
 
+        if(!textset){
+            glGenTextures(1, &text0);
+            glBindTexture(GL_TEXTURE_2D, text0);
+            glGenTextures(1, &text1);
+            glBindTexture(GL_TEXTURE_2D, text1); 
+        }
+
         glUseProgram(shaderz->program);
+        glUniform1i(text0, 0);
+        glUniform1i(text1,  1);
         
         glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
         glUniformMatrix4fv(glGetUniformLocation(shaderz->program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -44,7 +59,14 @@ public:
         };
         // render glyph texture over quad
         glActiveTexture(GL_TEXTURE0);
+        shaderz->setInt("text0", 0);
         imbase->call();
+
+        if(has2){
+            glActiveTexture(GL_TEXTURE1);
+            shaderz->setInt("text1", 1);
+            imbase2->call();
+        }
         
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);

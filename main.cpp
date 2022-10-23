@@ -511,7 +511,7 @@ void ShaderConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     if(!args[0].IsEmpty() && args[0]->IsString()) {
         v8::String::Utf8Value str(isolate, args[0]);
         const char* cstr = ToCString(str);
-        shadercl.craft(get_file(cstr));
+        shadercl.craft(cstr);
         //cout << "wa " << cstr << endl;
         //cout << "setted was the model " << modecl.VBO << endl;
     }
@@ -1355,6 +1355,43 @@ static void Setimagetexture(v8::Local<v8::String> property,
   screen_elements[valueb].image.imbase = &ctextures[dock];
 }
 
+static void Setimagetexture1(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void>& info) {
+    int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+    int valueb = valuea;
+
+    int dock = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    screen_elements[valueb].image.has2 = true;
+    screen_elements[valueb].image.imbase2 = &ctextures[dock];
+}
+
+static void Setimageshader(v8::Local<v8::String> property,
+                        v8::Local<v8::Value> value,
+                        const v8::PropertyCallbackInfo<void>& info) {
+  int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+  int valueb = valuea;
+
+  int dock = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+  screen_elements[valueb].image.shaderz = &cshaders[dock];
+}
+
+static void Getimageshader(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value>& info) {
+
+    v8::HandleScope handle_scope(isolate);
+    //TODO: make return shader
+}
+
+static void Gettexture1(v8::Local<v8::String> property,
+                        const v8::PropertyCallbackInfo<v8::Value>& info) {
+
+    v8::HandleScope handle_scope(isolate);
+    //TODO: make return shader
+}
+
 static void Setimflipx(v8::Local<v8::String> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void>& info) {
@@ -1543,6 +1580,8 @@ void ImageMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& arg
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getelvec2, Setelvec2, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "scale").ToLocalChecked(), Getimscal2, Setimscal2, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "texture").ToLocalChecked(), Gettexture, Setimagetexture, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "texture1").ToLocalChecked(), Gettexture1, Setimagetexture1, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "shader").ToLocalChecked(), Getimageshader, Setimageshader, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "flipped_x").ToLocalChecked(), Getimflipx, Setimflipx, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "flipped_y").ToLocalChecked(), Getimflipy, Setimflipy, v8::Integer::New(isolate,awaeex));
     local->Set(isolate, "Delete", v8::FunctionTemplate::New(isolate, elDelete));
