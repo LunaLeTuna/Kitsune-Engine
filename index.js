@@ -2,7 +2,6 @@ Win_title("Blåhaj's Berry Collection"); //names title
 
 var blahaj_tex_1 = new Texture("./bbc_textures/blahaj/b1.png");
 var blahaj_tex_2 = new Texture("./bbc_textures/blahaj/p1.png");
-var blahaj_tex_3 = new Texture("./bbc_textures/blahaj/p2.png");
 
 var heart_im = new Texture("./bbc_textures/UI/heart.png");
 var darke_im = new Texture("./bbc_textures/UI/darxk.png");
