@@ -13,7 +13,7 @@ var bbbb = new Prop();
 var hack = new Font();
 hack.GetFontFile("./fonts/SF.ttf");
 
-var fps = new element();
+var fps = new TextElement();
 fps.text = "Kitsune Demo :3";
 fps.position = new Vector2(25.0, 70.0);
 fps.scale = 0.5;

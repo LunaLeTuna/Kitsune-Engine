@@ -2,8 +2,8 @@
 #define GL_GLEXT_PROTOTYPES
 #define STB_IMAGE_IMPLEMENTATION
 
-//#define Include_physics
-//#define Include_console_interaction
+#define Include_physics
+#define Include_console_interaction
 
 #include <stdio.h>
 
@@ -1517,7 +1517,7 @@ void TextMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args
         screen_elements.push_back(elpt);
         awaeex = screen_elements.size()-1;
     }else{
-        cout << element_available.back() <<  endl;
+        // cout << element_available.back() <<  endl;
         awaeex = element_available.back();
         screen_elements[element_available.back()] = elpt;
         element_available.pop_back();
@@ -1566,7 +1566,7 @@ void ImageMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& arg
         screen_elements.push_back(elpt);
         awaeex = screen_elements.size()-1;
     }else{
-        cout << element_available.back() <<  endl;
+        // cout << element_available.back() <<  endl;
         awaeex = element_available.back();
         screen_elements[element_available.back()] = elpt;
         element_available.pop_back();

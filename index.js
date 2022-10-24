@@ -14,9 +14,17 @@ while(i !== 10){
     i++;
 }
 
+var berry_textures = [];
+var i = 1;
+while(i !== 9){
+    var tt = new Texture("./bbc_textures/berries/B"+i+".png");
+    berry_textures.push(tt);
+    i++;
+}
+
 var shader_frames = [];
 var i = 0;
-while(i !== 52){
+while(i !== 29){
     let awanya = i.toString().padStart(4, "0");
     var tt = new Texture("./bbc_textures/shatter/"+awanya+".png");
     shader_frames.push(tt);
@@ -110,6 +118,16 @@ sans.GetFontFile("./fonts/ComicSans.ttf");
 var blaheal = 5;
 var blahealmax = 5;
 
+var blascore = 0;
+
+let score = new TextElement();
+score.position = new Vector2(5.0, innerHeight-25);
+score.scale = 0.5;
+score.font = hack;
+score.text = "score: "+blascore;
+score.alignX = "left";
+score.alignY = "top";
+
 let health = new TextElement();
 health.position = new Vector2(100.0, 80.0);
 health.scale = 0.5;
@@ -172,6 +190,8 @@ async function Deathamon(){
 var time = 0;
 function tick(delta){
 
+    score.position = new Vector2(5.0, innerHeight-25);
+
     if(waiting_start){
         blahaj.position = new Vector2(innerWidth/2, innerHeight/2);
         start_test.position = new Vector2(innerWidth/2, innerHeight/2-140);
@@ -206,6 +226,7 @@ function tick(delta){
         return;
     }
 
+    score.text = "score: "+blascore;
     health.text = "health "+blaheal+"/"+blahealmax;
 
     ents.forEach((ent, nya) => {
@@ -218,8 +239,16 @@ function tick(delta){
         var a = blahaj.position.x - ent.element.position.x;
         var b = blahaj.position.y - ent.element.position.y;
 
-        if(Math.sqrt( a*a + b*b )  < 30){
+        if(Math.sqrt( a*a + b*b )  < 30 && ent.type == "enemy"){
             blaheal--;
+            ent.element.Delete();
+            ents.splice(nya, 1); 
+            return;
+        }
+
+        if(Math.sqrt( a*a + b*b )  < 30 && ent.type == "fruit"){
+            blascore++;
+            if(blaheal<blahealmax && Math.random()>0.9)blaheal++;
             ent.element.Delete();
             ents.splice(nya, 1); 
             return;
@@ -230,11 +259,17 @@ function tick(delta){
         }
 
         if(ent.going == "left"){
-            ent.element.position = new Vector2(ent.element.position.x-ent.speed,ent.element.position.y);
-        }else if(ent.going == "right"){
-            ent.element.position = new Vector2(ent.element.position.x+ent.speed,ent.element.position.y);
+            return ent.element.position = new Vector2(ent.element.position.x-ent.speed,ent.element.position.y);
         }
-        // print(ent.element._id)
+        if(ent.going == "right"){
+            return ent.element.position = new Vector2(ent.element.position.x+ent.speed,ent.element.position.y);
+        }
+        if(ent.going == "up"){
+            return ent.element.position = new Vector2(ent.element.position.x,ent.element.position.y+ent.speed);
+        }
+        if(ent.going == "down"){
+            return ent.element.position = new Vector2(ent.element.position.x,ent.element.position.y-ent.speed);
+        }
     });
 
     if(Spawn_Timer >= max_Spawn_Timer && ents.length <= enemy_max){
@@ -247,7 +282,7 @@ function tick(delta){
         };
         temp_emy.element = new ImageElement();
         let min = Math.ceil(0);
-        let max = Math.floor(8);
+        let max = Math.floor(enemy_textures.length-1);
         var randomx = Math.floor(Math.random()*(max-min+1))+min;
         temp_emy.element.texture = enemy_textures[randomx];
         temp_emy.element.scale = new Vector2(60, 60);
@@ -258,6 +293,33 @@ function tick(delta){
             temp_emy.going = "right"
             temp_emy.element.position = new Vector2(0,Math.random()*innerHeight);
             temp_emy.element.flipped_y = true;
+        }
+        // temp_emy.element.texture = enemy_textures[Math.round(Math.random())*enemy_textures.length];
+        ents.push(temp_emy);
+    }else{
+        Spawn_Timer++;
+    }
+    
+    if(Spawn_Timer >= max_Spawn_Timer && ents.length <= enemy_max){
+        Spawn_Timer=0;
+        var temp_emy = {
+            going: "", // string as up or down
+            speed: 0.5,
+            type: "fruit",
+            element: null
+        };
+        temp_emy.element = new ImageElement();
+        let min = Math.ceil(0);
+        let max = Math.floor(berry_textures.length-1);
+        var randomx = Math.floor(Math.random()*(max-min+1))+min;
+        temp_emy.element.texture = berry_textures[randomx];
+        temp_emy.element.scale = new Vector2(60, 60);
+        if(Math.random()>0.5){
+            temp_emy.going = "down";
+            temp_emy.element.position = new Vector2(Math.random()*innerWidth,innerHeight);
+        }else{
+            temp_emy.going = "up"
+            temp_emy.element.position = new Vector2(Math.random()*innerWidth,0);
         }
         // temp_emy.element.texture = enemy_textures[Math.round(Math.random())*enemy_textures.length];
         ents.push(temp_emy);
