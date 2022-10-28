@@ -22,12 +22,29 @@ while(i !== 9){
     i++;
 }
 
+var powerup_textures = [];
+var i = 1;
+while(i !== 3){
+    var tt = new Texture("./bbc_textures/powerup/po"+i+".png");
+    powerup_textures.push(tt);
+    i++;
+}
+
 var shader_frames = [];
 var i = 0;
 while(i !== 29){
     let awanya = i.toString().padStart(4, "0");
     var tt = new Texture("./bbc_textures/shatter/"+awanya+".png");
     shader_frames.push(tt);
+    i++;
+}
+
+var cub_frames = [];
+var i = 0;
+while(i !== 53){
+    let awanya = i.toString().padStart(4, "0");
+    var tt = new Texture("./bbc_textures/cube/"+awanya+".png");
+    cub_frames.push(tt);
     i++;
 }
 
@@ -39,10 +56,10 @@ numa.scale = new Vector2(0, 0);
 numa.shader = bbc_shaders;
 numa.texture = blahaj_tex_1;
 numa.texture1 = shader_frames[0];
-var on_shatter_frame = 0;
+var on_animation_frame = 0;
 var frame_wait = 0;
 var max_frame_wait = 5;
-var is_shatter_done = false;
+var is_animation_done = false;
 
 var is_dead = false;
 var waiting_start = true;
@@ -70,6 +87,9 @@ var waiting_start = true;
 
     if (keyCode == 32)
         on_space();
+
+    if (keyCode == 340)
+        use_powerup();
 
 }
 
@@ -144,6 +164,40 @@ blahaj.position = new Vector2(innerWidth/2, 70.0);
 blahaj.scale = new Vector2(150.0, 100.0);
 blahaj.texture = blahaj_tex_1;
 
+/*
+0 = non
+1 = nya star
+2 = cube
+*/
+var power_up = 0;
+var last_power_up = 0;
+var power_up_timer = 0;
+var powerup_setups = [
+function() {
+
+    blahaj.shaderDefault();
+    blahaj.texture = blahaj_tex_1;
+    power_up = 0;
+    power_up_timer=0;
+},
+
+function() {
+    blahaj.shaderDefault();
+    blahaj.texture = blahaj_tex_2;
+    power_up = 1;
+    power_up_timer=500;
+},
+
+function() {
+    blahaj.shader = bbc_shaders;
+    blahaj.texture1 = cub_frames[0];
+    power_up = 2;
+    power_up_timer=500;
+}
+
+]
+
+
 
 let Death_sign = new TextElement();
 Death_sign.position = new Vector2(-100.0, -100.0);
@@ -180,6 +234,9 @@ var enemy_max = 30;
 
 
 async function Deathamon(){
+    on_animation_frame=0;
+    frame_wait=0;
+    max_frame_wait=5;
     numa.position = blahaj.position;
     numa.scale = new Vector2(blahaj.scale.x*2, blahaj.scale.y*2);
     numa.flipped_y = blahaj.flipped_y;
@@ -209,21 +266,50 @@ function tick(delta){
         dark.position = new Vector2(innerWidth/2, innerHeight/2);
         dark.scale = new Vector2(innerWidth, innerHeight);
 
-        if(!is_shatter_done)
+        if(!is_animation_done)
         if(frame_wait >= max_frame_wait){
             blahaj.scale = new Vector2(0,0);
             frame_wait=0;
-            if(on_shatter_frame >= shader_frames.length-1){
-                is_shatter_done=true;
+            if(on_animation_frame >= shader_frames.length-1){
+                is_animation_done=true;
             }else{
-                on_shatter_frame++
-                numa.texture1 = shader_frames[on_shatter_frame];
+                on_animation_frame++
+                numa.texture1 = shader_frames[on_animation_frame];
             }
             
         }else
         frame_wait++
 
         return;
+    }
+
+    if(power_up !== last_power_up){
+        print("owo");
+        powerup_setups[power_up]();
+        last_power_up = power_up;
+    }
+
+    if(power_up !== 0){
+        if(power_up==2){
+            if(frame_wait >= max_frame_wait){
+                frame_wait=0;
+                if(on_animation_frame >= cub_frames.length-1){
+                    on_animation_frame=1;
+                    blahaj.texture1 = cub_frames[on_animation_frame];
+                }else{
+                    on_animation_frame++
+                    blahaj.texture1 = cub_frames[on_animation_frame];
+                }
+                
+            }else
+            frame_wait++
+        }
+
+        if(power_up_timer > 0 && power_up !== 0){
+            power_up_timer--;
+        }else{
+            power_up=0;
+        }
     }
 
     score.text = "score: "+blascore;
@@ -236,11 +322,17 @@ function tick(delta){
             return;
         }
 
+        if(ent.element.position.y<-5||ent.element.position.y>innerHeight+5){
+            ent.element.Delete();
+            ents.splice(nya, 1); 
+            return;
+        }
+
         var a = blahaj.position.x - ent.element.position.x;
         var b = blahaj.position.y - ent.element.position.y;
 
         if(Math.sqrt( a*a + b*b )  < 30 && ent.type == "enemy"){
-            blaheal--;
+            if(power_up !== 0) blaheal--;
             ent.element.Delete();
             ents.splice(nya, 1); 
             return;
@@ -248,7 +340,16 @@ function tick(delta){
 
         if(Math.sqrt( a*a + b*b )  < 30 && ent.type == "fruit"){
             blascore++;
-            if(blaheal<blahealmax && Math.random()>0.9)blaheal++;
+            if(blaheal<blahealmax && Math.random()<0.1)blaheal++;
+            ent.element.Delete();
+            ents.splice(nya, 1); 
+            return;
+        }
+
+        if(Math.sqrt( a*a + b*b )  < 30 && ent.type == "powerup"){
+            blascore++;
+            power_up=ent.power_up;
+            if(blaheal<blahealmax && Math.random()<0.33)blaheal++;
             ent.element.Delete();
             ents.splice(nya, 1); 
             return;
@@ -274,7 +375,7 @@ function tick(delta){
 
     if(Spawn_Timer >= max_Spawn_Timer && ents.length <= enemy_max){
         Spawn_Timer=0;
-        var temp_emy = {
+        let temp_emy = {
             going: "", // string as left or right
             speed: 0.5,
             type: "enemy",
@@ -301,8 +402,7 @@ function tick(delta){
     }
     
     if(Spawn_Timer >= max_Spawn_Timer && ents.length <= enemy_max){
-        Spawn_Timer=0;
-        var temp_emy = {
+        let temp_emy = {
             going: "", // string as up or down
             speed: 0.5,
             type: "fruit",
@@ -323,8 +423,33 @@ function tick(delta){
         }
         // temp_emy.element.texture = enemy_textures[Math.round(Math.random())*enemy_textures.length];
         ents.push(temp_emy);
-    }else{
-        Spawn_Timer++;
+    }
+
+    if(Math.random() < 3 && power_up == 0)
+    if(Spawn_Timer >= max_Spawn_Timer && ents.length <= enemy_max){
+        let min = Math.ceil(0);
+        let max = Math.floor(powerup_textures.length-1);
+        var randomx = Math.floor(Math.random()*(max-min+1))+min;
+        let temp_emy = {
+            going: "", // string as up or down
+            speed: 0.5,
+            power_up: randomx+1,
+            type: "powerup",
+            element: null
+        };
+        temp_emy.element = new ImageElement();
+        temp_emy.element.texture = powerup_textures[randomx];
+        temp_emy.element.scale = new Vector2(60, 60);
+        if(Math.random()>0.5){
+            temp_emy.going = "left";
+            temp_emy.element.position = new Vector2(innerWidth,Math.random()*innerHeight);
+        }else{
+            temp_emy.going = "right"
+            temp_emy.element.position = new Vector2(0,Math.random()*innerHeight);
+            temp_emy.element.flipped_y = true;
+        }
+        // temp_emy.element.texture = enemy_textures[Math.round(Math.random())*enemy_textures.length];
+        ents.push(temp_emy);
     }
 
     if(blahaj.position.y < 0) Deathamon();
@@ -353,7 +478,7 @@ function tick(delta){
         null
     } 
     if (s) {
-        temp.y-=speed;
+        gravity=-4;
     }
     if (a){
         temp.x-=speed;
@@ -365,6 +490,31 @@ function tick(delta){
     }
 
     blahaj.position = new Vector2(blahaj.position.x+temp.x,blahaj.position.y+gravity);
+}
+
+function use_powerup(){
+    if(power_up==0) return;
+
+    if(power_up==1){
+        let temp_emy = {
+            going: "", // string as up or down
+            speed: 15,
+            type: "bullet",
+            element: null
+        };
+        temp_emy.element = new ImageElement();
+        temp_emy.element.texture = heart_im;
+        temp_emy.element.scale = new Vector2(60, 60);
+        temp_emy.element.position = blahaj.position;
+        if(blahaj.flipped_y){
+            temp_emy.going = "left";
+        }else{
+            temp_emy.going = "right"
+            temp_emy.element.flipped_y = true;
+        }
+        ents.push(temp_emy);
+        return;
+    }
 }
 
 function on_space(){

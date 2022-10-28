@@ -1367,6 +1367,14 @@ static void Setimagetexture1(v8::Local<v8::String> property,
     screen_elements[valueb].image.imbase2 = &ctextures[dock];
 }
 
+void SetimageshaderDefault(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    v8::HandleScope handle_scope(isolate);
+
+    int idthinh = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    screen_elements[idthinh].image.shaderz = &image_base_shader;
+}
+
 static void Setimageshader(v8::Local<v8::String> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void>& info) {
@@ -1584,6 +1592,7 @@ void ImageMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& arg
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "shader").ToLocalChecked(), Getimageshader, Setimageshader, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "flipped_x").ToLocalChecked(), Getimflipx, Setimflipx, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "flipped_y").ToLocalChecked(), Getimflipy, Setimflipy, v8::Integer::New(isolate,awaeex));
+    local->Set(isolate, "shaderDefault", v8::FunctionTemplate::New(isolate, SetimageshaderDefault));
     local->Set(isolate, "Delete", v8::FunctionTemplate::New(isolate, elDelete));
     awaeex++;
 
