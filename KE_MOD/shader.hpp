@@ -1,54 +1,30 @@
 #pragma once
 
+/*
+    shader_attribute types
+    0 = int
+    1 = float
+    2 = vector2
+    3 = vector3
+    4 = vector4
+*/
+
+class shader_attribute{
+    const char *name;
+    void* data;
+    uint8_t type;
+};
+
 class shader{
     public:
     int success;
+
+    vector<shader_attribute> attributes;
  
     string name;
     unsigned int vertex;
     unsigned int fragment;
     unsigned int program; //id or what
-
-    // uint8_t settings;
-    // // 00000000
-    // //first bit is give time
-    // //second bit is give lights
-
-    // void shader_info_handler(string location){
-    //     //kitsune engine shader info B3
-    //     string code = get_file(location+".kesi");
-
-    //     uint8_t tempside = 0;
-    //     string loadtemp = "";
-
-    //     uint8_t temp_setting = 0;
-
-    //     stringstream ss;
-    //     stringstream src(code);
-    //     string line;
-    //     string prefix;
-    //     while(getline(src,line)){
-    //         ss.clear();
-    //         ss.str(line);
-    //         ss >> prefix;
-
-    //         if(prefix == "#"){
-
-    //         }else if(prefix == "give_time"){
-    //             ss >> temp_setting;
-    //             if(temp_setting) settings += 1;
-    //         }else if(prefix == "load_lights"){
-    //             ss >> temp_setting;
-    //             if(temp_setting) settings += 2;
-    //         }else if(prefix == "load_screen"){
-    //             ss >> temp_setting;
-    //             if(temp_setting) settings += 4;
-    //         }else{
-                
-    //         }
-    //     }
-    //     cout << "nya nya mf: " << settings << endl;
-    // }
 
     void craft(string location){
 
@@ -98,7 +74,7 @@ class shader{
             glDeleteShader(fragment);
     }
 
-        void setBool(const std::string &name, bool value) const
+    void setBool(const std::string &name, bool value) const
     {
         glUniform1i(glGetUniformLocation(program, name.c_str()), (int)value);
     }
@@ -129,6 +105,10 @@ class shader{
     void setVec3(const std::string &name, float x, float y, float z) const
     {
         glUniform3f(glGetUniformLocation(program, name.c_str()), x, y, z);
+    }
+    void setVec3(const char* name, float x, float y, float z) const
+    {
+        glUniform3f(glGetUniformLocation(program, name), x, y, z);
     }
     // ------------------------------------------------------------------------
     void setVec4(const std::string &name, const glm::vec4 &value) const

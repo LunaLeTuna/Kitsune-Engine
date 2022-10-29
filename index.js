@@ -16,6 +16,8 @@ SetMainCam(p_cam);
 //player light
 var p_torch = new PointLight();
 
+var rainbow = new Shader("./KB/shaders/sample");
+rainbow.setVec3("color", new Vector3(0, 0, 0))
 
 var ellie = new Prop();
 ellie.position = new Vector3(0,1,0);
@@ -341,11 +343,13 @@ function BV(map) {
         objectc.model = cube_model;
         objectc.position = new Vector3(map.Bricks[i].yPos+map.Bricks[i].yScale/2, map.Bricks[i].zPos+map.Bricks[i].zScale/2, map.Bricks[i].xPos+map.Bricks[i].xScale/2);
         objectc.scale = new Vector3(map.Bricks[i].yScale/2, map.Bricks[i].zScale/2, map.Bricks[i].xScale/2)
+        objectc.texture = albido_create;
+        objectc.shader = rainbow;
         scene.push( objectc );
     }
 }
 
-BV(loadBrk("./11894.brk"));
+BV(loadBrk("./stanfordlucy.brk"));
 
 CursorPin(false);
 
@@ -358,6 +362,8 @@ var sxsss = 0;
 
 var deltaTime = 0;
 function tick(delta){
+    p_torch.position = p_cam.position;
+
     dev_text.position = new Vector2(10, innerHeight-24);
 
     deltaTime = deltaTime+0.01;

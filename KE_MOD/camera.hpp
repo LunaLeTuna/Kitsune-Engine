@@ -11,8 +11,8 @@ class cameras{
     glm::vec3 up = glm::vec3(0.0f, 1.0f,  0.0f);
     
     float near = 0.1f;
-    float far = 100.0f;
-    float fov = 45.0f;
+    float far = 1000.0f;
+    float fov = 60.0f;
     float aspect = 0;
 
     void refresh(){

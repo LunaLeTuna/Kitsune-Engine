@@ -626,6 +626,7 @@ int main(int argc, char* argv[]) {
             }
 
             if(i.shaders->program != last_shader) {
+                
                 last_shader = i.shaders->program;
                 current_shader = i.shaders;
                 glUseProgram(current_shader->program);
@@ -669,7 +670,7 @@ int main(int argc, char* argv[]) {
             //to render
             if(i.models != NULL)
             if(i.allow_render)
-            //if(check_cull(main_cam, &i))
+            // if(check_cull(main_cam, &i))
             i.use(current_shader);
         }
 

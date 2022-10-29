@@ -184,12 +184,13 @@ static void Getshader(v8::Local<v8::String> property,
 static void Setshader(v8::Local<v8::String> property,
                         v8::Local<v8::Value> value,
                         const v8::PropertyCallbackInfo<void>& info) {
-  int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
-  int valueb = valuea;
+    int64_t valuea = static_cast<int64_t>(info.Data().As<v8::Integer>()->Value());
+    int valueb = valuea;
 
-  int dock = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+    int dock = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  part[valueb].shaders = &cshaders[dock];
+    part[valueb].default_shader = 0;
+    part[valueb].shaders = &cshaders[dock];
 }
 
 static void Getmodel(v8::Local<v8::String> property,
