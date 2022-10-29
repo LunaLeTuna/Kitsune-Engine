@@ -1,68 +1,146 @@
-Win_title("Blåhaj's Berry Collection"); //names title
+Win_title("Fall"); //names title
 
-var blahaj_tex_1 = new Texture("./bbc_textures/blahaj/b1.png");
-var blahaj_tex_2 = new Texture("./bbc_textures/blahaj/p1.png");
 
-var heart_im = new Texture("./bbc_textures/UI/heart.png");
-var darke_im = new Texture("./bbc_textures/UI/darxk.png");
+var room_size = 0;
+var room = [];
 
-var enemy_textures = [];
-var i = 1;
-while(i !== 10){
-    var tt = new Texture("./bbc_textures/enemies/L"+i+".png");
-    enemy_textures.push(tt);
-    i++;
+
+var room_texture = new Texture("./devb.png");
+
+//side
+var wall1 = new Model("./map_objects/wall1.obj");
+
+//corner
+var corner1 = new Model("./map_objects/corner1.obj");
+
+//door
+var door1 = new Model("./map_objects/the_hole.obj");
+
+//floor
+var floor1 = new Model("./map_objects/floor1.obj");
+
+function create_map_element(type, position, r) {
+    if(!type) type = "floor";
+    if(!position) position = new Vector3(0,0,0);
+    let rotationc;
+    if(r==0) rotationc = new Vector3(0,0,0);
+    else if(r==1) rotationc = new Vector3(0,1.57,0);
+    else if(r==2) rotationc = new Vector3(0,3.14,0);
+    else if(r==3) rotationc = new Vector3(0,4.71,0);
+    else rotationc = new Vector3(0,0,0);
+
+    if(type=="wall"){
+        room[room_size] = new Prop();
+        room[room_size].model = wall1;
+        room[room_size].texture = room_texture;
+        room[room_size].specular = room_texture;
+        room[room_size].scale = new Vector3(10,10,10);
+        room[room_size].position = position;
+        room[room_size].rotation = rotationc;
+        room_size++;
+        return;
+    }
+    if(type=="corner"){
+        room[room_size] = new Prop();
+        room[room_size].model = corner1;
+        room[room_size].texture = room_texture;
+        room[room_size].scale = new Vector3(10,10,10);
+        room[room_size].position = position;
+        room[room_size].rotation = rotationc;
+        room_size++;
+        return;
+    }
+    if(type=="door"){
+        room[room_size] = new Prop();
+        room[room_size].model = door1;
+        room[room_size].texture = room_texture;
+        room[room_size].scale = new Vector3(10,10,10);
+        room[room_size].position = position;
+        room[room_size].rotation = rotationc;
+        room_size++;
+        return;
+    }
+    if(type=="floor"){
+        room[room_size] = new Prop();
+        room[room_size].model = floor1;
+        room[room_size].texture = room_texture;
+        room[room_size].scale = new Vector3(10,10,10);
+        room[room_size].position = position;
+        room[room_size].rotation = rotationc;
+        room_size++;
+        return;
+    }
 }
 
-var berry_textures = [];
-var i = 1;
-while(i !== 9){
-    var tt = new Texture("./bbc_textures/berries/B"+i+".png");
-    berry_textures.push(tt);
-    i++;
+
+// var map = [[["wall",0]]];
+
+var map = [
+    [["corner",3],["n",0],["door",0],["wall",0],["wall",0],["corner",0]],
+    [["wall",3],["floor",0],["floor",0],["floor",0],["floor",0],["wall",1]],
+    [["wall",3],["floor",0],["floor",0],["floor",0],["floor",0],["wall",1]],
+    [["wall",3],["floor",0],["floor",0],["floor",0],["floor",0],["wall",1]],
+    [["corner",2],["door",2],["n",2],["wall",2],["wall",2],["corner",1]]
+]
+
+var map_scale = 20;
+
+function genmap(){
+    var maxX = map[0].length-1;
+    var maxY = map.length-1;
+
+    for(let iy = 0; iy <= maxY; iy++){
+        for(let ix = 0; ix <= maxX; ix++){
+            create_map_element(map[iy][ix][0],new Vector3(iy*map_scale,0,ix*map_scale),map[iy][ix][1]);
+        }
+    }
 }
 
-var powerup_textures = [];
-var i = 1;
-while(i !== 3){
-    var tt = new Texture("./bbc_textures/powerup/po"+i+".png");
-    powerup_textures.push(tt);
-    i++;
-}
+//basic create objects
+var cube_model = new Model("./cube.obj");
+var albido_create = new Texture("./create/container.png");
+var specular_create = new Texture("./create/container_specular.png");
 
-var shader_frames = [];
-var i = 0;
-while(i !== 29){
-    let awanya = i.toString().padStart(4, "0");
-    var tt = new Texture("./bbc_textures/shatter/"+awanya+".png");
-    shader_frames.push(tt);
-    i++;
-}
+//shader
+var test_shader = new Shader();
 
-var cub_frames = [];
-var i = 0;
-while(i !== 53){
-    let awanya = i.toString().padStart(4, "0");
-    var tt = new Texture("./bbc_textures/cube/"+awanya+".png");
-    cub_frames.push(tt);
-    i++;
-}
+//player
+var player = new Prop();
+player.model = cube_model;
+player.texture = albido_create;
+player.specular = specular_create;
+print(cube_model._id);
+player.position = new Vector3(1.5,5,0);
+player.mass = 1;
+player.create_physbody();
 
-var bbc_shaders = new Shader("./bbc_shaders/normal_animate");
+//player camera
+var p_cam = new Camera();
+p_cam.position = new Vector3(0,2,0);
+p_cam.rotation = new Vector3(0,0,0);
+SetMainCam(p_cam);
 
-var numa = new ImageElement();
-numa.position = new Vector2(0, 0);
-numa.scale = new Vector2(0, 0);
-numa.shader = bbc_shaders;
-numa.texture = blahaj_tex_1;
-numa.texture1 = shader_frames[0];
-var on_animation_frame = 0;
-var frame_wait = 0;
-var max_frame_wait = 5;
-var is_animation_done = false;
+//player light
+var p_torch = new PointLight();
 
-var is_dead = false;
-var waiting_start = true;
+
+var ellie = new Prop();
+ellie.position = new Vector3(0,1,0);
+ellie.scale = new Vector3(.5,.5,.5)
+// ellie.model = cube_model;
+// ellie.texture = albido_create;
+// ellie.specular = specular_create;
+var el = new PointLight();
+el.position = new Vector3(2,1.5,2);
+
+//
+//player movement
+//
+ function pivot_point(place, center, rot){
+    var resultx = Math.cos(rot)*(place.x-center.x)-Math.sin(rot)*(place.y-center.y)+center.x
+    var resulty = Math.sin(rot)*(place.x-center.x)+Math.cos(rot)*(place.y-center.y)+center.y
+    return {"x": resultx, "y": resulty};
+ } 
 
   var w = false;
   var s = false;
@@ -86,11 +164,9 @@ var waiting_start = true;
         d=true;
 
     if (keyCode == 32)
-        on_space();
+        space=true;
 
-    if (keyCode == 340)
-        use_powerup();
-
+    // print(keyCode);
 }
 
 function buttonthedpog(event){
@@ -108,421 +184,152 @@ function buttonthedpog(event){
     if (keyCode == 68)
         d=false;
 
+    if (keyCode == 32)
+        space=false;
+
 }
 
 Input.addEventListener("keypress", buttonpushedpog);
 Input.addEventListener("keyrelease", buttonthedpog);
 
+var firstMouse = true;
+var yaw   = -90.0;
+var pitch =  0.0;
+var lastX =  800.0 / 2.0;
+var lastY =  600.0 / 2.0;
+
 function radians(dgr){return dgr*(Math.PI/180);}
 function degrees(rag){return rag*180/Math.PI;}
 
+var xpos;
+var ypos;
 
-CursorPin(false);
+function mousty(event){
 
-let speed = 10; //how fast side to side movement is
-let jump = 3.5; //how much space will add to gravity
-let gravity = 0; //current effect on blahaj +up -down
-let grav_pull = -0.05; //how much gravity is added to gravity every tick
-let min_gravity = 5; //caps jump
-let max_gravity = -5; //termenal volocity down
+    //print("mouse x: " + event.xpos);
+    //print("mouse y: " + event.ypos);
+    xpos = event.xpos
+    ypos = event.ypos
 
-let player_max_health = 10;
-let player_health = 10;
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
 
-let hack = new Font();
-hack.GetFontFile("./fonts/SF.ttf");
+    let xoffset = xpos - lastX;
+    let yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    lastX = xpos;
+    lastY = ypos;
 
-let sans = new Font();
-sans.GetFontFile("./fonts/ComicSans.ttf");
+    let sensitivity = 0.1; // change this value to your liking
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
 
-var blaheal = 5;
-var blahealmax = 5;
+    yaw += xoffset;
+    pitch -= yoffset;
 
-var blascore = 0;
+    // make sure that when pitch is out of bounds, screen doesn't get flipped
+    if (pitch > 89.0)
+        pitch = 89.0;
+    if (pitch < -89.0)
+        pitch = -89.0;
 
-let score = new TextElement();
-score.position = new Vector2(5.0, innerHeight-25);
-score.scale = 0.5;
-score.font = hack;
-score.text = "score: "+blascore;
-score.alignX = "left";
-score.alignY = "top";
+    yaw = yaw%360;
+    pitch = pitch%360;
 
-let health = new TextElement();
-health.position = new Vector2(100.0, 80.0);
-health.scale = 0.5;
-health.font = hack;
-health.text = "Health: "+blaheal+"/"+blahealmax;
-
-let nyanometer = new ImageElement();
-nyanometer.position = new Vector2(100.0, 80.0);
-nyanometer.scale = new Vector2(100.0, 100.0);
-nyanometer.texture = heart_im;
-
-var blahaj = new ImageElement();
-blahaj.position = new Vector2(innerWidth/2, 70.0);
-blahaj.scale = new Vector2(150.0, 100.0);
-blahaj.texture = blahaj_tex_1;
-
-/*
-0 = non
-1 = nya star
-2 = cube
-*/
-var power_up = 0;
-var last_power_up = 0;
-var power_up_timer = 0;
-var powerup_setups = [
-function() {
-
-    blahaj.shaderDefault();
-    blahaj.texture = blahaj_tex_1;
-    power_up = 0;
-    power_up_timer=0;
-},
-
-function() {
-    blahaj.shaderDefault();
-    blahaj.texture = blahaj_tex_2;
-    power_up = 1;
-    power_up_timer=500;
-},
-
-function() {
-    blahaj.shader = bbc_shaders;
-    blahaj.texture1 = cub_frames[0];
-    power_up = 2;
-    power_up_timer=500;
+    p_cam.rotation = new Vector3(pitch,yaw,0);
 }
 
-]
+Input.addEventListener("mousemove", mousty);
 
 
+CursorPin(true);
 
-let Death_sign = new TextElement();
-Death_sign.position = new Vector2(-100.0, -100.0);
-Death_sign.scale = 0;
-Death_sign.font = sans;
-Death_sign.text = "YOU DIED";
-Death_sign.color = new Vector3(1,0,0);
+var speed = 0.2;
+var maxspeed = 1;
 
-var Death_size = 0;
-var Death_tick = 0.005;
-var Death_target = 3;
+var player_max_health = 10;
+var player_health = 10;
 
-let start_test = new TextElement();
-start_test.position = new Vector2(innerWidth/2, innerHeight/2-140);
-start_test.scale = 1;
-start_test.font = hack;
-start_test.text = "Space To Start";
-start_test.color = new Vector3(1,1,1);
+var hack = new Font();
+hack.GetFontFile("./fonts/SF.ttf");
 
-var dark = new ImageElement();
-dark.position = new Vector2(0, 0);
-dark.scale = new Vector2(0, 0);
-dark.texture = darke_im;
+var health = new TextElement();
+health.position = new Vector2(25.0, 70.0);
+health.scale = 0.5;
+health.font = hack;
+health.text = "Health: 10/10";
+
+var nyanometer = new ImageElement();
+nyanometer.position = new Vector2(40.0, 70.0);
+nyanometer.scale = new Vector2(100.0, 100.0);
+nyanometer.texture = albido_create;
 
 var monark = false;
 
 var sxsss = 0;
 
-var Spawn_Timer = 0;
-var max_Spawn_Timer = 66;
+//random box
+var bbbbb = new Prop();
+    bbbbb.model = cube_model;
+    bbbbb.texture = albido_create;
+    bbbbb.specular = specular_create;
+    bbbbb.position = new Vector3(20,6,3);
+    bbbbb.mass = 1;
 
-var ents = [];
-var enemy_max = 30;
-
-
-async function Deathamon(){
-    on_animation_frame=0;
-    frame_wait=0;
-    max_frame_wait=5;
-    numa.position = blahaj.position;
-    numa.scale = new Vector2(blahaj.scale.x*2, blahaj.scale.y*2);
-    numa.flipped_y = blahaj.flipped_y;
-    health.text = "health 0/"+blahealmax;
-    return is_dead=true;
-}
+    bbbbb.create_physbody();
 
 var time = 0;
 function tick(delta){
-
-    score.position = new Vector2(5.0, innerHeight-25);
-
-    if(waiting_start){
-        blahaj.position = new Vector2(innerWidth/2, innerHeight/2);
-        start_test.position = new Vector2(innerWidth/2, innerHeight/2-140);
-        return;
-    }
-
-    if(is_dead){
-        Death_sign.position = new Vector2(innerWidth/2, innerHeight/2);
-        if(Death_size < Death_target)
-        Death_size+=Death_tick;
-        else
-        Death_size = Death_target
-        Death_sign.scale = Death_size
-
-        dark.position = new Vector2(innerWidth/2, innerHeight/2);
-        dark.scale = new Vector2(innerWidth, innerHeight);
-
-        if(!is_animation_done)
-        if(frame_wait >= max_frame_wait){
-            blahaj.scale = new Vector2(0,0);
-            frame_wait=0;
-            if(on_animation_frame >= shader_frames.length-1){
-                is_animation_done=true;
-            }else{
-                on_animation_frame++
-                numa.texture1 = shader_frames[on_animation_frame];
-            }
-            
-        }else
-        frame_wait++
-
-        return;
-    }
-
-    if(power_up !== last_power_up){
-        print("owo");
-        powerup_setups[power_up]();
-        last_power_up = power_up;
-    }
-
-    if(power_up !== 0){
-        if(power_up==2){
-            if(frame_wait >= max_frame_wait){
-                frame_wait=0;
-                if(on_animation_frame >= cub_frames.length-1){
-                    on_animation_frame=1;
-                    blahaj.texture1 = cub_frames[on_animation_frame];
-                }else{
-                    on_animation_frame++
-                    blahaj.texture1 = cub_frames[on_animation_frame];
-                }
-                
-            }else
-            frame_wait++
-        }
-
-        if(power_up_timer > 0 && power_up !== 0){
-            power_up_timer--;
-        }else{
-            power_up=0;
-        }
-    }
-
-    score.text = "score: "+blascore;
-    health.text = "health "+blaheal+"/"+blahealmax;
-
-    ents.forEach((ent, nya) => {
-        if(ent.element.position.x<-5||ent.element.position.x>innerWidth+5){
-            ent.element.Delete();
-            ents.splice(nya, 1); 
-            return;
-        }
-
-        if(ent.element.position.y<-5||ent.element.position.y>innerHeight+5){
-            ent.element.Delete();
-            ents.splice(nya, 1); 
-            return;
-        }
-
-        var a = blahaj.position.x - ent.element.position.x;
-        var b = blahaj.position.y - ent.element.position.y;
-
-        if(Math.sqrt( a*a + b*b )  < 30 && ent.type == "enemy"){
-            if(power_up !== 0) blaheal--;
-            ent.element.Delete();
-            ents.splice(nya, 1); 
-            return;
-        }
-
-        if(Math.sqrt( a*a + b*b )  < 30 && ent.type == "fruit"){
-            blascore++;
-            if(blaheal<blahealmax && Math.random()<0.1)blaheal++;
-            ent.element.Delete();
-            ents.splice(nya, 1); 
-            return;
-        }
-
-        if(Math.sqrt( a*a + b*b )  < 30 && ent.type == "powerup"){
-            blascore++;
-            power_up=ent.power_up;
-            if(blaheal<blahealmax && Math.random()<0.33)blaheal++;
-            ent.element.Delete();
-            ents.splice(nya, 1); 
-            return;
-        }
-
-        if(blaheal == 0){ 
-            Deathamon();
-        }
-
-        if(ent.going == "left"){
-            return ent.element.position = new Vector2(ent.element.position.x-ent.speed,ent.element.position.y);
-        }
-        if(ent.going == "right"){
-            return ent.element.position = new Vector2(ent.element.position.x+ent.speed,ent.element.position.y);
-        }
-        if(ent.going == "up"){
-            return ent.element.position = new Vector2(ent.element.position.x,ent.element.position.y+ent.speed);
-        }
-        if(ent.going == "down"){
-            return ent.element.position = new Vector2(ent.element.position.x,ent.element.position.y-ent.speed);
-        }
-    });
-
-    if(Spawn_Timer >= max_Spawn_Timer && ents.length <= enemy_max){
-        Spawn_Timer=0;
-        let temp_emy = {
-            going: "", // string as left or right
-            speed: 0.5,
-            type: "enemy",
-            element: null
-        };
-        temp_emy.element = new ImageElement();
-        let min = Math.ceil(0);
-        let max = Math.floor(enemy_textures.length-1);
-        var randomx = Math.floor(Math.random()*(max-min+1))+min;
-        temp_emy.element.texture = enemy_textures[randomx];
-        temp_emy.element.scale = new Vector2(60, 60);
-        if(Math.random()>0.5){
-            temp_emy.going = "left";
-            temp_emy.element.position = new Vector2(innerWidth,Math.random()*innerHeight);
-        }else{
-            temp_emy.going = "right"
-            temp_emy.element.position = new Vector2(0,Math.random()*innerHeight);
-            temp_emy.element.flipped_y = true;
-        }
-        // temp_emy.element.texture = enemy_textures[Math.round(Math.random())*enemy_textures.length];
-        ents.push(temp_emy);
-    }else{
-        Spawn_Timer++;
-    }
-    
-    if(Spawn_Timer >= max_Spawn_Timer && ents.length <= enemy_max){
-        let temp_emy = {
-            going: "", // string as up or down
-            speed: 0.5,
-            type: "fruit",
-            element: null
-        };
-        temp_emy.element = new ImageElement();
-        let min = Math.ceil(0);
-        let max = Math.floor(berry_textures.length-1);
-        var randomx = Math.floor(Math.random()*(max-min+1))+min;
-        temp_emy.element.texture = berry_textures[randomx];
-        temp_emy.element.scale = new Vector2(60, 60);
-        if(Math.random()>0.5){
-            temp_emy.going = "down";
-            temp_emy.element.position = new Vector2(Math.random()*innerWidth,innerHeight);
-        }else{
-            temp_emy.going = "up"
-            temp_emy.element.position = new Vector2(Math.random()*innerWidth,0);
-        }
-        // temp_emy.element.texture = enemy_textures[Math.round(Math.random())*enemy_textures.length];
-        ents.push(temp_emy);
-    }
-
-    if(Math.random() < 3 && power_up == 0)
-    if(Spawn_Timer >= max_Spawn_Timer && ents.length <= enemy_max){
-        let min = Math.ceil(0);
-        let max = Math.floor(powerup_textures.length-1);
-        var randomx = Math.floor(Math.random()*(max-min+1))+min;
-        let temp_emy = {
-            going: "", // string as up or down
-            speed: 0.5,
-            power_up: randomx+1,
-            type: "powerup",
-            element: null
-        };
-        temp_emy.element = new ImageElement();
-        temp_emy.element.texture = powerup_textures[randomx];
-        temp_emy.element.scale = new Vector2(60, 60);
-        if(Math.random()>0.5){
-            temp_emy.going = "left";
-            temp_emy.element.position = new Vector2(innerWidth,Math.random()*innerHeight);
-        }else{
-            temp_emy.going = "right"
-            temp_emy.element.position = new Vector2(0,Math.random()*innerHeight);
-            temp_emy.element.flipped_y = true;
-        }
-        // temp_emy.element.texture = enemy_textures[Math.round(Math.random())*enemy_textures.length];
-        ents.push(temp_emy);
-    }
-
-    if(blahaj.position.y < 0) Deathamon();
-
     time = time+0.01;
 
-    if(blahaj.position.x < 0-5) blahaj.position = new Vector2(innerWidth,blahaj.position.y);
-    if(blahaj.position.x > innerWidth+5) blahaj.position = new Vector2(0,blahaj.position.y);
-
-    if(min_gravity <= gravity) gravity = min_gravity;
-    if(max_gravity >= gravity) gravity = max_gravity;
-    
-    gravity+=grav_pull;
-
-    var beet = (Math.sin(time*3)*30)+120;
-    // nyanometer.position = new Vector2(100.0-(beet/2), 100.0-(beet/2));
+    let beet = (Math.sin(time*3)*30)+120;
+    nyanometer.position = new Vector2(100.0-(beet/2), 100.0-(beet/2));
     nyanometer.scale = new Vector2(beet, beet);
 
-    // blahaj.position = new Vector2(innerWidth/2, innerHeight/2);
+    if(monark==false){
+        genmap();
+        monark=true;
+    }
+
+    p_cam.position = new Vector3(player.position.x, player.position.y+2, player.position.z);
+    p_torch.position = new Vector3(player.position.x, player.position.y, player.position.z);
+
+    let cam_rot = p_cam.rotation.y;
 
     let current = {x:0,y:0};
 
     let temp = {x:0,y:0};
 
     if (w) {
-        null
+        temp.y-=speed;
     } 
     if (s) {
-        gravity=-4;
+        temp.y+=speed;
     }
     if (a){
         temp.x-=speed;
-        blahaj.flipped_y = true;
     }
     if (d){
         temp.x+=speed;
-        blahaj.flipped_y = false;
+    }
+    if (space){
+        let ray = new RayCast(player.position, new Vector3(player.position.x,player.position.y-1.3,player.position.z));
+        if(ray.hasHit)player.AddForce(new Vector3(0,1,0));
     }
 
-    blahaj.position = new Vector2(blahaj.position.x+temp.x,blahaj.position.y+gravity);
-}
+    if(player.LinearVelocity.z < maxspeed)  player.LinearVelocity.z = maxspeed;
+    if(player.LinearVelocity.z > -maxspeed)  player.LinearVelocity.z = -maxspeed;
+    if(player.LinearVelocity.x < maxspeed) player.LinearVelocity.x = maxspeed;
+    if(player.LinearVelocity.x > -maxspeed) player.LinearVelocity.x = -maxspeed;
 
-function use_powerup(){
-    if(power_up==0) return;
-
-    if(power_up==1){
-        let temp_emy = {
-            going: "", // string as up or down
-            speed: 15,
-            type: "bullet",
-            element: null
-        };
-        temp_emy.element = new ImageElement();
-        temp_emy.element.texture = heart_im;
-        temp_emy.element.scale = new Vector2(60, 60);
-        temp_emy.element.position = blahaj.position;
-        if(blahaj.flipped_y){
-            temp_emy.going = "left";
-        }else{
-            temp_emy.going = "right"
-            temp_emy.element.flipped_y = true;
-        }
-        ents.push(temp_emy);
-        return;
+    if(((w||s)||(a||d))){
+        var new_place = pivot_point(temp, current, cam_rot);
+        player.AddForce(new Vector3(new_place.x,0,new_place.y));
     }
-}
 
-function on_space(){
-    if(waiting_start){
-        waiting_start=false;
-        start_test.position = new Vector2(0,0);
-        start_test.scale=0;
-    }
-    if(!is_dead)
-    gravity=jump;
+    ellie.rotation = new Vector3(0,-p_cam.rotation.y,0);
+    // print("x:"+player.rotation.x+" y:"+ player.rotation.y+" z:"+ player.rotation.z);
 }

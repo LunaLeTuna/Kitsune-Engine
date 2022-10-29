@@ -2135,8 +2135,10 @@ int main(int argc, char* argv[]) {
 //         pogger.view = glm::lookAt(pogger.position, pogger.position + pogger.front, pogger.up);
 
         main_cam->projection = glm::perspective(glm::radians(main_cam->fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, main_cam->near, main_cam->far);
-
-        //dynamicWorld->stepSimulation(1.f / 60.f ,10);
+        
+#ifdef Include_physics
+        dynamicWorld->stepSimulation(1.f / 60.f ,10);
+#endif
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
@@ -2186,7 +2188,6 @@ int main(int argc, char* argv[]) {
 
         for (prop& i : part) {
 #ifdef Include_physics
-            dynamicWorld->stepSimulation(1.f / 60.f ,10);
 
             //parody prop physics counterpart
             if(i.has_physbody && i.mass != 0){
