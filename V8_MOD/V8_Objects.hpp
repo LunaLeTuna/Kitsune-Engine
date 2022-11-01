@@ -3,10 +3,12 @@
 #ifndef V8_Objs
 #define V8_Objs
 
+// Create a template for the global object.
+v8::Local<v8::ObjectTemplate> global;
+
 #include "./print.hpp"
 #include "./window.hpp"
 #include "./V8cmd.hpp"
-#include "./require.hpp"
 
 #include "./vector3.hpp"
 #include "./vector2.hpp"
@@ -15,9 +17,11 @@
 
 #include "./V8rayCast.hpp"
 
+#include "./fs.hpp"
+#include "./require.hpp"
+
 v8::Local<v8::Context> load_wrap_functions(v8::Isolate* isolate) {
-    // Create a template for the global object.
-    v8::Local<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
+    global = v8::ObjectTemplate::New(isolate);
 
     //Vector3s :3
     global->Set(isolate, "Vector3", v8::FunctionTemplate::New(isolate, Vector3Constructor));
@@ -67,11 +71,18 @@ v8::Local<v8::Context> load_wrap_functions(v8::Isolate* isolate) {
 
     global->Set(isolate, "print", v8::FunctionTemplate::New(isolate, Print));
     global->Set(isolate, "Win_title", v8::FunctionTemplate::New(isolate, Win_title));
-    global->Set(isolate, "version", v8::FunctionTemplate::New(isolate, Version));
-
     global->SetAccessor(v8::String::NewFromUtf8(isolate, "innerWidth").ToLocalChecked(), GetscreenWidth, SetscreenWidth);
     global->SetAccessor(v8::String::NewFromUtf8(isolate, "innerHeight").ToLocalChecked(), GetscreenHeight, SetscreenHeight);
     global->Set(isolate, "CursorPin", v8::FunctionTemplate::New(isolate, toggle_curser_pin));
+    global->Set(isolate, "version", v8::FunctionTemplate::New(isolate, Version));
+
+    //file system
+    v8::Local<v8::ObjectTemplate> fst = v8::ObjectTemplate::New(isolate);
+    fst->Set(isolate, "readFileSync", v8::FunctionTemplate::New(isolate, readFileSync));
+    global->Set(isolate, "fs", fst);
+
+    //require
+    global->Set(isolate, "require", v8::FunctionTemplate::New(isolate, V8Require));
 
     return v8::Context::New(isolate, NULL, global);
 }

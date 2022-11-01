@@ -5,6 +5,8 @@ var cube_model = new Model("./cube.obj");
 var albido_create = new Texture("./create/container.png");
 var specular_create = new Texture("./create/container_specular.png");
 
+var plane_model = new Model("./KB/models/Plane.obj");
+
 //player camera
 var p_cam = new Camera();
 p_cam.position = new Vector3(0,2,0);
@@ -18,11 +20,20 @@ var p_torch = new PointLight();
 var ellie = new Prop();
 ellie.position = new Vector3(0,1,0);
 ellie.scale = new Vector3(.5,.5,.5)
-// ellie.model = cube_model;
-// ellie.texture = albido_create;
-// ellie.specular = specular_create;
 var el = new PointLight();
 el.position = new Vector3(2,1.5,2);
+
+var hack = new Font();
+hack.GetFontFile("./KB/fonts/Varela-Regular.ttf");
+
+var dev_text = new TextElement();
+dev_text.alignX = "left";
+dev_text.alignY = "top";
+dev_text.position = new Vector2(5, innerHeight-100);
+dev_text.font = hack;
+dev_text.color = new Vector3(1,1,0);
+dev_text.scale = 0.5;
+dev_text.text = "Kitsune Builder"
 
 //
 //player movement
@@ -182,6 +193,7 @@ function mousty(event){
 
 Input.addEventListener("mousemove", mousty);
 
+const { rgbToHex, convertRGB } = require('./KB/color/color.js');
 
 function loadBrk(map) {
 
@@ -317,195 +329,28 @@ function loadBrk(map) {
     return World;
 }
 
+function BV(map) {
+    var scene = [];
+
+    var plane = new Prop();
+    plane.scale = new Vector3(map.Environment.baseSize,0,map.Environment.baseSize);
+
+    var b = map.Bricks.length;
+    for (let i = 0; i < b; i++) {
+        var objectc = new Prop();
+        objectc.model = cube_model;
+        objectc.position = new Vector3(map.Bricks[i].yPos+map.Bricks[i].yScale/2, map.Bricks[i].zPos+map.Bricks[i].zScale/2, map.Bricks[i].xPos+map.Bricks[i].xScale/2);
+        objectc.scale = new Vector3(map.Bricks[i].yScale/2, map.Bricks[i].zScale/2, map.Bricks[i].xScale/2)
+        scene.push( objectc );
+    }
+}
+
+BV(loadBrk("./11894.brk"));
 
 CursorPin(false);
 
 var speed = 0.2;
 var maxspeed = 1;
-
-
-function rgbToHex(r, g, b) {
-    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-}
-function rgbToBgr(rgb) {
-    return rgb.substring(4, 6) + rgb.substring(2, 4) + rgb.substring(0, 2);
-}
-function rgbToDec(r, g, b) {
-    const rgb = r | (g << 8) | (b << 16);
-    return rgb.toString(10);
-}
-function hexToDec(hex, bgr = false) {
-    hex = hex.replace(/^#/, "");
-    const rgb = hexToRGB(hex);
-    if (!bgr) {
-        return rgbToDec(rgb[0], rgb[1], rgb[2]);
-    }
-    else {
-        return rgbToDec(rgb[2], rgb[1], rgb[0]);
-    }
-}
-function hexToRGB(hex) {
-    hex = hex.replace(/^#/, "");
-    const bigint = parseInt(hex, 16);
-    const r = (bigint >> 16) & 255;
-    const g = (bigint >> 8) & 255;
-    const b = bigint & 255;
-    return [r, g, b];
-}
-function convertRGB(r, g, b) {
-    r = Number(r);
-    g = Number(g);
-    b = Number(b);
-    r *= 255, g *= 255, b *= 255;
-    return [Math.ceil(r), Math.ceil(g), Math.ceil(b)];
-}
-const COLOR_REGEX = /(\[#[0-9a-fA-F]{6}\])/g;
-function formatHex(input) {
-    const match = input.match(COLOR_REGEX);
-    if (!match)
-        return input;
-    match.forEach((colorCode) => {
-        let hexCol = colorCode.replace(/[\[#\]]/g, "").toUpperCase();
-        hexCol = rgbToBgr(hexCol);
-        input = input.replace(colorCode, `<color:${hexCol}>`);
-    });
-    return input;
-}
-
-
-function loadBrk(map) {
-
-    let FILE = fs.readFileSync(map, "UTF-8");
-    let LINES = FILE.split("\n");
-    let totalLines = 0;
-    let bricks = [];
-    let cam = [];
-    let environment = {};
-    let currentBrick = -1;
-    let scriptWarning = false;
-
-    for (let line of LINES) {
-        totalLines++;
-        line = line.trim();
-        switch (totalLines) {
-            case 1: {
-                if (line !== "B R I C K  W O R K S H O P  V0.2.0.0") {
-                    print("ERROR: This set was created using an incompatible version of Brick Hill.");
-                    return process.exit(0);
-                }
-                continue;
-            }
-            case 3: {
-                const glColor = line.split(" ");
-                const RGB = convertRGB(glColor[0], glColor[1], glColor[2]);
-                environment["ambient"] = rgbToHex(RGB[2], RGB[1], RGB[0]);
-                continue;
-            }
-            case 4: {
-                const glColor = line.split(" ");
-                const RGB = convertRGB(glColor[0], glColor[1], glColor[2]);
-                environment["baseColor"] = rgbToHex(RGB[0], RGB[1], RGB[2]);
-                continue;
-            }
-            case 5: {
-                const glColor = line.split(" ");
-                const RGB = convertRGB(glColor[0], glColor[1], glColor[2]);
-                environment["skyColor"] = rgbToHex(RGB[0], RGB[1], RGB[2]);
-                continue;
-            }
-            case 6: {
-                environment["baseSize"] = Number(line);
-                continue;
-            }
-            case 7: {
-                environment["sunIntensity"] = Number(line);
-                continue;
-            }
-            case 8: {
-                environment["weather"] = Number(line);
-                continue;
-            }
-        }
-
-        const DATA = line.split(" ");
-        const ATTRIBUTE = DATA[0].replace("+", "");
-        const VALUE = DATA.slice(1).join(" ");
-        switch (ATTRIBUTE) {
-            case "NAME": {
-                bricks[currentBrick].name = VALUE;
-                continue;
-            }
-            case "ROT": {
-                bricks[currentBrick].rotation = VALUE;
-                continue;
-            }
-            case "SHAPE": {
-                bricks[currentBrick].shape = VALUE;
-                continue;
-            }
-            case "MODEL": {
-                bricks[currentBrick].model = VALUE;
-                continue;
-            }
-            case "NOCOLLISION": {
-                bricks[currentBrick].collision = false;
-                continue;
-            }
-            case "COLOR": {
-                const colors = VALUE.split(" ");
-                const color = convertRGB(colors[0], colors[1], colors[2]);
-                let team = new Team(teams[teams.length - 1], rgbToHex(color[0], color[1], color[2]));
-                teams[teams.length - 1] = team;
-                continue;
-            }
-            case "LIGHT": {
-                const colors = VALUE.split(' ');
-                const lightRange = colors[3];
-                const RGB = convertRGB(colors[0], colors[1], colors[2]);
-                bricks[currentBrick].lightEnabled = true;
-                bricks[currentBrick]._lightRange = lightRange;
-                bricks[currentBrick]._lightColor = rgbToHex(RGB[0], RGB[1], RGB[2]);
-                continue;
-            }
-            case "SCRIPT": {
-                if (scriptWarning)
-                    continue;
-                scriptWarning = true;
-                console.warn("WARNING: This set contains scripts. Scripts are incompatible with node-hill so they will not be loaded.");
-                continue;
-            }
-            case "CAMERA_POS": {
-                cam.pos = VALUE.split(" ");
-                continue;
-            }
-            case "CAMERA_ROT": {
-                cam.rot = VALUE.split(" ");
-                continue;
-            }
-        }
-        if (DATA.length === 10) {
-          const RGB = convertRGB(DATA[6], DATA[7], DATA[8])
-
-            let brick = {
-              "xPos": Number(DATA[0]),
-              "yPos": Number(DATA[1]),
-              "zPos": Number(DATA[2]),
-              "xScale": Number(DATA[3]),
-              "yScale": Number(DATA[4]),
-              "zScale": Number(DATA[5]),
-              "color": rgbToHex(RGB[0], RGB[1], RGB[2]),
-              "alpha": Number(DATA[9])
-            }
-
-            bricks.push(brick);
-            currentBrick++;
-        }
-        // if (DATA[0] && DATA[0] === ">TEAM")
-        //     teams.push(VALUE);
-    }
-    let World = {"Environment":environment, "Bricks":bricks, "Camera":cam}
-    return World;
-}
 
 var monark = false;
 
@@ -513,6 +358,7 @@ var sxsss = 0;
 
 var deltaTime = 0;
 function tick(delta){
+    dev_text.position = new Vector2(10, innerHeight-24);
 
     deltaTime = deltaTime+0.01;
 

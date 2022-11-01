@@ -80,5 +80,6 @@ void Vector3Constructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
         args.GetReturnValue().Set(v8_vector3(args));
         return;
     }
+    
     args.GetReturnValue().Set(v8_vector3(args));
 }

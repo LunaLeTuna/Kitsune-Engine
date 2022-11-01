@@ -29,14 +29,15 @@ Another problem is that some computers may not load all the props, bigger oof
 
 - Make robust obj importer, allowing for bones and auto triangulation
 
-- Make Map/Scene editor (probably made in engine)
-
-- Revamp input system
+- finish map editor
 
 - Make Documentation
 
 - Make better demos
 
-- Allow for scripts to call other scripts (like "require" in node.js)
+- ~~Allow for scripts to call other scripts (like "require" in node.js)~~
+    I think I kinda got it implemented, just has some flaws probably; like requireing in a required js file
+    will get the file from where the executable is, not the actuall js file is... I think havn't tried.
+    also isn't exactly like node.
 
 - Port to vulkan and jolt physics (long time before that)

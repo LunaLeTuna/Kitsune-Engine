@@ -3,7 +3,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 #define Include_physics
-#define Include_console_interaction
+// #define Include_console_interaction unix stuff
 
 #include <stdio.h>
 
@@ -510,8 +510,6 @@ int main(int argc, char* argv[]) {
     // Run the script to get the result.
     resultz = script->Run(context).ToLocalChecked();
 
-
-
     //run script's init, at start
 //     v8::Local<v8::Value> foo_value = context->Global()->Get(context, v8::String::NewFromUtf8(isolate, "init").ToLocalChecked()).ToLocalChecked();
 //     if (foo_value->IsFunction()) {
@@ -551,21 +549,6 @@ int main(int argc, char* argv[]) {
                 v8::MaybeLocal<v8::Value> foo_result = v8::Function::Cast(*foo_object)->Call(context, context->Global(), 1, &targ);
             }
         }
-
-//         for(int v=dynamicWorld->getNumCollisionObjects()-1; v>=0;v--){
-//             btCollisionObject* obj = dynamicWorld->getCollisionObjectArray()[v];
-//             btRigidBody* body = btRigidBody::upcast(obj);
-//             btTransform trans; // :3
-//             if(body && body->getMotionState()){
-//                 body->getMotionState()->getWorldTransform(trans);
-//             }else{
-//                 trans = obj->getWorldTransform();
-//             }
-//             printf("world pos object %d = %f, %f, %f\n", v, float(trans.getOrigin().getX()), float (trans.getOrigin().getY()), float(trans.getOrigin().getZ()));
-//         }
-
-
-//         pogger.view = glm::lookAt(pogger.position, pogger.position + pogger.front, pogger.up);
 
         main_cam->projection = glm::perspective(glm::radians(main_cam->fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, main_cam->near, main_cam->far);
         
