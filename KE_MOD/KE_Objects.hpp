@@ -4,7 +4,7 @@
 #define KE_Objs
 
 #include "./camera.hpp"
-#include "./pointlight.hpp"
+#include "./lights/KE_lights.hpp"
 #include "./shader.hpp"
 #include "./texture.hpp"
 #include "./model.hpp"
