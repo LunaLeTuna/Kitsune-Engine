@@ -55,6 +55,24 @@
         "unordered_map": "cpp",
         "unordered_set": "cpp",
         "functional": "cpp",
-        "strstream": "cpp"
+        "strstream": "cpp",
+        "cstdarg": "cpp",
+        "ctime": "cpp",
+        "atomic": "cpp",
+        "bit": "cpp",
+        "chrono": "cpp",
+        "algorithm": "cpp",
+        "iterator": "cpp",
+        "memory": "cpp",
+        "memory_resource": "cpp",
+        "__assert": "cpp",
+        "__bit_reference": "cpp",
+        "__bits": "cpp",
+        "__config": "cpp",
+        "__debug": "cpp",
+        "__string": "cpp",
+        "__tuple": "cpp",
+        "locale": "cpp",
+        "__locale": "cpp"
     }
 }

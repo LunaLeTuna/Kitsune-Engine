@@ -7,6 +7,11 @@ var specular_create = new Texture("./create/container_specular.png");
 
 var plane_model = new Model("./KB/models/Plane.obj");
 
+
+var gizmo_arrow = new Model("./KB/interface_models/arrow.obj");
+var dot = new Texture("./KB/dot.png");
+
+
 //player camera
 var p_cam = new Camera();
 p_cam.position = new Vector3(0,2,0);
@@ -17,13 +22,33 @@ SetMainCam(p_cam);
 var p_torch = new PointLight();
 
 var rainbow = new Shader("./KB/shaders/sample");
-rainbow.setVec3("color", new Vector3(0, 0, 0))
+rainbow.setVec3("color", new Vector3(1, 0, 0));
 
-var ellie = new Prop();
-ellie.position = new Vector3(0,1,0);
-ellie.scale = new Vector3(.5,.5,.5)
-var el = new PointLight();
-el.position = new Vector3(2,1.5,2);
+// var ellie = new Prop();
+// ellie.position = new Vector3(0,1,0);
+// ellie.scale = new Vector3(.5,.5,.5)
+// var el = new PointLight();
+// el.position = new Vector3(2,1.5,2);
+
+var xar = new Prop();
+xar.model = gizmo_arrow;
+xar.texture = dot;
+xar.shader = rainbow;
+xar.setVec3("color", new Vector3(1,0,0));
+
+var yar = new Prop();
+yar.rotation = new Vector3(Math.PI/2,0,0)
+yar.model = gizmo_arrow;
+yar.texture = dot;
+yar.shader = rainbow;
+yar.setVec3("color", new Vector3(0,1,0));
+
+var zar = new Prop();
+zar.rotation = new Vector3(0,0,Math.PI/2)
+zar.model = gizmo_arrow;
+zar.texture = dot;
+zar.shader = rainbow;
+zar.setVec3("color", new Vector3(0,0,1));
 
 var hack = new Font();
 hack.GetFontFile("./KB/fonts/Varela-Regular.ttf");
@@ -317,7 +342,7 @@ function loadBrk(map) {
               "xScale": Number(DATA[3]),
               "yScale": Number(DATA[4]),
               "zScale": Number(DATA[5]),
-              "color": rgbToHex(RGB[0], RGB[1], RGB[2]),
+              "color": new Vector3(RGB[0]/255, RGB[1]/255, RGB[2]/255),
               "alpha": Number(DATA[9])
             }
 
@@ -343,10 +368,16 @@ function BV(map) {
         objectc.model = cube_model;
         objectc.position = new Vector3(map.Bricks[i].yPos+map.Bricks[i].yScale/2, map.Bricks[i].zPos+map.Bricks[i].zScale/2, map.Bricks[i].xPos+map.Bricks[i].xScale/2);
         objectc.scale = new Vector3(map.Bricks[i].yScale/2, map.Bricks[i].zScale/2, map.Bricks[i].xScale/2)
-        objectc.texture = albido_create;
+        objectc.texture = dot;
         objectc.shader = rainbow;
+        objectc.setVec3("color", map.Bricks[i].color);
+
+        objectc.create_physbody();
+
         scene.push( objectc );
     }
+
+    dev_text.text = "Kitsune Builder | " + b + " bricks";
 }
 
 BV(loadBrk("./stanfordlucy.brk"));
@@ -360,8 +391,21 @@ var monark = false;
 
 var sxsss = 0;
 
+
 var deltaTime = 0;
 function tick(delta){
+    // rainbow.setVec3("color", new Vector3(Math.sin(deltaTime), 0, 0));
+
+    
+
+    // var ray = new RayCast(p_cam.position, new Vector3(p_cam.position.x,p_cam.position.y-5,p_cam.position.z));
+
+    // if(ray.hasHit){
+    //     xar.position = ray.position;
+    //     yar.position = ray.position;
+    //     zar.position = ray.position;
+    // }
+
     p_torch.position = p_cam.position;
 
     dev_text.position = new Vector2(10, innerHeight-24);

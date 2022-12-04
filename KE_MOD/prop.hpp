@@ -1,5 +1,12 @@
 #pragma once
 
+class prop_attribute{
+    public:
+    string name;
+    void* data;
+    uint8_t type;
+};
+
 class prop{
     public:
     //render
@@ -8,8 +15,13 @@ class prop{
     string name;
     shader* shaders;
     model* models;
+
     texture* textures;
     texture* speculars;
+
+    bool has_shader_overide = 0;
+    vector<shader_attribute> shader_overide_attributes;
+
     glm::vec3 position = glm::vec3( 0.0f,  0.0f,  0.0f);
     glm::vec3 scale = glm::vec3( 1.0f,  1.0f,  1.0f);
     glm::vec3 rotation = glm::vec3( 0.0f,  0.0f,  0.0f);
@@ -26,7 +38,63 @@ class prop{
     btRigidBody* phys_counterpart;
 #endif
 
+void load_shader_prop_override_insert_attribute(shader* shader_program){
+        for (auto& attribute : shader_overide_attributes){
+            switch(attribute.type) {
+                case 0:
+                {
+                    int* back = static_cast<int*>(attribute.data);
+                    shader_program->setInt(attribute.name, *back);
+                    break;
+                }
+                case 1:
+                {
+                    float* back = static_cast<float*>(attribute.data);
+                    shader_program->setFloat(attribute.name, *back);
+                    break;
+                }
+                case 2:
+                {
+                    glm::vec2* back = static_cast<glm::vec2*>(attribute.data);
+                    shader_program->setVec2(attribute.name, back->x, back->y);
+                    break;
+                }
+                case 3:
+                {
+                    glm::vec3* back = static_cast<glm::vec3*>(attribute.data);
+                    shader_program->setVec3(attribute.name, back->x, back->y, back->z);
+                    break;
+                }
+                case 5:
+                {
+                    bool* back = static_cast<bool*>(attribute.data);
+                    shader_program->setBool(attribute.name, *back);
+                    break;
+                }
+                default:
+                    cout << "unknown attribute type in " << name << endl;
+            }
+        }
+    }
+
+    void audit_shader_override_insert_attribute(string name, void* data, uint8_t type){
+        has_shader_overide = 1;
+        for (auto& attribute : shader_overide_attributes){
+            if(attribute.name.compare(name) == 0){
+                attribute.data = data;
+                attribute.type = type;
+                return;
+            }
+        }
+        shader_attribute temp;
+        temp.name = name;
+        temp.data = data;
+        temp.type = type;
+        shader_overide_attributes.push_back(temp);
+    }
+
     void use(shader* shader_program){
+
         glBindVertexArray(models->VAO);
 
         glActiveTexture(GL_TEXTURE0);
@@ -41,6 +109,10 @@ class prop{
         model = glm::rotate(model, rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
         model = glm::scale(model, scale);
         shader_program->setMat4("model", model);
+
+        if(has_shader_overide){
+            load_shader_prop_override_insert_attribute(shader_program);
+        }
 
         glDrawArrays(GL_TRIANGLES, 0, models->rcount);
     }

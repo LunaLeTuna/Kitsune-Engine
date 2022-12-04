@@ -7,10 +7,12 @@
     2 = vector2
     3 = vector3
     4 = vector4
+    5 = bool
 */
 
 class shader_attribute{
-    const char *name;
+    public:
+    string name;
     void* data;
     uint8_t type;
 };
@@ -133,6 +135,60 @@ class shader{
     void setMat4(const std::string &name, const glm::mat4 &mat) const
     {
         glUniformMatrix4fv(glGetUniformLocation(program, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+    }
+
+    void load_attribute(){
+        for (auto& attribute : attributes){
+            switch(attribute.type) {
+                case 0:
+                {
+                    int* back = static_cast<int*>(attribute.data);
+                    setInt(attribute.name, *back);
+                    break;
+                }
+                case 1:
+                {
+                    float* back = static_cast<float*>(attribute.data);
+                    setFloat(attribute.name, *back);
+                    break;
+                }
+                case 2:
+                {
+                    glm::vec2* back = static_cast<glm::vec2*>(attribute.data);
+                    setVec2(attribute.name, back->x, back->y);
+                    break;
+                }
+                case 3:
+                {
+                    glm::vec3* back = static_cast<glm::vec3*>(attribute.data);
+                    setVec3(attribute.name, back->x, back->y, back->z);
+                    break;
+                }
+                case 5:
+                {
+                    bool* back = static_cast<bool*>(attribute.data);
+                    setBool(attribute.name, *back);
+                    break;
+                }
+                default:
+                    cout << "unknown attribute type in " << name << endl;
+            }
+        }
+    }
+
+    void audit_attribute(string name, void* data, uint8_t type){
+        for (auto& attribute : attributes){
+            if(attribute.name.compare(name) == 0){
+                attribute.data = data;
+                attribute.type = type;
+                return;
+            }
+        }
+        shader_attribute temp;
+        temp.name = name;
+        temp.data = data;
+        temp.type = type;
+        attributes.push_back(temp);
     }
 
 };

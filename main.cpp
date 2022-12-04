@@ -667,6 +667,8 @@ int main(int argc, char* argv[]) {
                 current_shader->setMat4("view", main_cam->view);
             }
 
+            current_shader->load_attribute();
+
             //to render
             if(i.models != NULL)
             if(i.allow_render)

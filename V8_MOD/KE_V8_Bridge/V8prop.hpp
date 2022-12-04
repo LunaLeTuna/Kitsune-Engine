@@ -9,6 +9,78 @@ texture spec;
 int awax = 0; //size
 vector<prop> part;
 
+void setPBool(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+    int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    bool ax = args[1]->BooleanValue(isolate);
+
+    v8::String::Utf8Value str(isolate, args[0]);
+    const char* cstr = ToCString(str);
+    
+    void* kickin = (void*)(ax);
+    part[MID].audit_shader_override_insert_attribute(cstr, kickin, 5);
+}
+// ------------------------------------------------------------------------
+void setPInt(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+    int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    int ax = args[1]->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    v8::String::Utf8Value str(isolate, args[0]);
+    const char* cstr = ToCString(str);
+    
+    void* kickin = (void*)(ax);
+    part[MID].audit_shader_override_insert_attribute(cstr, kickin, 0);
+}
+// ------------------------------------------------------------------------
+void setPFloat(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+    int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    float* ax = new float(args[1]->NumberValue(isolate->GetCurrentContext()).FromJust());
+
+    v8::String::Utf8Value str(isolate, args[0]);
+    const char* cstr = ToCString(str);
+    
+    void* kickin = (void*)(ax);
+    part[MID].audit_shader_override_insert_attribute(cstr, kickin, 1);
+}
+// ------------------------------------------------------------------------
+void setPVec2(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+    int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    float ax = args[1]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    float ay = args[1]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    v8::String::Utf8Value str(isolate, args[0]);
+    const char* cstr = ToCString(str);
+    
+    void* kickin = (void*)(new glm::vec2(ax, ay));
+    part[MID].audit_shader_override_insert_attribute(cstr, kickin, 2);
+}
+// ------------------------------------------------------------------------
+void setPVec3(const v8::FunctionCallbackInfo<v8::Value>& args) 
+{
+    int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    float ax = args[1]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    float ay = args[1]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    float az = args[1]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    v8::String::Utf8Value str(isolate, args[0]);
+    const char* cstr = ToCString(str);
+    
+    void* kickin = (void*)(new glm::vec3(ax, ay, az));
+    part[MID].audit_shader_override_insert_attribute(cstr, kickin, 3);
+}
+// ------------------------------------------------------------------------
+
 static void Getvec3p(v8::Local<v8::String> property,
                         const v8::PropertyCallbackInfo<v8::Value>& info) {
 
@@ -389,6 +461,11 @@ void PropConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "specular").ToLocalChecked(), Getspecular, Setspecular, v8::Integer::New(isolate,awax));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "shader").ToLocalChecked(), Getshader, Setshader, v8::Integer::New(isolate,awax));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "model").ToLocalChecked(), Getmodel, Setmodel, v8::Integer::New(isolate,awax));
+    local->Set(v8::String::NewFromUtf8(isolate, "setBool").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPBool));
+    local->Set(v8::String::NewFromUtf8(isolate, "setInt").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPInt));
+    local->Set(v8::String::NewFromUtf8(isolate, "setFloat").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPFloat));
+    local->Set(v8::String::NewFromUtf8(isolate, "setVec2").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPVec2));
+    local->Set(v8::String::NewFromUtf8(isolate, "setVec3").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPVec3));
 #ifdef Include_physics
     local->Set(v8::String::NewFromUtf8(isolate, "create_physbody").ToLocalChecked(), v8::FunctionTemplate::New(isolate, create_physbody));
     local->Set(v8::String::NewFromUtf8(isolate, "AddForce").ToLocalChecked(), v8::FunctionTemplate::New(isolate, add_force));
