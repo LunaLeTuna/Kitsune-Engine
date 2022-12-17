@@ -436,10 +436,46 @@ static void Getpmass(v8::Local<v8::String> property,
  * yeah, you pretty much get it
  */
 
-void PropConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
+v8::Local<v8::Object> v8_prop(int propID){
 
-    v8::HandleScope handle_scope(isolate);
     v8::Persistent<v8::ObjectTemplate> prop_templ;
+
+    if (prop_templ.IsEmpty()) {
+    v8::EscapableHandleScope inner(isolate);
+    v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
+        local->Set(isolate, "_id", v8::Integer::New(isolate, propID));
+        local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getvec3p, Setvec3p, v8::Integer::New(isolate,propID));
+        local->SetAccessor(v8::String::NewFromUtf8(isolate, "scale").ToLocalChecked(), Getvec3sc, Setvec3sc, v8::Integer::New(isolate,propID));
+        local->SetAccessor(v8::String::NewFromUtf8(isolate, "rotation").ToLocalChecked(), Getvec3r, Setvec3r, v8::Integer::New(isolate,propID));
+        local->SetAccessor(v8::String::NewFromUtf8(isolate, "texture").ToLocalChecked(), Gettexture, Settexture, v8::Integer::New(isolate,propID));
+        local->SetAccessor(v8::String::NewFromUtf8(isolate, "specular").ToLocalChecked(), Getspecular, Setspecular, v8::Integer::New(isolate,propID));
+        local->SetAccessor(v8::String::NewFromUtf8(isolate, "shader").ToLocalChecked(), Getshader, Setshader, v8::Integer::New(isolate,propID));
+        local->SetAccessor(v8::String::NewFromUtf8(isolate, "model").ToLocalChecked(), Getmodel, Setmodel, v8::Integer::New(isolate,propID));
+        local->Set(v8::String::NewFromUtf8(isolate, "setBool").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPBool));
+        local->Set(v8::String::NewFromUtf8(isolate, "setInt").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPInt));
+        local->Set(v8::String::NewFromUtf8(isolate, "setFloat").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPFloat));
+        local->Set(v8::String::NewFromUtf8(isolate, "setVec2").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPVec2));
+        local->Set(v8::String::NewFromUtf8(isolate, "setVec3").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPVec3));
+#ifdef Include_physics
+        local->Set(v8::String::NewFromUtf8(isolate, "create_physbody").ToLocalChecked(), v8::FunctionTemplate::New(isolate, create_physbody));
+        local->Set(v8::String::NewFromUtf8(isolate, "AddForce").ToLocalChecked(), v8::FunctionTemplate::New(isolate, add_force));
+        local->SetAccessor(v8::String::NewFromUtf8(isolate, "LinearVelocity").ToLocalChecked(), Getpvl, Setpvl, v8::Integer::New(isolate,propID));
+        local->SetAccessor(v8::String::NewFromUtf8(isolate, "mass").ToLocalChecked(), Getpmass, Setpmass, v8::Integer::New(isolate,propID));
+#endif
+
+        prop_templ.Reset(isolate, inner.Escape(local));
+    }
+
+    v8::Local<v8::Object> prop_obj =
+      v8::Local<v8::ObjectTemplate>::New(isolate, prop_templ)
+          ->NewInstance(isolate->GetCurrentContext())
+          .ToLocalChecked();
+
+    return prop_obj;
+}
+
+void PropConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
+    v8::HandleScope handle_scope(isolate);
 
     prop zpart;
 
@@ -450,37 +486,56 @@ void PropConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     zpart.speculars = &spec;
 
     part.push_back(zpart);
-
-
-    v8::EscapableHandleScope inner(isolate);
-    v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
-    local->Set(isolate, "_id", v8::Integer::New(isolate, awax));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getvec3p, Setvec3p, v8::Integer::New(isolate,awax));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "scale").ToLocalChecked(), Getvec3sc, Setvec3sc, v8::Integer::New(isolate,awax));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "rotation").ToLocalChecked(), Getvec3r, Setvec3r, v8::Integer::New(isolate,awax));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "texture").ToLocalChecked(), Gettexture, Settexture, v8::Integer::New(isolate,awax));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "specular").ToLocalChecked(), Getspecular, Setspecular, v8::Integer::New(isolate,awax));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "shader").ToLocalChecked(), Getshader, Setshader, v8::Integer::New(isolate,awax));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "model").ToLocalChecked(), Getmodel, Setmodel, v8::Integer::New(isolate,awax));
-    local->Set(v8::String::NewFromUtf8(isolate, "setBool").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPBool));
-    local->Set(v8::String::NewFromUtf8(isolate, "setInt").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPInt));
-    local->Set(v8::String::NewFromUtf8(isolate, "setFloat").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPFloat));
-    local->Set(v8::String::NewFromUtf8(isolate, "setVec2").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPVec2));
-    local->Set(v8::String::NewFromUtf8(isolate, "setVec3").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPVec3));
-#ifdef Include_physics
-    local->Set(v8::String::NewFromUtf8(isolate, "create_physbody").ToLocalChecked(), v8::FunctionTemplate::New(isolate, create_physbody));
-    local->Set(v8::String::NewFromUtf8(isolate, "AddForce").ToLocalChecked(), v8::FunctionTemplate::New(isolate, add_force));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "LinearVelocity").ToLocalChecked(), Getpvl, Setpvl, v8::Integer::New(isolate,awax));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "mass").ToLocalChecked(), Getpmass, Setpmass, v8::Integer::New(isolate,awax));
-#endif
-
+    
+    args.GetReturnValue().Set(v8_prop(awax));
     awax++;
-    prop_templ.Reset(isolate, inner.Escape(local));
-
-        v8::Local<v8::Object> prop_obj =
-      v8::Local<v8::ObjectTemplate>::New(isolate, prop_templ)
-          ->NewInstance(isolate->GetCurrentContext())
-          .ToLocalChecked();
-
-        args.GetReturnValue().Set(prop_obj);
 }
+
+// void PropConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
+
+//     v8::HandleScope handle_scope(isolate);
+//     v8::Persistent<v8::ObjectTemplate> prop_templ;
+
+//     prop zpart;
+
+//     zpart.name = "woot"+to_string(awax);
+
+//     zpart.models = &cubez;
+//     zpart.textures = &tex;
+//     zpart.speculars = &spec;
+
+//     part.push_back(zpart);
+
+
+//     v8::EscapableHandleScope inner(isolate);
+//     v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
+//     local->Set(isolate, "_id", v8::Integer::New(isolate, awax));
+//     local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getvec3p, Setvec3p, v8::Integer::New(isolate,awax));
+//     local->SetAccessor(v8::String::NewFromUtf8(isolate, "scale").ToLocalChecked(), Getvec3sc, Setvec3sc, v8::Integer::New(isolate,awax));
+//     local->SetAccessor(v8::String::NewFromUtf8(isolate, "rotation").ToLocalChecked(), Getvec3r, Setvec3r, v8::Integer::New(isolate,awax));
+//     local->SetAccessor(v8::String::NewFromUtf8(isolate, "texture").ToLocalChecked(), Gettexture, Settexture, v8::Integer::New(isolate,awax));
+//     local->SetAccessor(v8::String::NewFromUtf8(isolate, "specular").ToLocalChecked(), Getspecular, Setspecular, v8::Integer::New(isolate,awax));
+//     local->SetAccessor(v8::String::NewFromUtf8(isolate, "shader").ToLocalChecked(), Getshader, Setshader, v8::Integer::New(isolate,awax));
+//     local->SetAccessor(v8::String::NewFromUtf8(isolate, "model").ToLocalChecked(), Getmodel, Setmodel, v8::Integer::New(isolate,awax));
+//     local->Set(v8::String::NewFromUtf8(isolate, "setBool").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPBool));
+//     local->Set(v8::String::NewFromUtf8(isolate, "setInt").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPInt));
+//     local->Set(v8::String::NewFromUtf8(isolate, "setFloat").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPFloat));
+//     local->Set(v8::String::NewFromUtf8(isolate, "setVec2").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPVec2));
+//     local->Set(v8::String::NewFromUtf8(isolate, "setVec3").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPVec3));
+// #ifdef Include_physics
+//     local->Set(v8::String::NewFromUtf8(isolate, "create_physbody").ToLocalChecked(), v8::FunctionTemplate::New(isolate, create_physbody));
+//     local->Set(v8::String::NewFromUtf8(isolate, "AddForce").ToLocalChecked(), v8::FunctionTemplate::New(isolate, add_force));
+//     local->SetAccessor(v8::String::NewFromUtf8(isolate, "LinearVelocity").ToLocalChecked(), Getpvl, Setpvl, v8::Integer::New(isolate,awax));
+//     local->SetAccessor(v8::String::NewFromUtf8(isolate, "mass").ToLocalChecked(), Getpmass, Setpmass, v8::Integer::New(isolate,awax));
+// #endif
+
+//     awax++;
+//     prop_templ.Reset(isolate, inner.Escape(local));
+
+//         v8::Local<v8::Object> prop_obj =
+//       v8::Local<v8::ObjectTemplate>::New(isolate, prop_templ)
+//           ->NewInstance(isolate->GetCurrentContext())
+//           .ToLocalChecked();
+
+//         args.GetReturnValue().Set(prop_obj);
+// }

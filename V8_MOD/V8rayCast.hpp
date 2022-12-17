@@ -27,7 +27,7 @@ void RayConstruct( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
         Raycast_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), quick_create_vector3(glm::vec3(res.m_hitPointWorld.getX(), res.m_hitPointWorld.getY(), res.m_hitPointWorld.getZ())));
     
-        Raycast_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "object").ToLocalChecked(), v8::Number::New(isolate, res.m_collisionObject->getUserIndex()));
+        Raycast_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "object").ToLocalChecked(), v8_prop(res.m_collisionObject->getUserIndex()));
     }else{
         Raycast_obj->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "hasHit").ToLocalChecked(), v8::Boolean::New(isolate, 0));
     }

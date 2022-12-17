@@ -82,6 +82,8 @@ dev_text.text = "Kitsune Builder"
   var d = false;
   var shift = false;
   var space = false;
+  var p = false;
+  var l = false;
   
 function buttonpushedpog(event){
     var keyCode = event;
@@ -103,6 +105,12 @@ function buttonpushedpog(event){
 
     if (keyCode == 32)
         space=true;
+
+    if (keyCode == 80)
+        p=true;
+
+    if (keyCode == 76)
+        l=true;
 
     //print(keyCode);
 }
@@ -127,6 +135,12 @@ function buttonthedpog(event){
 
     if (keyCode == 32)
         space=false;
+
+    if (keyCode == 80)
+        p=false;
+
+    if (keyCode == 76)
+        l=false;
 
 }
 
@@ -404,13 +418,14 @@ var monark = false;
 var sxsss = 0;
 
 
-// var v = new Prop();
-//         v.model = cube_model;
-//         v.position = new Vector3(0,0,0);
-//         v.scale = new Vector3(0.1, 0.1, 0.1)
-//         v.texture = dot;
-//         v.shader = rainbow;
-//         v.setVec3("color", new Vector3(1,0,0));
+var v = new Prop();
+        v.model = cube_model;
+        v.position = new Vector3(0,0,0);
+        v.scale = new Vector3(0.1, 0.1, 0.1)
+        v.texture = dot;
+        v.shader = rainbow;
+        v.setVec3("color", new Vector3(1,0,0));
+        v.setBool("dont", true);
 
 
 var deltaTime = 0;
@@ -422,18 +437,23 @@ function tick(delta){
     rainbow.setVec3("color", new Vector3(Math.sin(deltaTime), 0, 0));
 
     
+    if(m1){
+        var ray = p_cam.CamLookAt(new Vector2(xpos,ypos),1000);
 
-    var ray = p_cam.CamLookAt(new Vector2(xpos,ypos),1000);
+        var ara = new Vector3(ray.position.x*100+p_cam.position.x, ray.position.y*100+p_cam.position.y, ray.position.z*100+p_cam.position.z)
 
-    var ara = new Vector3(ray.position.x*100+p_cam.position.x, ray.position.y*100+p_cam.position.y, ray.position.z*100+p_cam.position.z)
+        var point = RayCast(p_cam.position, ara);
 
-    var point = RayCast(p_cam.position, ara);
+        if(point.hasHit){
+            xar.position = point.object.position;
+            yar.position = point.object.position;
+            zar.position = point.object.position;
 
-    if(point.hasHit){
-        xar.position = point.position;
-        yar.position = point.position;
-        zar.position = point.position;
-        print(point.object, ara.x, ara.y, ara.z)
+            v.position = point.object.position;
+            v.scale = new Vector3(point.object.scale.x+0.04,point.object.scale.y+0.04,point.object.scale.z+0.04);
+
+            print(point.object._id, ara.x, ara.y, ara.z)
+        }
     }
 
     // v.position = ray.position;
@@ -442,9 +462,10 @@ function tick(delta){
 
     dev_text.position = new Vector2(10, innerHeight-24);
 
-    if(m1)
+    if(p)
     deltaTime = deltaTime+0.5;
-    if(m2)
+
+    if(l)
     deltaTime = deltaTime-0.5;
 
     let cam_rot = p_cam.rotation.y;
