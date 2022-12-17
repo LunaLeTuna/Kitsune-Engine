@@ -55,11 +55,31 @@ uniform DirLight dirLight;
 uniform int NR_POINT_LIGHTS;
 uniform PointLight pointLights[MAX_LIGHTS];
 
+uniform float y_scan;
+uniform bool dont;
+
 void main()
 {
     // properties
     vec3 norm = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
 
-    FragColor = vec4(color, 1.0);
+    float diff = max(dot(norm, dirLight.direction*-20), 3.0);
+
+    vec3 result = (dirLight.ambient * diff) * color;
+
+    float glow_depth = 3;
+
+    if(dont)
+    FragColor = vec4(result, 1);
+
+    else if(FragPos.y >= y_scan){
+    FragColor = vec4(result, 0);
+
+    }else if(FragPos.y+glow_depth >= y_scan){
+        float a = ((FragPos.y-(y_scan-glow_depth)));
+        FragColor = vec4(result.r+a/4, result.g+a/3, result.b+a/2, 1);
+    }
+    else if(FragPos.y <= y_scan)
+    FragColor = vec4(result, 1);
 }

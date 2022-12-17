@@ -21,7 +21,7 @@ void setBool(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    bool ax = args[1]->BooleanValue(isolate);
+    bool* ax = new bool(args[1]->BooleanValue(isolate));
 
     v8::String::Utf8Value str(isolate, args[0]);
     const char* cstr = ToCString(str);
@@ -34,7 +34,7 @@ void setInt(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    int ax = args[1]->NumberValue(isolate->GetCurrentContext()).FromJust();
+    int* ax = new int(args[1]->NumberValue(isolate->GetCurrentContext()).FromJust());
 
     v8::String::Utf8Value str(isolate, args[0]);
     const char* cstr = ToCString(str);

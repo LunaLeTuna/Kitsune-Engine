@@ -13,7 +13,7 @@ void setPBool(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    bool ax = args[1]->BooleanValue(isolate);
+    bool* ax = new bool(args[1]->BooleanValue(isolate));
 
     v8::String::Utf8Value str(isolate, args[0]);
     const char* cstr = ToCString(str);
@@ -26,7 +26,7 @@ void setPInt(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     int MID = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    int ax = args[1]->NumberValue(isolate->GetCurrentContext()).FromJust();
+    int* ax = new int(args[1]->NumberValue(isolate->GetCurrentContext()).FromJust());
 
     v8::String::Utf8Value str(isolate, args[0]);
     const char* cstr = ToCString(str);
@@ -287,7 +287,7 @@ static void Setmodel(v8::Local<v8::String> property,
 #ifdef Include_physics
 vector<btRigidBody*> bodies;
 
-btRigidBody* create_physbox(glm::vec3 position, glm::vec3 size, float mass){
+btRigidBody* create_physbox(glm::vec3 position, glm::vec3 size, float mass, int id){
     btTransform L;
     L.setIdentity();
     L.setOrigin(btVector3(position.x,position.y,position.z));
@@ -295,6 +295,7 @@ btRigidBody* create_physbox(glm::vec3 position, glm::vec3 size, float mass){
     btMotionState* motionL = new btDefaultMotionState(L);
     btRigidBody::btRigidBodyConstructionInfo infoL(mass,motionL,box);
     btRigidBody* bodyL = new btRigidBody(infoL);
+    bodyL->setUserIndex(id);
     dynamicWorld->addRigidBody(bodyL);
     bodies.push_back(bodyL);
     return bodyL;
@@ -303,6 +304,8 @@ btRigidBody* create_physbox(glm::vec3 position, glm::vec3 size, float mass){
 void create_physbody(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
     v8::HandleScope handle_scope(isolate);
+    
+    float valueb = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
     float xp, yp, zp;
     if(args[0]->IsObject()){
@@ -312,14 +315,12 @@ void create_physbody(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
         zp = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
     }else{
-        xp=1;
-        yp=1;
-        zp=1;
+        xp=part[valueb].scale.x;
+        yp=part[valueb].scale.y;
+        zp=part[valueb].scale.z;
     }
-    
-    float valueb = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-    part[valueb].phys_counterpart = create_physbox(part[valueb].position, glm::vec3(xp,yp,zp), part[valueb].mass);
+    part[valueb].phys_counterpart = create_physbox(part[valueb].position, glm::vec3(xp,yp,zp), part[valueb].mass, valueb);
     part[valueb].has_physbody = 1;
 
     fflush(stdout);

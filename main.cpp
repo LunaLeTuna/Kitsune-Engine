@@ -30,6 +30,13 @@
 #include <map>
 #include <pthread.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <time.h>
+
 #ifdef Include_physics
 #include <btBulletDynamicsCommon.h>
 #endif
@@ -59,6 +66,15 @@ btSequentialImpulseConstraintSolver* solver;
 
 btDiscreteDynamicsWorld* dynamicWorld;
 #endif
+
+string get_file_date(string location){
+    char time[50];
+    struct stat attrib;
+    
+    stat(location.c_str(), &attrib);
+    strftime(time, 50, "aaaa-%m-%d %H:%M:%S", localtime(&attrib.st_mtime));
+    return time;
+}
 
 string get_file(string location){
 
@@ -273,6 +289,7 @@ void AddInputEvent( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 }
 
 #include "./V8_MOD/V8_Objects.hpp"
+#include "./management_scripts/management.hpp"
 
 glm::vec3 foo = glm::vec3( 0.0f,  0.0f,  0.0f);
 
@@ -524,6 +541,7 @@ int main(int argc, char* argv[]) {
 //     }
 
     while (!glfwWindowShouldClose(window)) {
+        hotload();
 
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
@@ -550,7 +568,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        main_cam->projection = glm::perspective(glm::radians(main_cam->fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, main_cam->near, main_cam->far);
+        main_cam->reproject();
         
 #ifdef Include_physics
         dynamicWorld->stepSimulation(1.f / 60.f ,10);
@@ -572,7 +590,7 @@ int main(int argc, char* argv[]) {
 
         // directional light
         current_shader->setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
-        current_shader->setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+        current_shader->setVec3("dirLight.ambient", 1.0f, 1.0f, 1.0f);
         current_shader->setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
         current_shader->setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
 

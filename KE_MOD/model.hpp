@@ -9,6 +9,7 @@ struct Vertex{
 class model{
     public:
     string name;
+    string Location;
     unsigned int VBO, VAO;
     int rcount;
     vector<Vertex> vertices;

@@ -73,6 +73,8 @@
         "__string": "cpp",
         "__tuple": "cpp",
         "locale": "cpp",
-        "__locale": "cpp"
+        "__locale": "cpp",
+        "forward_list": "cpp",
+        "*.ipp": "cpp"
     }
 }

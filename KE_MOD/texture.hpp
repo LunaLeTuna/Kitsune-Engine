@@ -5,6 +5,7 @@ class texture{
     int success;
 
     string name;
+    string Location;
 
     unsigned int texture_id; //id or what
     int width, height, nrChannels;

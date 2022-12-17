@@ -24,11 +24,75 @@ class shader{
     vector<shader_attribute> attributes;
  
     string name;
-    unsigned int vertex;
-    unsigned int fragment;
+    string Location;
+    string Vlast_changed;
+    string Flast_changed;
+
     unsigned int program; //id or what
 
+void Act_Hotswap(string location, string vt, string ft){
+        unsigned int vertex;
+        unsigned int fragment;
+        Location = location;
+        Flast_changed = ft;
+        Vlast_changed = vt;
+
+        char infoLog[621];
+
+        // shader_info_handler(location);
+
+        string va = get_file(location+".vert");
+
+        const char *vav = va.c_str();
+
+        vertex = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertex, 1, &vav, NULL);
+        glCompileShader(vertex);
+        glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderInfoLog(vertex, 621, NULL, infoLog);
+            std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+        }
+
+        string ay = get_file(location+".frag");
+
+        const char *aya = ay.c_str();
+
+        fragment = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragment, 1, &aya, NULL);
+        glCompileShader(fragment);
+        glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderInfoLog(fragment, 621, NULL, infoLog);
+            std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+        }
+
+            unsigned int last_program = program;
+            unsigned int new_program = glCreateProgram();
+            glAttachShader(new_program, vertex);
+            glAttachShader(new_program, fragment);
+            glLinkProgram(new_program);
+
+            glGetProgramiv(new_program, GL_LINK_STATUS, &success);
+            if (!success) {
+                glGetProgramInfoLog(new_program, 621, NULL, infoLog);
+                std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+            }
+            cout << new_program << " " << last_program << endl;
+            program = new_program;
+            glDeleteProgram(last_program);
+            glDeleteShader(vertex);
+            glDeleteShader(fragment);
+    }
+
     void craft(string location){
+            unsigned int vertex;
+    unsigned int fragment;
+        Location = location;
+        Flast_changed = get_file_date(Location+".frag");
+        Vlast_changed = get_file_date(Location+".vert");
 
         char infoLog[621];
 

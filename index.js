@@ -24,6 +24,8 @@ var p_torch = new PointLight();
 var rainbow = new Shader("./KB/shaders/sample");
 rainbow.setVec3("color", new Vector3(1, 0, 0));
 
+rainbow.setFloat("y_scan", 0.1);
+
 // var ellie = new Prop();
 // ellie.position = new Vector3(0,1,0);
 // ellie.scale = new Vector3(.5,.5,.5)
@@ -35,6 +37,7 @@ xar.model = gizmo_arrow;
 xar.texture = dot;
 xar.shader = rainbow;
 xar.setVec3("color", new Vector3(1,0,0));
+xar.setBool("dont", true);
 
 var yar = new Prop();
 yar.rotation = new Vector3(Math.PI/2,0,0)
@@ -42,6 +45,7 @@ yar.model = gizmo_arrow;
 yar.texture = dot;
 yar.shader = rainbow;
 yar.setVec3("color", new Vector3(0,1,0));
+yar.setBool("dont", true);
 
 var zar = new Prop();
 zar.rotation = new Vector3(0,0,Math.PI/2)
@@ -49,6 +53,7 @@ zar.model = gizmo_arrow;
 zar.texture = dot;
 zar.shader = rainbow;
 zar.setVec3("color", new Vector3(0,0,1));
+zar.setBool("dont", true);
 
 var hack = new Font();
 hack.GetFontFile("./KB/fonts/Varela-Regular.ttf");
@@ -178,12 +183,13 @@ var xpos;
 var ypos;
 
 function mousty(event){
-    if(!m3) return;
 
     //print("mouse x: " + event.xpos);
     //print("mouse y: " + event.ypos);
     xpos = event.xpos
     ypos = event.ypos
+
+    if(!m3) return;
 
     if (firstMouse)
     {
@@ -253,7 +259,7 @@ function loadBrk(map) {
             case 4: {
                 const glColor = line.split(" ");
                 const RGB = convertRGB(glColor[0], glColor[1], glColor[2]);
-                environment["baseColor"] = rgbToHex(RGB[0], RGB[1], RGB[2]);
+                environment["baseColor"] = new Vector3(RGB[0]/255, RGB[1]/255, RGB[2]/255);
                 continue;
             }
             case 5: {
@@ -361,6 +367,11 @@ function BV(map) {
 
     var plane = new Prop();
     plane.scale = new Vector3(map.Environment.baseSize,0,map.Environment.baseSize);
+    plane.model = plane_model;
+    plane.texture = dot;
+    plane.shader = rainbow;
+    plane.setVec3("color", map.Environment.baseColor);
+    plane.setBool("dont", true);
 
     var b = map.Bricks.length;
     for (let i = 0; i < b; i++) {
@@ -371,6 +382,7 @@ function BV(map) {
         objectc.texture = dot;
         objectc.shader = rainbow;
         objectc.setVec3("color", map.Bricks[i].color);
+        objectc.setBool("dont", false);
 
         objectc.create_physbody();
 
@@ -392,25 +404,48 @@ var monark = false;
 var sxsss = 0;
 
 
+// var v = new Prop();
+//         v.model = cube_model;
+//         v.position = new Vector3(0,0,0);
+//         v.scale = new Vector3(0.1, 0.1, 0.1)
+//         v.texture = dot;
+//         v.shader = rainbow;
+//         v.setVec3("color", new Vector3(1,0,0));
+
+
 var deltaTime = 0;
 function tick(delta){
-    // rainbow.setVec3("color", new Vector3(Math.sin(deltaTime), 0, 0));
+
+    rainbow.setFloat("y_scan", deltaTime);
+
+
+    rainbow.setVec3("color", new Vector3(Math.sin(deltaTime), 0, 0));
 
     
 
-    // var ray = new RayCast(p_cam.position, new Vector3(p_cam.position.x,p_cam.position.y-5,p_cam.position.z));
+    var ray = p_cam.CamLookAt(new Vector2(xpos,ypos),1000);
 
-    // if(ray.hasHit){
-    //     xar.position = ray.position;
-    //     yar.position = ray.position;
-    //     zar.position = ray.position;
-    // }
+    var ara = new Vector3(ray.position.x*100+p_cam.position.x, ray.position.y*100+p_cam.position.y, ray.position.z*100+p_cam.position.z)
+
+    var point = RayCast(p_cam.position, ara);
+
+    if(point.hasHit){
+        xar.position = point.position;
+        yar.position = point.position;
+        zar.position = point.position;
+        print(point.object, ara.x, ara.y, ara.z)
+    }
+
+    // v.position = ray.position;
 
     p_torch.position = p_cam.position;
 
     dev_text.position = new Vector2(10, innerHeight-24);
 
-    deltaTime = deltaTime+0.01;
+    if(m1)
+    deltaTime = deltaTime+0.5;
+    if(m2)
+    deltaTime = deltaTime-0.5;
 
     let cam_rot = p_cam.rotation.y;
 
@@ -418,7 +453,7 @@ function tick(delta){
 
     let temp = {x:0,y:0};
 
-    var cameraSpeed = 0.1;
+    var cameraSpeed = 0.4;
 
     if(m3){
         if (w) {
