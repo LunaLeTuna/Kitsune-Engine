@@ -284,19 +284,32 @@ static void Setmodel(v8::Local<v8::String> property,
   part[valueb].models = &cmodels[dock];
 }
 
+void depthdraw(const v8::FunctionCallbackInfo<v8::Value>& args) {
+
+    v8::HandleScope handle_scope(isolate);
+    
+    float valueb = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+
+    if(!args[0].IsEmpty() && args[0]->IsBoolean()){
+        part[valueb].ignore_depth_test = args[0]->BooleanValue(isolate);
+    }
+
+}
+
 #ifdef Include_physics
 vector<btRigidBody*> bodies;
 
-btRigidBody* create_physbox(glm::vec3 position, glm::vec3 size, float mass, int id){
+btRigidBody* create_physbox(glm::vec3 position, glm::vec3 rotation, glm::vec3 size, float mass, int id, int group){
     btTransform L;
     L.setIdentity();
     L.setOrigin(btVector3(position.x,position.y,position.z));
+    L.setRotation(btQuaternion(rotation.x, rotation.y, rotation.z));
     btBoxShape* box = new btBoxShape(btVector3(size.x,size.y,size.z));
     btMotionState* motionL = new btDefaultMotionState(L);
     btRigidBody::btRigidBodyConstructionInfo infoL(mass,motionL,box);
     btRigidBody* bodyL = new btRigidBody(infoL);
     bodyL->setUserIndex(id);
-    dynamicWorld->addRigidBody(bodyL);
+    dynamicWorld->addRigidBody(bodyL, group, group);
     bodies.push_back(bodyL);
     return bodyL;
 }
@@ -307,20 +320,50 @@ void create_physbody(const v8::FunctionCallbackInfo<v8::Value>& args) {
     
     float valueb = args.Holder()->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
+    int ColType = 0;
+    if(!args[0].IsEmpty() && args[0]->IsString()){
+        v8::String::Utf8Value str(isolate, args[0]);
+        const char* cstr = ToCString(str);
+        if(strcmp(cstr, "box")==0)
+            ColType = 0;
+        // else if(strcmp(cstr, "sphere")==0)
+        //     ColType = 1;
+    }
+
     float xp, yp, zp;
-    if(args[0]->IsObject()){
-        xp = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+    if(!args[1].IsEmpty() && args[1]->IsObject()){
+        xp = args[1]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-        yp = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+        yp = args[1]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "y").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-        zp = args[0]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
+        zp = args[1]->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "z").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
     }else{
         xp=part[valueb].scale.x;
         yp=part[valueb].scale.y;
         zp=part[valueb].scale.z;
     }
 
-    part[valueb].phys_counterpart = create_physbox(part[valueb].position, glm::vec3(xp,yp,zp), part[valueb].mass, valueb);
+    //put collision offset here
+
+    int groupID = -1;
+    if(!args[3].IsEmpty() && args[3]->IsNumber()){
+        groupID = args[3]->NumberValue(isolate->GetCurrentContext()).FromJust();
+    }
+
+    switch (ColType)
+    {
+    case 0:
+        part[valueb].phys_counterpart = create_physbox(part[valueb].position, part[valueb].rotation, glm::vec3(xp,yp,zp), part[valueb].mass, valueb, groupID);
+        break;
+    
+    // case 1:
+    //     part[valueb].phys_counterpart = create_physsphere(part[valueb].position, glm::vec3(xp,yp,zp), part[valueb].mass, valueb, -1);
+    //     break;
+    
+    default:
+        break;
+    }
+    
     part[valueb].has_physbody = 1;
 
     fflush(stdout);
@@ -451,6 +494,7 @@ v8::Local<v8::Object> v8_prop(int propID){
         local->SetAccessor(v8::String::NewFromUtf8(isolate, "specular").ToLocalChecked(), Getspecular, Setspecular, v8::Integer::New(isolate,propID));
         local->SetAccessor(v8::String::NewFromUtf8(isolate, "shader").ToLocalChecked(), Getshader, Setshader, v8::Integer::New(isolate,propID));
         local->SetAccessor(v8::String::NewFromUtf8(isolate, "model").ToLocalChecked(), Getmodel, Setmodel, v8::Integer::New(isolate,propID));
+        local->Set(v8::String::NewFromUtf8(isolate, "depthdraw").ToLocalChecked(), v8::FunctionTemplate::New(isolate, depthdraw));
         local->Set(v8::String::NewFromUtf8(isolate, "setBool").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPBool));
         local->Set(v8::String::NewFromUtf8(isolate, "setInt").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPInt));
         local->Set(v8::String::NewFromUtf8(isolate, "setFloat").ToLocalChecked(), v8::FunctionTemplate::New(isolate, setPFloat));

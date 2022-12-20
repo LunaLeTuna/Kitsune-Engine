@@ -12,6 +12,7 @@ class prop{
     //render
     bool allow_render = 1;
     bool default_shader = 1;
+    bool ignore_depth_test = 0;
     string name;
     shader* shaders;
     model* models;
@@ -112,6 +113,12 @@ void load_shader_prop_override_insert_attribute(shader* shader_program){
 
         if(has_shader_overide){
             load_shader_prop_override_insert_attribute(shader_program);
+        }
+
+        if(ignore_depth_test){
+            glDepthFunc(GL_ALWAYS);
+        }else{
+            glDepthFunc(GL_LESS);
         }
 
         glDrawArrays(GL_TRIANGLES, 0, models->rcount);

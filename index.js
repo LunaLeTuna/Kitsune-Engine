@@ -32,29 +32,6 @@ rainbow.setFloat("y_scan", 0.1);
 // var el = new PointLight();
 // el.position = new Vector3(2,1.5,2);
 
-var xar = new Prop();
-xar.model = gizmo_arrow;
-xar.texture = dot;
-xar.shader = rainbow;
-xar.setVec3("color", new Vector3(1,0,0));
-xar.setBool("dont", true);
-
-var yar = new Prop();
-yar.rotation = new Vector3(Math.PI/2,0,0)
-yar.model = gizmo_arrow;
-yar.texture = dot;
-yar.shader = rainbow;
-yar.setVec3("color", new Vector3(0,1,0));
-yar.setBool("dont", true);
-
-var zar = new Prop();
-zar.rotation = new Vector3(0,0,Math.PI/2)
-zar.model = gizmo_arrow;
-zar.texture = dot;
-zar.shader = rainbow;
-zar.setVec3("color", new Vector3(0,0,1));
-zar.setBool("dont", true);
-
 var hack = new Font();
 hack.GetFontFile("./KB/fonts/Varela-Regular.ttf");
 
@@ -398,7 +375,7 @@ function BV(map) {
         objectc.setVec3("color", map.Bricks[i].color);
         objectc.setBool("dont", false);
 
-        objectc.create_physbody();
+        objectc.create_physbody(null, null, null, 1);
 
         scene.push( objectc );
     }
@@ -419,14 +396,60 @@ var sxsss = 0;
 
 
 var v = new Prop();
-        v.model = cube_model;
-        v.position = new Vector3(0,0,0);
-        v.scale = new Vector3(0.1, 0.1, 0.1)
-        v.texture = dot;
-        v.shader = rainbow;
-        v.setVec3("color", new Vector3(1,0,0));
-        v.setBool("dont", true);
+    v.model = cube_model;
+    v.position = new Vector3(0,0,0);
+    v.scale = new Vector3(0.1, 0.1, 0.1)
+    v.texture = dot;
+    v.shader = rainbow;
+    v.setVec3("color", new Vector3(1,0,0));
+    v.setBool("dont", true);
 
+var xar = new Prop();
+xar.model = gizmo_arrow;
+xar.texture = dot;
+xar.shader = rainbow;
+xar.setVec3("color", new Vector3(1,0,0));
+xar.setBool("dont", true);
+xar.position = new Vector3(0, 1, 0);
+xar.depthdraw(true);
+xar.create_physbody(null, new Vector3(0.5, 1, 0.5), null, 4^2);
+
+var yar = new Prop();
+yar.rotation = new Vector3(Math.PI/2,0,0)
+yar.model = gizmo_arrow;
+yar.texture = dot;
+yar.shader = rainbow;
+yar.setVec3("color", new Vector3(0,1,0));
+yar.setBool("dont", true);
+yar.position = new Vector3(0, 0, 1);
+yar.depthdraw(true);
+yar.create_physbody(null, new Vector3(0.5, 1, 0.5), null, 4^2);
+
+var zar = new Prop();
+zar.rotation = new Vector3(0,0,Math.PI/2)
+zar.model = gizmo_arrow;
+zar.texture = dot;
+zar.shader = rainbow;
+zar.setVec3("color", new Vector3(0,0,1));
+zar.setBool("dont", true);
+zar.position = new Vector3(-1, 0, 0);
+zar.depthdraw(true);
+zar.create_physbody(null, new Vector3(0.5, 1, 0.5), null, 4^2);
+
+
+
+//  0=none
+//  1=x
+//  2=y
+//  3=z
+var holding = 0;
+
+var hold_offsetx = 0;
+var hold_offsety = 0;
+
+var holding_base_pose = new Vector3(0,0,0);
+
+var holding_selected = v;
 
 var deltaTime = 0;
 function tick(delta){
@@ -437,22 +460,76 @@ function tick(delta){
     rainbow.setVec3("color", new Vector3(Math.sin(deltaTime), 0, 0));
 
     
-    if(m1){
+    if(m1 && holding == 0){
+        
         var ray = p_cam.CamLookAt(new Vector2(xpos,ypos),1000);
 
         var ara = new Vector3(ray.position.x*100+p_cam.position.x, ray.position.y*100+p_cam.position.y, ray.position.z*100+p_cam.position.z)
 
-        var point = RayCast(p_cam.position, ara);
+        var point = RayCast(p_cam.position, ara, 1);
 
         if(point.hasHit){
-            xar.position = point.object.position;
-            yar.position = point.object.position;
-            zar.position = point.object.position;
+            holding_selected = point.object;
 
-            v.position = point.object.position;
-            v.scale = new Vector3(point.object.scale.x+0.04,point.object.scale.y+0.04,point.object.scale.z+0.04);
+            xar.position = new Vector3(holding_selected.position.x, holding_selected.position.y+1, holding_selected.position.z);
+            yar.position = new Vector3(holding_selected.position.x, holding_selected.position.y, holding_selected.position.z+1);
+            zar.position = new Vector3(holding_selected.position.x-1, holding_selected.position.y, holding_selected.position.z);
 
-            print(point.object._id, ara.x, ara.y, ara.z)
+            v.position = holding_selected.position;
+            v.scale = new Vector3(holding_selected.scale.x+0.04,holding_selected.scale.y+0.04,holding_selected.scale.z+0.04);
+
+            print(holding_selected._id, ara.x, ara.y, ara.z)
+        }
+    }else if(m1 && holding !== 0){
+
+        let nowx = Math.round((hold_offsetx-xpos)/(innerWidth/10));
+        let nowy = Math.round((hold_offsety-ypos)/(innerHeight/10));
+
+        if(holding == 1){
+            holding_selected.position = new Vector3(holding_base_pose.x, holding_base_pose.y+nowy, holding_base_pose.z);
+        }else if(holding == 2){
+            holding_selected.position = new Vector3(holding_base_pose.x, holding_base_pose.y, holding_base_pose.z-nowx);
+        }else if(holding == 3){
+            holding_selected.position = new Vector3(holding_base_pose.x-nowx, holding_base_pose.y, holding_base_pose.z);
+        }
+
+        xar.position = new Vector3(holding_selected.position.x, holding_selected.position.y+1, holding_selected.position.z);
+        yar.position = new Vector3(holding_selected.position.x, holding_selected.position.y, holding_selected.position.z+1);
+        zar.position = new Vector3(holding_selected.position.x-1, holding_selected.position.y, holding_selected.position.z);
+    }else{
+        holding_base_pose = holding_selected.position;
+
+        var ray = p_cam.CamLookAt(new Vector2(xpos,ypos),1000);
+
+        var ara = new Vector3(ray.position.x*100+p_cam.position.x, ray.position.y*100+p_cam.position.y, ray.position.z*100+p_cam.position.z)
+
+        var point = RayCast(p_cam.position, ara, 4^2);
+
+        hold_offsetx = xpos;
+        hold_offsety = ypos;
+
+        if(point.hasHit){
+
+            if(point.object._id == xar._id){
+                xar.setVec3("color", new Vector3(1,0.3,0.3));
+                holding = 1;
+            }else if(point.object._id == yar._id){
+                yar.setVec3("color", new Vector3(0.3,1,0.3));
+                holding = 2;
+            }else if(point.object._id == zar._id){
+                zar.setVec3("color", new Vector3(0.3,0.3,1));
+                holding = 3;
+            }else{
+                xar.setVec3("color", new Vector3(1,0,0));
+                yar.setVec3("color", new Vector3(0,1,0));
+                zar.setVec3("color", new Vector3(0,0,1));
+                holding = 0;
+            }
+        }else{
+            xar.setVec3("color", new Vector3(1,0,0));
+            yar.setVec3("color", new Vector3(0,1,0));
+            zar.setVec3("color", new Vector3(0,0,1));
+            holding = 0;
         }
     }
 
