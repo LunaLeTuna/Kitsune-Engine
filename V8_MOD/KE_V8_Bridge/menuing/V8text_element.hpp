@@ -31,14 +31,15 @@ void TextMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& args
 
     v8::EscapableHandleScope inner(isolate);
     v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);
+    local->Set(isolate, "_id", v8::Integer::New(isolate, awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getelvec2, Setelvec2, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "scale").ToLocalChecked(), Getelts, Setelts, v8::Integer::New(isolate,awaeex));
-//     local->SetAccessor(v8::String::NewFromUtf8(isolate, "font").ToLocalChecked(), Getelfont, Setelfont, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "text").ToLocalChecked(), Geteltext, Seteltext, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "font").ToLocalChecked(), Getelfont, Setelfont, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "color").ToLocalChecked(), Getelcolor, Setelcolor, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "alignX").ToLocalChecked(), GetelalignX, SetelalignX, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "alignY").ToLocalChecked(), GetelalignY, SetelalignY, v8::Integer::New(isolate,awaeex));
+    local->Set(isolate, "Delete", v8::FunctionTemplate::New(isolate, elDelete));
     awaeex++;
 
     MenuElement_templ.Reset(isolate, inner.Escape(local));

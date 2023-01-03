@@ -54,9 +54,12 @@ uniform vec3 viewPos;
 uniform DirLight dirLight;
 uniform int NR_POINT_LIGHTS;
 uniform PointLight pointLights[MAX_LIGHTS];
+uniform Material material;
 
+uniform vec3 brick_size;
 uniform float y_scan;
 uniform bool dont;
+uniform bool base;
 
 void main()
 {
@@ -69,17 +72,23 @@ void main()
     vec3 result = (dirLight.ambient * diff) * color;
 
     float glow_depth = 3;
+    float dist = length(FragPos); //FragPos.y
 
-    // if(dont)
-    // FragColor = vec4(result, 1);
+    if(norm.y >= 0.01){
+        result = vec3(texture(material.diffuse, vec2(TexCoords.x*brick_size.z*2,TexCoords.y*brick_size.x*2)))* color;
+    }else if(base){
+        result = vec3(texture(material.diffuse, vec2(TexCoords.x*brick_size.z,TexCoords.y*brick_size.x)))* color;
+    }
 
-    // else if(FragPos.y >= y_scan){
-    // FragColor = vec4(result, 0);
+    if(dist >= y_scan){
+    FragColor = vec4(result, 0);
 
-    // }else if(FragPos.y+glow_depth >= y_scan){
-    //     float a = ((FragPos.y-(y_scan-glow_depth)));
-    //     FragColor = vec4(result.r+a/4, result.g+a/3, result.b+a/2, 1);
-    // }
-    // else if(FragPos.y <= y_scan)
+    }else if(dist+glow_depth >= y_scan){
+        float a = ((dist-(y_scan-glow_depth)));
+        FragColor = vec4(result.r+a/4, result.g+a/3, result.b+a/2, 1);
+    }
+    else if(dist <= y_scan)
     FragColor = vec4(result, 1);
+
+    // FragColor = vec4(dist, 0, 0, 1);
 }

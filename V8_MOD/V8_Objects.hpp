@@ -59,6 +59,7 @@ v8::Local<v8::Context> load_wrap_functions(v8::Isolate* isolate) {
     //Menu Elements
     global->Set(isolate, "TextElement", v8::FunctionTemplate::New(isolate, TextMenuElementConstructor));
     global->Set(isolate, "ImageElement", v8::FunctionTemplate::New(isolate, ImageMenuElementConstructor));
+    global->Set(isolate, "ButtonElement", v8::FunctionTemplate::New(isolate, ButtonMenuElementConstructor));
 
     //input
     v8::Local<v8::ObjectTemplate> input_b = v8::ObjectTemplate::New(isolate);

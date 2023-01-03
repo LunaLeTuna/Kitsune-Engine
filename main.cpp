@@ -53,6 +53,9 @@ int SCR_HEIGHT = 600;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+float xpos_mouse = 0;
+float ypos_mouse = 0;
+
 GLFWwindow* window;
 
 #ifdef Include_physics
@@ -93,6 +96,128 @@ string get_file(string location){
     //cout << apock;
 
     return apock;
+}
+
+std::unique_ptr<v8::Platform> platform;
+v8::Isolate::CreateParams create_params;
+v8::Isolate* isolate;
+v8::Local<v8::String> source;
+v8::Local<v8::Context> context;
+v8::Local<v8::Script> script;
+v8::Local<v8::Value> resultz;
+
+const char* ToCString(const v8::String::Utf8Value& value) {
+    return *value ? *value : "<string conversion failed>";
+}
+
+/*
+ * how does this event thing work you may ask?
+ *
+ * here we have a box, each one is filled with functions
+ * we add functions to these boxes by doing "Input.addEventListener("keydown", buttonpushedpog)"
+ *  ____________        ____________
+ * |            |      |            |
+ * |            |      |            |
+ * |    awa     |      |    pog     |
+ * |            |      |            |
+ * |____________|      |____________|
+ *
+ * this is for triggering a lot of functions depending which box you choose
+ */
+
+class inputevent_feld{
+public:
+    char* call_on;
+    char* locked;
+    vector<v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>> func;
+};
+
+int entvcount = -1;
+vector<inputevent_feld> event_calls;
+
+int find_inputevent(char* name) { //TODO: rip phonebook in half || hash it
+    if(entvcount != -1) {
+        for(int i = 0; i <= entvcount; i++){
+            if(strcmp(event_calls[i].call_on, name) == 0){
+                return i;
+            }
+        }
+        return -1;
+    }else{
+        return -1;
+    }
+}
+
+int find_inputevent(char* name, char* locked) { //TODO: rip phonebook in half || hash it
+    if(entvcount != -1) {
+        for(int i = 0; i <= entvcount; i++){
+            if(strcmp(event_calls[i].call_on, name) == 0 && strcmp(event_calls[i].locked, locked) == 0){
+                return i;
+            }
+        }
+        return -1;
+    }else{
+        return -1;
+    }
+}
+
+int one_box_please(char* name) { //but hold the functions
+    if(find_inputevent(name) == -1) {
+        inputevent_feld newt; //make new box
+
+        newt.call_on = name; //lable new box
+
+        entvcount++;
+        event_calls.push_back(newt); //then put the box up in to storage for later
+        return entvcount;
+    }else{
+        return -1;
+    }
+
+}
+
+int one_box_please(char* name, char* locked) { //but hold the functions
+    if(find_inputevent(name) == -1) {
+        inputevent_feld newt; //make new box
+
+        newt.call_on = name; //lable new box
+        newt.locked = locked;
+
+        entvcount++;
+        event_calls.push_back(newt); //then put the box up in to storage for later
+        return entvcount;
+    }else{
+        return -1;
+    }
+
+}
+
+void AddInputEvent( const v8::FunctionCallbackInfo<v8::Value>& args ) {
+    v8::HandleScope handle_scope(isolate);
+
+    if (args[1]->IsFunction() && args[0]->IsString()) {
+
+        v8::String::Utf8Value str(isolate, args[0]);
+        const char* cstr = ToCString(str);
+
+        int dex = find_inputevent((char*)cstr);
+        if(dex != -1) {
+            v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(args[1]);
+            event_calls[dex].func.push_back(v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>(isolate, callback));
+        }else{
+            //so we can't find a box with the lable, so we need a new one :3
+            inputevent_feld newt; //make new box
+
+            newt.call_on = (char*)cstr; //lable new box
+
+            v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(args[1]); //grab the function out of the arguments
+            newt.func.push_back(v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>(isolate, callback)); //plop the function in to the box we made, after converting it to persistent
+
+            entvcount++;
+            event_calls.push_back(newt); //then put the box up in to storage for later
+        }
+    }
+
 }
 
 #include "./KE_MOD/KE_Objects.hpp"
@@ -196,98 +321,6 @@ bool check_cull(cameras* cam, prop* thprop){
     return 1;
 }
 
-std::unique_ptr<v8::Platform> platform;
-v8::Isolate::CreateParams create_params;
-v8::Isolate* isolate;
-v8::Local<v8::String> source;
-v8::Local<v8::Context> context;
-v8::Local<v8::Script> script;
-v8::Local<v8::Value> resultz;
-
-const char* ToCString(const v8::String::Utf8Value& value) {
-    return *value ? *value : "<string conversion failed>";
-}
-
-/*
- * how does this event thing work you may ask?
- *
- * here we have a box, each one is filled with functions
- * we add functions to these boxes by doing "Input.addEventListener("keydown", buttonpushedpog)"
- *  ____________        ____________
- * |            |      |            |
- * |            |      |            |
- * |    awa     |      |    pog     |
- * |            |      |            |
- * |____________|      |____________|
- *
- * this is for triggering a lot of functions depending which box you choose
- */
-
-class inputevent_feld{
-public:
-    char* call_on;
-    vector<v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>> func;
-};
-
-int entvcount = -1;
-vector<inputevent_feld> event_calls;
-
-int find_inputevent(char* name) { //TODO: rip phonebook in half || hash it
-    if(entvcount != -1) {
-        for(int i = 0; i <= entvcount; i++){
-            if(strcmp(event_calls[i].call_on, name) == 0){
-                return i;
-            }
-        }
-        return -1;
-    }else{
-        return -1;
-    }
-}
-
-int one_box_please(char* name) { //but hold the functions
-    if(find_inputevent(name) == -1) {
-        inputevent_feld newt; //make new box
-
-        newt.call_on = name; //lable new box
-
-        entvcount++;
-        event_calls.push_back(newt); //then put the box up in to storage for later
-        return entvcount;
-    }else{
-        return -1;
-    }
-
-}
-
-void AddInputEvent( const v8::FunctionCallbackInfo<v8::Value>& args ) {
-    v8::HandleScope handle_scope(isolate);
-
-    if (args[1]->IsFunction() && args[0]->IsString()) {
-
-        v8::String::Utf8Value str(isolate, args[0]);
-        const char* cstr = ToCString(str);
-
-        int dex = find_inputevent((char*)cstr);
-        if(dex != -1) {
-            v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(args[1]);
-            event_calls[dex].func.push_back(v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>(isolate, callback));
-        }else{
-            //so we can't find a box with the lable, so we need a new one :3
-            inputevent_feld newt; //make new box
-
-            newt.call_on = (char*)cstr; //lable new box
-
-            v8::Local<v8::Function> callback = v8::Local<v8::Function>::Cast(args[1]); //grab the function out of the arguments
-            newt.func.push_back(v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>(isolate, callback)); //plop the function in to the box we made, after converting it to persistent
-
-            entvcount++;
-            event_calls.push_back(newt); //then put the box up in to storage for later
-        }
-    }
-
-}
-
 #include "./V8_MOD/V8_Objects.hpp"
 #include "./management_scripts/management.hpp"
 
@@ -306,35 +339,35 @@ public:
 //TODO: write a key GOOD keymanager
 //basicly to allow to detect multable keypresses
 //add mouse buttons stuff too
-int key_event_id = one_box_please("key"); //just dosn't care
-int keypress_event_id = one_box_please("keypress"); //GLFW_PRESS
-int keyrelease_event_id = one_box_please("keyrelease"); //GLFW_RELEASE
-int keyhold_event_id = one_box_please("keyhold"); //GLFW_REPEAT
+int key_event_id = one_box_please("key", "key"); //just dosn't care
+int keypress_event_id = one_box_please("keypress", "key"); //GLFW_PRESS
+int keyrelease_event_id = one_box_please("keyrelease", "key"); //GLFW_RELEASE
+int keyhold_event_id = one_box_please("keyhold", "key"); //GLFW_REPEAT
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[key_event_id].func) {
         v8::TryCatch trycatch(isolate);
         v8::Local<v8::Value> buttonkey = v8::Integer::New(isolate, key);
         v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonkey);
     }
-    for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[keypress_event_id].func) {
-        v8::TryCatch trycatch(isolate);
-        if(action == GLFW_PRESS){
-        v8::Local<v8::Value> buttonkey = v8::Integer::New(isolate, key);
-        v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonkey);
+    if(action == GLFW_PRESS){
+        for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[keypress_event_id].func) {
+            v8::TryCatch trycatch(isolate);
+            v8::Local<v8::Value> buttonkey = v8::Integer::New(isolate, key);
+            v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonkey);
         }
     }
-    for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[keyrelease_event_id].func) {
-        v8::TryCatch trycatch(isolate);
-        if(action == GLFW_RELEASE){
-        v8::Local<v8::Value> buttonkey = v8::Integer::New(isolate, key);
-        v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonkey);
+    if(action == GLFW_RELEASE){
+        for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[keyrelease_event_id].func) {
+            v8::TryCatch trycatch(isolate);
+            v8::Local<v8::Value> buttonkey = v8::Integer::New(isolate, key);
+            v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonkey);
         }
     }
-    for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[keyhold_event_id].func) {
-        v8::TryCatch trycatch(isolate);
-        if(action == GLFW_REPEAT){
-        v8::Local<v8::Value> buttonkey = v8::Integer::New(isolate, key);
-        v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonkey);
+    if(action == GLFW_REPEAT){
+        for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[keyhold_event_id].func) {
+            v8::TryCatch trycatch(isolate);
+            v8::Local<v8::Value> buttonkey = v8::Integer::New(isolate, key);
+            v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonkey);
         }
     }
 }
@@ -351,10 +384,13 @@ void windowSizeCallback(GLFWwindow* window, int width, int height){
 
 v8::Persistent<v8::ObjectTemplate> mouse_templ;
 
-int mousemove_event_id = one_box_please("mousemove");
+int mousemove_event_id = one_box_please("mousemove", "mouse");
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
+
+    xpos_mouse = xpos;
+    ypos_mouse = ypos;
 
     for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[mousemove_event_id].func) {
         v8::TryCatch trycatch(isolate);
@@ -383,10 +419,10 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
     }
 }
 
-int mouse_event_id = one_box_please("mouse"); //just dosn't care
-int mousepress_event_id = one_box_please("mousepress"); //GLFW_PRESS
-int mouserelease_event_id = one_box_please("mouserelease"); //GLFW_RELEASE
-int mousehold_event_id = one_box_please("mousehold"); //GLFW_REPEAT
+int mouse_event_id = one_box_please("mouse", "mouse"); //just dosn't care
+int mousepress_event_id = one_box_please("mousepress", "mouse"); //GLFW_PRESS
+int mouserelease_event_id = one_box_please("mouserelease", "mouse"); //GLFW_RELEASE
+int mousehold_event_id = one_box_please("mousehold", "mouse"); //GLFW_REPEAT
 void mouse_click_callback(GLFWwindow* window, int button, int action, int mods)
 {
 
@@ -395,25 +431,34 @@ void mouse_click_callback(GLFWwindow* window, int button, int action, int mods)
         v8::Local<v8::Value> buttonmouse = v8::Integer::New(isolate, button);
         v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonmouse);
     }
-    for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[mousepress_event_id].func) {
-        v8::TryCatch trycatch(isolate);
-        if(action == GLFW_PRESS){
-        v8::Local<v8::Value> buttonmouse = v8::Integer::New(isolate, button);
-        v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonmouse);
+    
+    if(action == GLFW_PRESS){
+        for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[mousepress_event_id].func) {
+            v8::TryCatch trycatch(isolate);
+            
+            v8::Local<v8::Value> buttonmouse = v8::Integer::New(isolate, button);
+            v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonmouse);
+        }
+        for (element& s : screen_elements) {
+            if(!s.not_used)
+            if(s.is_button)
+            if(s.allow_render)
+                s.pressed_button();
         }
     }
-    for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[mouserelease_event_id].func) {
-        v8::TryCatch trycatch(isolate);
-        if(action == GLFW_RELEASE){
-        v8::Local<v8::Value> buttonmouse = v8::Integer::New(isolate, button);
-        v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonmouse);
+
+    if(action == GLFW_RELEASE){
+        for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[mouserelease_event_id].func) {
+            v8::TryCatch trycatch(isolate);
+            v8::Local<v8::Value> buttonmouse = v8::Integer::New(isolate, button);
+            v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonmouse);
         }
     }
-    for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[mousehold_event_id].func) {
-        v8::TryCatch trycatch(isolate);
-        if(action == GLFW_REPEAT){
-        v8::Local<v8::Value> buttonmouse = v8::Integer::New(isolate, button);
-        v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonmouse);
+    if(action == GLFW_REPEAT){
+        for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[mousehold_event_id].func) {
+            v8::TryCatch trycatch(isolate);
+            v8::Local<v8::Value> buttonmouse = v8::Integer::New(isolate, button);
+            v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &buttonmouse);
         }
     }
 }

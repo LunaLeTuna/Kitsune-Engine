@@ -75,6 +75,11 @@
         "locale": "cpp",
         "__locale": "cpp",
         "forward_list": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "ratio": "cpp",
+        "cinttypes": "cpp",
+        "variant": "cpp",
+        "__threading_support": "cpp",
+        "ios": "cpp"
     }
 }

@@ -11,7 +11,8 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-
+uniform float y_scan;
+uniform bool dont;
 
 void main()
 {
@@ -19,5 +20,13 @@ void main()
     Normal = mat3(transpose(inverse(model))) * aNormal;
     TexCoords = aTexCoords;
 
-    gl_Position = projection * view * vec4(FragPos, 1.0);
+    float glow_depth = 3;
+    float dist = length(FragPos);
+
+    float additive = 0;
+    if(dist+glow_depth >= y_scan && !dont){
+        additive = ((dist-(y_scan-glow_depth)));
+    }
+
+    gl_Position = projection * view * vec4(FragPos + additive, 1.0);
 }

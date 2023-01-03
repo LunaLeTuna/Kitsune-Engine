@@ -7,6 +7,7 @@ var specular_create = new Texture("./create/container_specular.png");
 
 var plane_model = new Model("./KB/models/Plane.obj");
 
+var studs = new Texture("./KB/textures/Brick/stud.png");
 
 var gizmo_arrow = new Model("./KB/interface_models/arrow.obj");
 var dot = new Texture("./KB/dot.png");
@@ -25,6 +26,9 @@ var rainbow = new Shader("./KB/shaders/sample");
 rainbow.setVec3("color", new Vector3(1, 0, 0));
 
 rainbow.setFloat("y_scan", 0.1);
+rainbow.setBool("base", false);
+
+var outline = new Shader("./KB/shaders/outline");
 
 // var ellie = new Prop();
 // ellie.position = new Vector3(0,1,0);
@@ -43,6 +47,46 @@ dev_text.font = hack;
 dev_text.color = new Vector3(1,1,0);
 dev_text.scale = 0.5;
 dev_text.text = "Kitsune Builder"
+
+var vvv = new TextElement();
+vvv.alignX = "left";
+vvv.alignY = "top";
+vvv.position = new Vector2(5, innerHeight-500);
+vvv.font = hack;
+vvv.color = new Vector3(1,1,0);
+vvv.scale = 0.5;
+vvv.text = "pressed: 0"
+
+var fdsafdsaf = new ButtonElement();
+fdsafdsaf.alignX = "center";
+fdsafdsaf.alignY = "bottom";
+fdsafdsaf.position = new Vector2(5, innerHeight-100);
+fdsafdsaf.font = hack;
+fdsafdsaf.color = new Vector3(1,1,0);
+fdsafdsaf.scale = 0.5;
+fdsafdsaf.text = "pfsdafdsafasdfsfog"
+
+var bsdfdsfdsa = new Texture("./KB/textures/Brick/stud.png");
+
+fdsafdsaf.texture = bsdfdsfdsa;
+
+var sfdafdsafdsafsdgsa = 0;
+
+function pressed () {
+    sfdafdsafdsafsdgsa++;
+}
+
+function hovered() {
+    fdsafdsaf.text = "nya"
+}
+
+function unhovered() {
+    fdsafdsaf.text = "pfsdafdsafasdfsfog"
+}
+
+fdsafdsaf.addEventListener("pressed", pressed);
+fdsafdsaf.addEventListener("hover", hovered);
+fdsafdsaf.addEventListener("unhover", unhovered);
 
 //
 //player movement
@@ -359,15 +403,19 @@ function BV(map) {
     var plane = new Prop();
     plane.scale = new Vector3(map.Environment.baseSize*0.5,0,map.Environment.baseSize*0.5);
     plane.model = plane_model;
-    plane.texture = dot;
+    plane.texture = studs;
     plane.shader = rainbow;
+    plane.setVec3("brick_size", new Vector3(map.Environment.baseSize,map.Environment.baseSize,map.Environment.baseSize));
     plane.setVec3("color", map.Environment.baseColor);
     plane.setBool("dont", true);
+    plane.setBool("base", true);
 
     var b = map.Bricks.length;
     for (let i = 0; i < b; i++) {
         var objectc = new Prop();
         objectc.model = cube_model;
+        objectc.texture = studs;
+
         // objectc.position = new Vector3(map.Bricks[i].yPos+map.Bricks[i].yScale/2, map.Bricks[i].zPos+map.Bricks[i].zScale/2, map.Bricks[i].xPos+map.Bricks[i].xScale/2);
         // objectc.scale = new Vector3(map.Bricks[i].yScale/2, map.Bricks[i].zScale/2, map.Bricks[i].xScale/2)
 
@@ -379,8 +427,9 @@ function BV(map) {
             objectc.scale = new Vector3( map.Bricks[i].yScale/2, map.Bricks[i].zScale/2, map.Bricks[i].xScale/2);
         }
 
-        objectc.texture = dot;
+        // objectc.texture = dot;
         objectc.shader = rainbow;
+        objectc.setVec3("brick_size", objectc.scale);
         objectc.setVec3("color", map.Bricks[i].color);
         objectc.setBool("dont", false);
 
@@ -405,13 +454,12 @@ var sxsss = 0;
 
 
 var v = new Prop();
-    v.model = cube_model;
-    v.position = new Vector3(0,0,0);
-    v.scale = new Vector3(0.1, 0.1, 0.1)
-    v.texture = dot;
-    v.shader = rainbow;
-    v.setVec3("color", new Vector3(1,0,0));
-    v.setBool("dont", true);
+v.model = cube_model;
+v.position = new Vector3(0,0,0);
+v.scale = new Vector3(0.1, 0.1, 0.1)
+v.texture = dot;
+v.shader = outline;
+v.setVec3("color", new Vector3(1,0.3,0.3));
 
 var xar = new Prop();
 xar.model = gizmo_arrow;
@@ -457,17 +505,24 @@ var hold_offsetx = 0;
 var hold_offsety = 0;
 
 var holding_base_pose = new Vector3(0,0,0);
+var last_ray;
 
 var holding_selected = v;
 
-var deltaTime = 0;
+var deltaTime = 1000;
 function tick(delta){
+    
+    vvv.text = "pressed: "+sfdafdsafdsafsdgsa;
+    vvv.position = new Vector2(10, innerHeight-50);
+
+    fdsafdsaf.position = new Vector2(innerWidth/2, innerHeight/2);
 
     rainbow.setFloat("y_scan", deltaTime);
 
 
     rainbow.setVec3("color", new Vector3(Math.sin(deltaTime), 0, 0));
 
+    // print(p_cam.rotation.x, p_cam.rotation.y, p_cam.rotation.z);
     
     if(m1 && holding == 0){
         
@@ -490,16 +545,28 @@ function tick(delta){
             print(holding_selected._id, ara.x, ara.y, ara.z)
         }
     }else if(m1 && holding !== 0){
+        
+        var ray = p_cam.CamLookAt(new Vector2(xpos,ypos),1000);
+        
+        let distencear = Math.sqrt(Math.pow(holding_base_pose.x-p_cam.position.x,2)+Math.pow(holding_base_pose.y-p_cam.position.y,2)+Math.pow(holding_base_pose.z-p_cam.position.z,2));
 
-        let nowx = Math.round((hold_offsetx-xpos)/(innerWidth/10));
-        let nowy = Math.round((hold_offsety-ypos)/(innerHeight/10));
+        let nowx = (hold_offsetx-xpos)/(innerWidth/distencear);
+        let nowy = (hold_offsety-ypos)/(innerHeight/distencear);
 
         if(holding == 1){
             holding_selected.position = new Vector3(holding_base_pose.x, holding_base_pose.y+nowy, holding_base_pose.z);
         }else if(holding == 2){
-            holding_selected.position = new Vector3(holding_base_pose.x, holding_base_pose.y, holding_base_pose.z-nowx);
+            if(p_cam.rotation.y >= 0)
+                var side = 1;
+            else
+                var side = -1;
+            holding_selected.position = new Vector3(holding_base_pose.x, holding_base_pose.y, holding_base_pose.z-nowx*side);
         }else if(holding == 3){
-            holding_selected.position = new Vector3(holding_base_pose.x-nowx, holding_base_pose.y, holding_base_pose.z);
+            if(p_cam.rotation.x <= 2)
+                var side = 1;
+            else
+                var side = -1;
+            holding_selected.position = new Vector3(holding_base_pose.x-nowx*side, holding_base_pose.y, holding_base_pose.z);
         }
 
         xar.position = new Vector3(holding_selected.position.x, holding_selected.position.y+1, holding_selected.position.z);
@@ -509,6 +576,8 @@ function tick(delta){
         holding_base_pose = holding_selected.position;
 
         var ray = p_cam.CamLookAt(new Vector2(xpos,ypos),1000);
+
+        last_ray = ray;
 
         var ara = new Vector3(ray.position.x*100+p_cam.position.x, ray.position.y*100+p_cam.position.y, ray.position.z*100+p_cam.position.z)
 
