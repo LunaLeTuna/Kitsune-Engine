@@ -357,7 +357,7 @@ function BV(map) {
     var scene = [];
 
     var plane = new Prop();
-    plane.scale = new Vector3(map.Environment.baseSize,0,map.Environment.baseSize);
+    plane.scale = new Vector3(map.Environment.baseSize*0.5,0,map.Environment.baseSize*0.5);
     plane.model = plane_model;
     plane.texture = dot;
     plane.shader = rainbow;
@@ -368,8 +368,17 @@ function BV(map) {
     for (let i = 0; i < b; i++) {
         var objectc = new Prop();
         objectc.model = cube_model;
-        objectc.position = new Vector3(map.Bricks[i].yPos+map.Bricks[i].yScale/2, map.Bricks[i].zPos+map.Bricks[i].zScale/2, map.Bricks[i].xPos+map.Bricks[i].xScale/2);
-        objectc.scale = new Vector3(map.Bricks[i].yScale/2, map.Bricks[i].zScale/2, map.Bricks[i].xScale/2)
+        // objectc.position = new Vector3(map.Bricks[i].yPos+map.Bricks[i].yScale/2, map.Bricks[i].zPos+map.Bricks[i].zScale/2, map.Bricks[i].xPos+map.Bricks[i].xScale/2);
+        // objectc.scale = new Vector3(map.Bricks[i].yScale/2, map.Bricks[i].zScale/2, map.Bricks[i].xScale/2)
+
+        if(map.Bricks[i].rotation)objectc.rotation = new Vector3(0, (map.Bricks[i].rotation-90)*Math.PI/180, 0);
+        objectc.position = new Vector3(map.Bricks[i].yPos+map.Bricks[i].yScale/2, map.Bricks[i].zPos+map.Bricks[i].zScale/2, (map.Bricks[i].xPos+map.Bricks[i].xScale/2)*-1);
+        if(map.Bricks[i].rot == 180 || map.Bricks[i].rot == 360){
+            objectc.scale = new Vector3( map.Bricks[i].xScale/2, map.Bricks[i].zScale/2, map.Bricks[i].yScale/2);
+        }else{
+            objectc.scale = new Vector3( map.Bricks[i].yScale/2, map.Bricks[i].zScale/2, map.Bricks[i].xScale/2);
+        }
+
         objectc.texture = dot;
         objectc.shader = rainbow;
         objectc.setVec3("color", map.Bricks[i].color);
@@ -383,7 +392,7 @@ function BV(map) {
     dev_text.text = "Kitsune Builder | " + b + " bricks";
 }
 
-BV(loadBrk("./stanfordlucy.brk"));
+BV(loadBrk("./11894.brk"));
 
 CursorPin(false);
 
