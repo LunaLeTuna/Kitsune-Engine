@@ -1,4 +1,5 @@
 Win_title("Kitsune-Builder"); //names title
+var scene = [];
 
 //basic create objects
 var cube_model = new Model("./cube.obj");
@@ -55,33 +56,58 @@ vvv.position = new Vector2(5, innerHeight-500);
 vvv.font = hack;
 vvv.color = new Vector3(1,1,0);
 vvv.scale = 0.5;
-vvv.text = "pressed: 0"
+vvv.text = "meow :3"
 
 var fdsafdsaf = new ButtonElement();
 fdsafdsaf.alignX = "center";
-fdsafdsaf.alignY = "bottom";
+fdsafdsaf.alignY = "center";
 fdsafdsaf.position = new Vector2(5, innerHeight-100);
 fdsafdsaf.font = hack;
 fdsafdsaf.color = new Vector3(1,1,0);
-fdsafdsaf.scale = 0.5;
-fdsafdsaf.text = "pfsdafdsafasdfsfog"
+fdsafdsaf.scale = new Vector2(110, 30);
+fdsafdsaf.Tscale = 0.5;
+fdsafdsaf.text = "add brick";
 
 var bsdfdsfdsa = new Texture("./KB/textures/Brick/stud.png");
 
-fdsafdsaf.texture = bsdfdsfdsa;
+fdsafdsaf.texture = dot;
 
-var sfdafdsafdsafsdgsa = 0;
+async function pressed () {
+    
+    fdsafdsaf.text = "add brick";
 
-function pressed () {
-    sfdafdsafdsafsdgsa++;
+    var ray = p_cam.CamLookAt(new Vector2(innerWidth/2,innerHeight/2),1000);
+
+    var ara = new Vector3(ray.position.x*100+p_cam.position.x, ray.position.y*100+p_cam.position.y, ray.position.z*100+p_cam.position.z)
+
+    var point = RayCast(p_cam.position, ara);
+
+    if(point.hasHit){
+        let objectc = new Prop();
+        objectc.model = cube_model;
+        objectc.texture = studs;
+
+        objectc.position = point.position;
+        objectc.scale = new Vector3(1,1,1);
+
+        // objectc.texture = dot;
+        objectc.shader = rainbow;
+        objectc.setVec3("brick_size", objectc.scale);
+        objectc.setVec3("color", new Vector3(1,1,1));
+        objectc.setBool("dont", false);
+    
+        objectc.create_physbody(null, null, null, 1);
+    
+        scene.push( objectc );
+    }
 }
 
 function hovered() {
-    fdsafdsaf.text = "nya"
+    fdsafdsaf.color = new Vector3(1,0,0);
 }
 
 function unhovered() {
-    fdsafdsaf.text = "pfsdafdsafasdfsfog"
+    fdsafdsaf.color = new Vector3(1,1,0);
 }
 
 fdsafdsaf.addEventListener("pressed", pressed);
@@ -398,7 +424,6 @@ function loadBrk(map) {
 }
 
 function BV(map) {
-    var scene = [];
 
     var plane = new Prop();
     plane.scale = new Vector3(map.Environment.baseSize*0.5,0,map.Environment.baseSize*0.5);
@@ -412,7 +437,7 @@ function BV(map) {
 
     var b = map.Bricks.length;
     for (let i = 0; i < b; i++) {
-        var objectc = new Prop();
+        let objectc = new Prop();
         objectc.model = cube_model;
         objectc.texture = studs;
 
@@ -511,11 +536,9 @@ var holding_selected = v;
 
 var deltaTime = 1000;
 function tick(delta){
-    
-    vvv.text = "pressed: "+sfdafdsafdsafsdgsa;
     vvv.position = new Vector2(10, innerHeight-50);
 
-    fdsafdsaf.position = new Vector2(innerWidth/2, innerHeight/2);
+    fdsafdsaf.position = new Vector2(400, innerHeight-35);
 
     rainbow.setFloat("y_scan", deltaTime);
 

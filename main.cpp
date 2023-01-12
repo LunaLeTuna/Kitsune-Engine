@@ -3,7 +3,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 #define Include_physics
-// #define Include_console_interaction unix stuff
+#define Include_console_interaction
 
 #include <stdio.h>
 
@@ -96,6 +96,13 @@ string get_file(string location){
     //cout << apock;
 
     return apock;
+}
+
+string ask_user_file(){
+    char filename[1024];
+    FILE *f = popen("zenity --file-selection", "r");
+    fgets(filename, 1024, f);
+    return filename;
 }
 
 std::unique_ptr<v8::Platform> platform;

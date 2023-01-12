@@ -4,6 +4,7 @@ struct Character {
     glm::ivec2   Size;      // Size of glyph
     glm::ivec2   Bearing;   // Offset from baseline to left/top of glyph
     unsigned int Advance;   // Horizontal offset to advance to next glyph
+    unsigned int Height;
 };
 
 shader text_base_shader;
@@ -95,7 +96,8 @@ public:
                     texturex,
                     glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
                     glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-                    static_cast<unsigned int>(face->glyph->advance.x)
+                    static_cast<unsigned int>(face->glyph->advance.x),
+                    ((static_cast<unsigned int>(face->max_advance_height)) >> 6)
                 };
                 Characters.insert(std::pair<char, Character>(c, character));
             }
@@ -206,8 +208,8 @@ public:
             float offcenterY = 0;
             if(alignmentX==1) offcenterX-=total_size_X/2;
             if(alignmentX==2) offcenterX-=total_size_X;
-            if(alignmentY==1) offcenterY-=total_size_Y/2;
-            if(alignmentY==2) offcenterY-=total_size_Y;
+            if(alignmentY==1) offcenterY-=(ch.Height * scale *1.5)/2;
+            if(alignmentY==2) offcenterY-=(ch.Height * scale *1.5);
             float xpos = (tx + ch.Bearing.x * scale)+offcenterX;
             float ypos = (ty - (ch.Size.y - ch.Bearing.y) * scale)+offcenterY;
 
@@ -236,7 +238,6 @@ public:
             tx += (ch.Advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64 (divide amount of 1/64th pixels by 64 to get amount of pixels))
         }
         total_size_X = tx-position.x;
-        total_size_Y = ty-position.y;
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
     }

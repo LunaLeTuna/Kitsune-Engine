@@ -81,7 +81,8 @@ void ButtonMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& ar
     local->Set(isolate, "_id", v8::Integer::New(isolate, awaeex));
 
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "position").ToLocalChecked(), Getelvec2, Setelvec2, v8::Integer::New(isolate,awaeex));
-    local->SetAccessor(v8::String::NewFromUtf8(isolate, "scale").ToLocalChecked(), Getelts, Setelts, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "scale").ToLocalChecked(), Getimscal2, Setimscal2, v8::Integer::New(isolate,awaeex));
+    local->SetAccessor(v8::String::NewFromUtf8(isolate, "Tscale").ToLocalChecked(), Getelts, Setelts, v8::Integer::New(isolate,awaeex));
 
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "text").ToLocalChecked(), Geteltext, Seteltext, v8::Integer::New(isolate,awaeex));
     local->SetAccessor(v8::String::NewFromUtf8(isolate, "font").ToLocalChecked(), Getelfont, Setelfont, v8::Integer::New(isolate,awaeex));

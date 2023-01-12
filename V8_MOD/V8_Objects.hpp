@@ -17,6 +17,7 @@ v8::Local<v8::ObjectTemplate> global;
 
 #include "./V8rayCast.hpp"
 
+#include "./dialog.hpp"
 #include "./fs.hpp"
 #include "./require.hpp"
 
@@ -76,6 +77,11 @@ v8::Local<v8::Context> load_wrap_functions(v8::Isolate* isolate) {
     global->SetAccessor(v8::String::NewFromUtf8(isolate, "innerHeight").ToLocalChecked(), GetscreenHeight, SetscreenHeight);
     global->Set(isolate, "CursorPin", v8::FunctionTemplate::New(isolate, toggle_curser_pin));
     global->Set(isolate, "version", v8::FunctionTemplate::New(isolate, Version));
+
+    //dialog system
+    v8::Local<v8::ObjectTemplate> dt = v8::ObjectTemplate::New(isolate);
+    dt->Set(isolate, "AskFile", v8::FunctionTemplate::New(isolate, file_dialog));
+    global->Set(isolate, "dialog", dt);
 
     //file system
     v8::Local<v8::ObjectTemplate> fst = v8::ObjectTemplate::New(isolate);

@@ -27,7 +27,8 @@ public:
 
     int pressed_button(){
         if(!is_button) return 0;
-        if((xpos_mouse >= image.position.x-image.scale.x/2 && xpos_mouse <= image.position.x+image.scale.x/2)&&(ypos_mouse >= image.position.y-image.scale.y/2 && ypos_mouse <= image.position.y+image.scale.y/2)){
+        float ypost = SCR_HEIGHT-ypos_mouse;
+        if((xpos_mouse >= image.position.x-image.scale.x/2 && xpos_mouse <= image.position.x+image.scale.x/2)&&(ypost >= image.position.y-image.scale.y/2 && ypost <= image.position.y+image.scale.y/2)){
                 for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[pressed_list].func) {
                     v8::TryCatch trycatch(isolate);
                     v8::Local<v8::Value> a = v8::Integer::New(isolate, 0);
@@ -40,8 +41,12 @@ public:
     }
 
     void render(){
+        glDepthFunc(GL_ALWAYS);
+
         if(is_button == 1){
-            if((xpos_mouse >= image.position.x-image.scale.x/2 && xpos_mouse <= image.position.x+image.scale.x/2)&&(ypos_mouse >= image.position.y-image.scale.y/2 && ypos_mouse <= image.position.y+image.scale.y/2)){
+            float ypost = SCR_HEIGHT-ypos_mouse;
+            // image.position.y = ypost;
+            if((xpos_mouse >= image.position.x-image.scale.x/2 && xpos_mouse <= image.position.x+image.scale.x/2)&&(ypost >= image.position.y-image.scale.y/2 && ypost <= image.position.y+image.scale.y/2)){
                 for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[hover_list].func) {
                     v8::TryCatch trycatch(isolate);
                     v8::Local<v8::Value> a = v8::Integer::New(isolate, 0);

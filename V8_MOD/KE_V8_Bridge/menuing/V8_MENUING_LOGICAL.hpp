@@ -276,8 +276,6 @@ static void SetelalignY(v8::Local<v8::String> property,
 
   v8::String::Utf8Value str(isolate, value);
   
-
-
   screen_elements[valueb].text.setalignmentY(ToCString(str));
 }
 

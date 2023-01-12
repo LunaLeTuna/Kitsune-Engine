@@ -30,6 +30,7 @@ void TextureConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     if(!args[0].IsEmpty() && args[0]->IsString()) {
         v8::String::Utf8Value str(isolate, args[0]);
         const char* cstr = ToCString(str);
+        // cout << "nya anfdsaf : " << cstr << endl;
         texturecl.load((char*)cstr);
     }
 
