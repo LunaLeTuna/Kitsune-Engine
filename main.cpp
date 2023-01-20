@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 
+
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -26,7 +27,13 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
-#include <cmath>
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+#ifndef M_PI
+#define M_PI           3.14159265358979323846
+#endif
+
 #include <map>
 #include <pthread.h>
 
@@ -41,7 +48,7 @@
 #include <btBulletDynamicsCommon.h>
 #endif
 
-#include <include/v8.h>
+#include <v8.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -473,7 +480,8 @@ void mouse_click_callback(GLFWwindow* window, int button, int action, int mods)
 cameras pogger;
 
 int main(int argc, char* argv[]) {
-    pogger.projection = glm::perspective(glm::radians(pogger.fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, pogger.near, pogger.far);
+
+    pogger.projection = glm::perspective(glm::radians(pogger.fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, pogger.Cnear, pogger.Cfar);
 
     main_cam = &pogger;
 

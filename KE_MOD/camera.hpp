@@ -10,8 +10,8 @@ class cameras{
     glm::quat rotation;
     glm::vec3 up = glm::vec3(0.0f, 1.0f,  0.0f);
     
-    float near = 0.1f;
-    float far = 1000.0f;
+    float Cnear = 0.1f;
+    float Cfar = 1000.0f;
     float fov = 60.0f;
     float aspect = 0;
 
@@ -25,7 +25,7 @@ class cameras{
     }
 
     void reproject(){
-        projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, near, far);
+        projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, Cnear, Cfar);
     }
 
     void set_rotation(glm::vec3 sc){

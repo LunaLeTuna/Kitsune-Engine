@@ -146,7 +146,7 @@ void CameraConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
 
     cpart.name = "c"+to_string(awac);
 
-    cpart.projection = glm::perspective(glm::radians(cpart.fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, cpart.near, cpart.far);
+    cpart.projection = glm::perspective(glm::radians(cpart.fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, cpart.Cnear, cpart.Cfar);
 
     cams.push_back(cpart);
 
