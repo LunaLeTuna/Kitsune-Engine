@@ -191,7 +191,7 @@ int one_box_please(char* name) { //but hold the functions
 }
 
 int one_box_please(char* name, char* locked) { //but hold the functions
-    if(find_inputevent(name) == -1) {
+    if(find_inputevent(name, locked) == -1) {
         inputevent_feld newt; //make new box
 
         newt.call_on = name; //lable new box
@@ -527,10 +527,11 @@ int main(int argc, char* argv[]) {
     image_base_shader.craft("./engine_dependent/menu_image/shader/base");
     text_base_shader.craft("./engine_dependent/text_fonts/shader/base");
 
-    base_font.craft("./fonts/ComicSans.ttf");
+    base_font.craft("./engine_dependent/fonts/Hack-Regular.ttf");
 
     shader waffle;
-    waffle.craft("./shaders/sample");
+    waffle.craft("./engine_dependent/shaders/sample");
+    cout << "meow" << endl;
 
     cubez.load_obj(get_file("./engine_dependent/ellie_def/pig.obj"));
 

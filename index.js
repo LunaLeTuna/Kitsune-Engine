@@ -3,8 +3,6 @@ var scene = [];
 
 //basic create objects
 var cube_model = new Model("./cube.obj");
-var albido_create = new Texture("./create/container.png");
-var specular_create = new Texture("./create/container_specular.png");
 
 var plane_model = new Model("./KB/models/Plane.obj");
 
@@ -38,7 +36,7 @@ var outline = new Shader("./KB/shaders/outline");
 // el.position = new Vector3(2,1.5,2);
 
 var hack = new Font();
-hack.GetFontFile("./KB/fonts/Varela-Regular.ttf");
+hack.GetFontFile("./engine_dependent/fonts/Hack-Regular.ttf");
 
 var dev_text = new TextElement();
 dev_text.alignX = "left";
@@ -68,9 +66,53 @@ fdsafdsaf.scale = new Vector2(110, 30);
 fdsafdsaf.Tscale = 0.5;
 fdsafdsaf.text = "add brick";
 
+var caa = new ButtonElement();
+caa.alignX = "center";
+caa.alignY = "center";
+caa.position = new Vector2(5, innerHeight-100);
+caa.font = hack;
+caa.color = new Vector3(1,0,0);
+caa.scale = new Vector2(110, 30);
+caa.Tscale = 0.5;
+caa.text = "center";
+
 var bsdfdsfdsa = new Texture("./KB/textures/Brick/stud.png");
 
 fdsafdsaf.texture = dot;
+caa.texture = dot;
+
+var butt = 0;
+
+async function nya () {
+    print("nya", butt);
+    
+    if(butt == 0){
+        caa.text = "bottom";
+        caa.alignY = "bottom";
+        butt=1;
+    }else if(butt == 1){
+        caa.text = "top";
+        caa.alignY = "top";
+        butt=2;
+    }else if(butt == 2){
+        caa.text = "center";
+        caa.alignY = "center";
+        butt=0;
+    }
+    
+}
+
+function nhovered() {
+    caa.color = new Vector3(1,0,0);
+}
+
+function munhovered() {
+    caa.color = new Vector3(1,1,0);
+}
+
+caa.addEventListener("pressed", nya)
+caa.addEventListener("hover", nhovered);
+caa.addEventListener("unhover", munhovered);
 
 async function pressed () {
     
@@ -539,6 +581,7 @@ function tick(delta){
     vvv.position = new Vector2(10, innerHeight-50);
 
     fdsafdsaf.position = new Vector2(400, innerHeight-35);
+    caa.position = new Vector2(550, innerHeight-35);
 
     rainbow.setFloat("y_scan", deltaTime);
 

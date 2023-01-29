@@ -80,6 +80,10 @@
         "cinttypes": "cpp",
         "variant": "cpp",
         "__threading_support": "cpp",
-        "ios": "cpp"
+        "ios": "cpp",
+        "valarray": "cpp",
+        "rope": "cpp",
+        "slist": "cpp",
+        "stacktrace": "cpp"
     }
 }

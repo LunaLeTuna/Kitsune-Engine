@@ -1,6 +1,0 @@
-# give_time useful for like waves or moveing things
-give_time 1
-# load_lights gives all lights
-load_lights 1
-# load_screen gives whats on screen good for maybe glass or reflections
-load_screen 0

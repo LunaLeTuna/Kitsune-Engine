@@ -75,6 +75,8 @@ void ButtonMenuElementConstructor( const v8::FunctionCallbackInfo<v8::Value>& ar
         element_available_size--;
     }
 
+    cout << "nya >w< butt: " << awaeex << endl;
+
 
     v8::EscapableHandleScope inner(isolate);
     v8::Local<v8::ObjectTemplate> local = v8::ObjectTemplate::New(isolate);

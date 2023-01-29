@@ -29,10 +29,12 @@ public:
         if(!is_button) return 0;
         float ypost = SCR_HEIGHT-ypos_mouse;
         if((xpos_mouse >= image.position.x-image.scale.x/2 && xpos_mouse <= image.position.x+image.scale.x/2)&&(ypost >= image.position.y-image.scale.y/2 && ypost <= image.position.y+image.scale.y/2)){
-                for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[pressed_list].func) {
-                    v8::TryCatch trycatch(isolate);
-                    v8::Local<v8::Value> a = v8::Integer::New(isolate, 0);
-                    v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &a);
+                if(pressed_list != -1){
+                    for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[pressed_list].func) {
+                        v8::TryCatch trycatch(isolate);
+                        v8::Local<v8::Value> a = v8::Integer::New(isolate, 0);
+                        v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &a);
+                    }
                 }
                 return 1;
             }else{
@@ -45,18 +47,21 @@ public:
 
         if(is_button == 1){
             float ypost = SCR_HEIGHT-ypos_mouse;
-            // image.position.y = ypost;
             if((xpos_mouse >= image.position.x-image.scale.x/2 && xpos_mouse <= image.position.x+image.scale.x/2)&&(ypost >= image.position.y-image.scale.y/2 && ypost <= image.position.y+image.scale.y/2)){
-                for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[hover_list].func) {
-                    v8::TryCatch trycatch(isolate);
-                    v8::Local<v8::Value> a = v8::Integer::New(isolate, 0);
-                    v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &a);
+                if(hover_list != -1){
+                    for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[hover_list].func) {
+                        v8::TryCatch trycatch(isolate);
+                        v8::Local<v8::Value> a = v8::Integer::New(isolate, 0);
+                        v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &a);
+                    }
                 }
             }else{
-                for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[unhover_list].func) {
-                    v8::TryCatch trycatch(isolate);
-                    v8::Local<v8::Value> a = v8::Integer::New(isolate, 0);
-                    v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &a);
+                if(unhover_list != -1){
+                    for (v8::Persistent<v8::Function, v8::CopyablePersistentTraits<v8::Function>>& entfs : event_calls[unhover_list].func) {
+                        v8::TryCatch trycatch(isolate);
+                        v8::Local<v8::Value> a = v8::Integer::New(isolate, 0);
+                        v8::Local<v8::Function>::New(isolate, entfs)->Call(context, context->Global(), 1, &a);
+                    }
                 }
             }
 
