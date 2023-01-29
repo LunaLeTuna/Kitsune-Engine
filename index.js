@@ -84,7 +84,6 @@ caa.texture = dot;
 var butt = 0;
 
 async function nya () {
-    print("nya", butt);
     
     if(butt == 0){
         caa.text = "bottom";
@@ -580,8 +579,8 @@ var deltaTime = 1000;
 function tick(delta){
     vvv.position = new Vector2(10, innerHeight-50);
 
-    fdsafdsaf.position = new Vector2(400, innerHeight-35);
-    caa.position = new Vector2(550, innerHeight-35);
+    fdsafdsaf.position = new Vector2(500, innerHeight-35);
+    caa.position = new Vector2(650, innerHeight-35);
 
     rainbow.setFloat("y_scan", deltaTime);
 
