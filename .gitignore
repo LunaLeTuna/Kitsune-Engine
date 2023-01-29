@@ -1,6 +1,9 @@
 KitsuneEngine*
 Kitsune_Engine*
 
+#glad
+./glad/libglad.a
+
 #v8
 v8_workspace
 

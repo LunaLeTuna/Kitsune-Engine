@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 
-#include <GL/gl.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -509,11 +509,16 @@ int main(int argc, char* argv[]) {
 
     glfwMakeContextCurrent(window);
 
-    glfwMakeContextCurrent(window);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetMouseButtonCallback(window, mouse_click_callback);
     glfwSetKeyCallback(window, key_callback);
     glfwSetWindowSizeCallback(window, windowSizeCallback);
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }    
 
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
