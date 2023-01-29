@@ -17,10 +17,11 @@ Another problem is that some computers may not load all the props, bigger oof
 - [Google's V8 Engine](https://v8.dev/)
 - [Bullet Physics](https://pybullet.org/)
 - [GLFW](https://www.glfw.org/)
+- [GLAD](https://glad.dav1d.de/)
 - [GLM](https://github.com/g-truc/glm)
 - [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h)
 - [FreeType](https://freetype.org/)
-- [learnopengl for lots of opengl code](https://learnopengl.com/)
+- [learnopengl for main opengl boilerplat](https://learnopengl.com/)
 - [Ty for pig "Ellie Pig" model](https://github.com/TyThePotato)
 
 ## Roadmap
