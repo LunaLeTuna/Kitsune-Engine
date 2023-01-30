@@ -57,6 +57,7 @@ using namespace std;
 
 int SCR_WIDTH = 800;
 int SCR_HEIGHT = 600;
+unsigned int fbo, fbt, rbo;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
@@ -394,6 +395,12 @@ void windowSizeCallback(GLFWwindow* window, int width, int height){
     glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
     glUseProgram(text_base_shader.program);
     glUniformMatrix4fv(glGetUniformLocation(text_base_shader.program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+    glBindTexture(GL_TEXTURE_2D, fbt);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
 }
 
 v8::Persistent<v8::ObjectTemplate> mouse_templ;
@@ -478,10 +485,12 @@ void mouse_click_callback(GLFWwindow* window, int button, int action, int mods)
 }
 
 cameras pogger;
+cameras shadow_cam;
 
 int main(int argc, char* argv[]) {
 
     pogger.projection = glm::perspective(glm::radians(pogger.fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, pogger.Cnear, pogger.Cfar);
+    shadow_cam.projection = glm::perspective(glm::radians(shadow_cam.fov), (float)800 / (float)800, shadow_cam.Cnear, shadow_cam.Cfar);
 
     main_cam = &pogger;
 
@@ -531,6 +540,9 @@ int main(int argc, char* argv[]) {
 
     shader waffle;
     waffle.craft("./engine_dependent/shaders/sample");
+
+    shader shadow_shader;
+    shadow_shader.craft("./engine_dependent/shaders/shadow");
     cout << "meow" << endl;
 
     cubez.load_obj(get_file("./engine_dependent/ellie_def/pig.obj"));
@@ -606,11 +618,41 @@ int main(int argc, char* argv[]) {
 //         }
 //     }
 
-    unsigned int fbo;
+
+    unsigned int sfbo;
+    glGenFramebuffers(2, &sfbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, sfbo);
+
+    unsigned int sfbt;
+    glGenTextures(2, &sfbt);
+    glBindTexture(GL_TEXTURE_2D, sfbt);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 800, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sfbt, 0);
+
+    unsigned int srbo;
+    glGenRenderbuffers(2, &srbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, srbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 800);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, srbo);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    texture set;
+    set.texture_id = sfbt;
+    element shad;
+    shad.image.shaderz = &image_base_shader;
+    shad.image.imbase = &set;
+    shad.image.flipx = 1;
+    shad.has_image = 1;
+
+
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    unsigned int fbt;
     glGenTextures(1, &fbt);
     glBindTexture(GL_TEXTURE_2D, fbt);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
@@ -618,7 +660,6 @@ int main(int argc, char* argv[]) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbt, 0);
 
-    unsigned int rbo;
     glGenRenderbuffers(1, &rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
@@ -646,11 +687,41 @@ int main(int argc, char* argv[]) {
         //input controlays
         processInput(window);
 
+        //render suns view (they see all >:3)
+        glBindFramebuffer(GL_FRAMEBUFFER, sfbo);
+        glEnable(GL_DEPTH_TEST);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // shadow_cam.position = main_cam->position;
+        // shadow_cam.front = main_cam->front;
+        // shadow_cam.reproject();
+
+        for (prop& i : part) {                
+            glUseProgram(shadow_shader.program);
+
+            shadow_shader.setVec3("viewPos", main_cam->position);
+
+            // directional light
+            shadow_shader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+            shadow_shader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+            shadow_shader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+            shadow_shader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+
+            shadow_shader.setMat4("projection", main_cam->projection);
+            shadow_shader.setMat4("view", main_cam->view);
+
+            //to render
+            if(i.models != NULL)
+            if(i.allow_render)
+            if(check_cull(main_cam, &i))
+            i.use(&shadow_shader);
+        }
+
+
+        //render actuall world
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
         glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         //background
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -781,9 +852,9 @@ int main(int argc, char* argv[]) {
                 current_shader->setMat4("projection", main_cam->projection);
                 current_shader->setMat4("view", main_cam->view);
 
-                glActiveTexture(GL_TEXTURE2);
-                current_shader->setInt("ScreenBuffer", 3);
-                glBindTexture(GL_TEXTURE_2D, rbo);
+                // glActiveTexture(GL_TEXTURE2);
+                // current_shader->setInt("ScreenBuffer", 3);
+                // glBindTexture(GL_TEXTURE_2D, rbo);
             }
 
             current_shader->load_attribute();
@@ -799,16 +870,15 @@ int main(int argc, char* argv[]) {
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glBindTexture(GL_TEXTURE_2D, fbt);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbt, 0);
-
-        glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         screen.image.position = glm::vec2(SCR_WIDTH/2, SCR_HEIGHT/2);
         screen.image.scale = glm::vec2(SCR_WIDTH, SCR_HEIGHT);
         screen.render();
+
+        shad.image.position = glm::vec2(300, 300);
+        shad.image.scale = glm::vec2(300, 300);
+        shad.render();
 
         for (element& s : screen_elements) {
             if(!s.not_used)

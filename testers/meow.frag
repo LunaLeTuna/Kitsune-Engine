@@ -4,8 +4,6 @@
 
 out vec4 FragColor;
 
-uniform sampler2D ScreenBuffer;
-
 struct Material {
     sampler2D diffuse;
     sampler2D specular;
@@ -77,7 +75,7 @@ void main()
     float dist = length(FragPos); //FragPos.y
 
     if(norm.y >= 0.01){
-        result = vec3(texture(ScreenBuffer, vec2(TexCoords.x*brick_size.z*2,TexCoords.y*brick_size.x*2)))* color;
+        result = vec3(texture(material.diffuse, vec2(TexCoords.x*brick_size.z*2,TexCoords.y*brick_size.x*2)))* color;
     }else if(base){
         result = vec3(texture(material.diffuse, vec2(TexCoords.x*brick_size.z,TexCoords.y*brick_size.x)))* color;
     }
