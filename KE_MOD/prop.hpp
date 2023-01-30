@@ -17,8 +17,11 @@ class prop{
     shader* shaders;
     model* models;
 
-    texture* textures;
-    texture* speculars;
+    texture* imbase0;
+    texture* imbase1;
+
+    GLuint text0, text1;
+    bool textset = false;
 
     bool has_shader_overide = 0;
     vector<shader_attribute> shader_overide_attributes;
@@ -98,10 +101,23 @@ void load_shader_prop_override_insert_attribute(shader* shader_program){
 
         glBindVertexArray(models->VAO);
 
+        if(!textset){
+            glGenTextures(1, &text0);
+            glBindTexture(GL_TEXTURE_2D, text0);
+            glGenTextures(1, &text1);
+            glBindTexture(GL_TEXTURE_2D, text1); 
+        }
+
+        glUniform1i(text0, 0);
+        glUniform1i(text1,  1);
+
         glActiveTexture(GL_TEXTURE0);
-        textures->call();
+        shader_program->setInt("text0", 0);
+        imbase0->call();
+
         glActiveTexture(GL_TEXTURE1);
-        speculars->call();
+        shader_program->setInt("text1", 1);
+        imbase1->call();
 
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, position);

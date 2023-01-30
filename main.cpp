@@ -105,7 +105,7 @@ string get_file(string location){
     return apock;
 }
 
-string ask_user_file(){
+string ask_user_file(){ //needs winder implementation
     char filename[1024];
     FILE *f = popen("zenity --file-selection", "r");
     fgets(filename, 1024, f);
@@ -606,6 +606,36 @@ int main(int argc, char* argv[]) {
 //         }
 //     }
 
+    unsigned int fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    unsigned int fbt;
+    glGenTextures(1, &fbt);
+    glBindTexture(GL_TEXTURE_2D, fbt);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbt, 0);
+
+    unsigned int rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    texture buffy;
+    buffy.texture_id = fbt;
+    element screen;
+    screen.image.shaderz = &image_base_shader;
+    screen.image.imbase = &buffy;
+    screen.image.flipx = 1;
+    screen.has_image = 1;
+
     while (!glfwWindowShouldClose(window)) {
         hotload();
 
@@ -615,6 +645,12 @@ int main(int argc, char* argv[]) {
 
         //input controlays
         processInput(window);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         //background
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -639,11 +675,6 @@ int main(int argc, char* argv[]) {
 #ifdef Include_physics
         dynamicWorld->stepSimulation(1.f / 60.f ,10);
 #endif
-
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         shader* current_shader = &waffle;
 
@@ -749,6 +780,10 @@ int main(int argc, char* argv[]) {
 
                 current_shader->setMat4("projection", main_cam->projection);
                 current_shader->setMat4("view", main_cam->view);
+
+                glActiveTexture(GL_TEXTURE2);
+                current_shader->setInt("ScreenBuffer", 3);
+                glBindTexture(GL_TEXTURE_2D, rbo);
             }
 
             current_shader->load_attribute();
@@ -759,6 +794,21 @@ int main(int argc, char* argv[]) {
             // if(check_cull(main_cam, &i))
             i.use(current_shader);
         }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDisable(GL_DEPTH_TEST);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glBindTexture(GL_TEXTURE_2D, fbt);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbt, 0);
+
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+
+        screen.image.position = glm::vec2(SCR_WIDTH/2, SCR_HEIGHT/2);
+        screen.image.scale = glm::vec2(SCR_WIDTH, SCR_HEIGHT);
+        screen.render();
 
         for (element& s : screen_elements) {
             if(!s.not_used)
@@ -806,6 +856,7 @@ int main(int argc, char* argv[]) {
         cmodels[xa].del();
     }
     glDeleteProgram(waffle.program);
+    // glDeleteFramebuffers(1, &fbo);
 
     isolate->Dispose();
     v8::V8::Dispose();

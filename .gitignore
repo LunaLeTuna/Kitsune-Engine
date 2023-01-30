@@ -4,7 +4,9 @@ Kitsune_Engine*
 #glad
 libglad*
 
-
+#idk
+*.gch
+*.a
 
 #v8
 v8_workspace

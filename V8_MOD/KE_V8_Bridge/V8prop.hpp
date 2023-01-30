@@ -222,7 +222,7 @@ static void Settexture(v8::Local<v8::String> property,
 
   int dock = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  part[valueb].textures = &ctextures[dock];
+  part[valueb].imbase0 = &ctextures[dock];
 }
 
 static void Getspecular(v8::Local<v8::String> property,
@@ -242,7 +242,7 @@ static void Setspecular(v8::Local<v8::String> property,
 
   int dock = value->ToObject(isolate->GetCurrentContext()).ToLocalChecked()->Get(context, v8::String::NewFromUtf8(isolate, "_id").ToLocalChecked()).ToLocalChecked()->NumberValue(isolate->GetCurrentContext()).FromJust();
 
-  part[valueb].speculars = &ctextures[dock];
+  part[valueb].imbase1 = &ctextures[dock];
 }
 
 static void Getshader(v8::Local<v8::String> property,
@@ -526,8 +526,8 @@ void PropConstructor( const v8::FunctionCallbackInfo<v8::Value>& args ) {
     zpart.name = "woot"+to_string(awax);
 
     zpart.models = &cubez;
-    zpart.textures = &tex;
-    zpart.speculars = &spec;
+    zpart.imbase0 = &tex;
+    zpart.imbase1 = &spec;
 
     part.push_back(zpart);
     

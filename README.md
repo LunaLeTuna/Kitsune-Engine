@@ -21,7 +21,7 @@ Another problem is that some computers may not load all the props, bigger oof
 - [GLM](https://github.com/g-truc/glm)
 - [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h)
 - [FreeType](https://freetype.org/)
-- [learnopengl for main opengl boilerplate](https://learnopengl.com/)
+- [learnopengl for main opengl boilerplate and text code](https://learnopengl.com/)
 - [Ty for pig "Ellie Pig" model](https://github.com/TyThePotato)
 
 ## Roadmap
