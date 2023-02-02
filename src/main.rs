@@ -1,28 +1,73 @@
 #[macro_use]
 extern crate glium;
-extern crate glm;
 
 use std::io::Cursor;
 
+use nalgebra::Vector2;
+
 mod cameras {
-    struct camera{
-        name: String,
-        view: glm::Mat4,
-        projection: glm::Mat4,
+    use std::f32::consts::PI;
 
-        position: glm::Vec3,
-        rotation: glm::Vec3,
-        up: glm::Vec3,
+    use nalgebra::{Vector3, Vector2, Matrix4, Rotation, Rotation3, Matrix, Perspective3};
 
-        near: f32,
-        far: f32,
-        fov: f32,
-        aspect: f32
+    pub struct camera{
+        pub name: String,
+        pub projection: Perspective3<f32>,
+
+        pub position: Vector3<f32>,
+        pub rotation: Rotation<f32,3>,
+        pub up: Vector3<f32>,
+
+        pub near: f32,
+        pub far: f32,
+        pub fov: f32,
+        pub aspect: f32
     }
 
-    fn reproject(cam: &mut camera, screen: glm::Vec2){
-        cam.projection = glm::ext::perspective(glm::radians(cam.fov),screen.x/screen.y, cam.near, cam.far);
+    fn radians(degrees: f32) -> f32 {
+        degrees*PI/180.0
     }
+
+    fn reproject(cam: &mut camera, screen: Vector2<f32>){
+        cam.projection = Perspective3::new(screen.x/screen.y,radians(cam.fov), cam.near, cam.far);
+    }
+
+    fn look_at(cam: &mut camera, target: Vector3<f32>){
+        let meow:Vector3<f32> = Vector3::new(cam.position.x+target.x,cam.position.y+target.y,cam.position.z+target.z);
+        cam.rotation = nalgebra::Rotation3::look_at_lh(&meow, &cam.up);
+    }
+
+    fn refresh(cam: &mut camera){
+        let mut model = Matrix4::new_scaling(1.0);
+        model.transform_vector(&cam.position);
+        println!("{}", model);
+    }
+
+    pub fn projectDROP(cam: camera) -> [[f32; 4]; 4] {
+        let binding = cam.projection.to_homogeneous();
+        let pogger =binding.as_ref();
+        *pogger
+    }
+
+    pub fn craft(screen: Vector2<f32>) -> camera {
+        let mut pog = camera { name: "meow".to_owned(),
+            up: Vector3::y(), 
+            far: 1024.0, 
+            near: 0.1, 
+            fov: 60.0,
+            projection: Perspective3::new(screen.y/screen.x,radians(60.0), 0.1, 1024.0),
+            position: Vector3::new(0.0, 0.0, 0.0),
+            rotation: Rotation3::new(Vector3::new(0.0, 0.0, 0.0)),
+            aspect: screen.x/screen.y,
+        };
+        reproject(&mut pog, screen);
+        pog
+    }
+}
+
+#[cfg(test)]
+mod pog{
+    
 }
 
 mod shaders {
@@ -144,12 +189,14 @@ mod models {
 }
 
 mod props {
+    use nalgebra::Vector3;
+
     use crate::{shaders::Shader, models::Model};
 
     pub struct Prop<'a> {
         model: &'a Model,
-        position: glm::Vec3,
-        scale: glm::Vec3
+        position: Vector3<f32>,
+        scale: Vector3<f32>
     }
 
     pub fn render_prop(shader: &Shader, prop: &Prop, display: &glium::Display) {
@@ -166,8 +213,8 @@ fn main() {
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-        let a = models::load_obj(format!("./pig.obj"),&display);
-            let shape = a.verts;
+    let a = models::load_obj(format!("./pig.obj"),&display);
+    let shape = a.verts;
 
 
     let image = image::load(Cursor::new(&include_bytes!("../engine_dependent/ellie_def/PiggoTexture.png")),
@@ -208,7 +255,7 @@ fn main() {
         }
 
         let mut target = display.draw();
-        target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
+        target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
 
         let t = (std::time::Instant::now() - start).as_secs_f32() * 2.0;
         let ang = t.sin();
@@ -220,7 +267,10 @@ fn main() {
             [0.0, 0.0, 0.0, 1.0f32]
         ];
 
-        let view = view_matrix(&[0.5, 0.2, -3.0], &[-0.5, -0.2, 3.0], &[0.0, 1.0, 0.0]);
+        let view = view_matrix(&[0.5, 0.2, 9.0], &[-0.5, -0.2, 3.0], &[0.0, 1.0, 0.0]);
+
+        let (width, height) = target.get_dimensions();
+        let mut _main_cam = cameras::craft(Vector2::new(width as f32, height as f32));
 
         let perspective = {
             let (width, height) = target.get_dimensions();
@@ -252,7 +302,7 @@ fn main() {
         };
 
         target.draw(&shape, glium::index::NoIndices(glium::index::PrimitiveType::TriangleStrip), &program,
-                    &uniform! { model: model, view: view, perspective: perspective,
+                    &uniform! { model: model, view: view, perspective: cameras::projectDROP(_main_cam),
                                 u_light: light, diffuse_tex: &diffuse_texture, normal_tex: &normal_map },
                     &params).unwrap();
         target.finish().unwrap();
@@ -293,49 +343,3 @@ fn view_matrix(position: &[f32; 3], direction: &[f32; 3], up: &[f32; 3]) -> [[f3
         [p[0], p[1], p[2], 1.0],
     ]
 }
-
-
-// fn main() {
-//     #[allow(unused_imports)]
-//     use glium::{glutin, Surface};
-
-//     let event_loop = glutin::event_loop::EventLoop::new();
-//     let wb = glutin::window::WindowBuilder::new();
-//     let cb = glutin::ContextBuilder::new();
-//     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
-
-//     let a = models::load_obj(format!("./pig.obj"),&display);
-//     let meow = a.verts;
-
-//     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TriangleStrip);
-
-//     let program = shaders::craft(format!("./shaders/base"), &display);
-
-//     event_loop.run(move |event, _, control_flow| {
-//         let next_frame_time = std::time::Instant::now() +
-//             std::time::Duration::from_nanos(16_666_667);
-//         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-
-//         match event {
-//             glutin::event::Event::WindowEvent { event, .. } => match event {
-//                 glutin::event::WindowEvent::CloseRequested => {
-//                     *control_flow = glutin::event_loop::ControlFlow::Exit;
-//                     return;
-//                 },
-//                 _ => return,
-//             },
-//             glutin::event::Event::NewEvents(cause) => match cause {
-//                 glutin::event::StartCause::ResumeTimeReached { .. } => (),
-//                 glutin::event::StartCause::Init => (),
-//                 _ => return,
-//             },
-//             _ => return,
-//         }
-
-//         let mut target = display.draw();
-//         target.clear_color(0.2, 0.3, 0.3, 1.0);
-//         target.draw(&meow, &indices, &program.program, &glium::uniforms::EmptyUniforms,
-//                     &Default::default()).unwrap();
-//         target.finish().unwrap();
-//     });
-// }
