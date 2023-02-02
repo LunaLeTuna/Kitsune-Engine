@@ -294,7 +294,7 @@ fn main() {
             .. Default::default()
         };
 
-        target.draw(&shape, glium::index::NoIndices(glium::index::PrimitiveType::TriangleStrip), &program,
+        target.draw(&shape, glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList), &program,
                     &uniform! { model: model, view: _main_cam.view_drop(), perspective: _main_cam.project_drop(),
                                 u_light: light, diffuse_tex: &diffuse_texture, normal_tex: &normal_map },
                     &params).unwrap();
