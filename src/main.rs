@@ -253,14 +253,14 @@ fn main() {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;
                     return;
                 },
-                _ => return,
+                _ => {},
             },
             glutin::event::Event::NewEvents(cause) => match cause {
                 glutin::event::StartCause::ResumeTimeReached { .. } => (),
                 glutin::event::StartCause::Init => (),
-                _ => return,
+                _ => {},
             },
-            _ => return,
+            _ => {},
         }
 
         let mut target = display.draw();
