@@ -280,7 +280,7 @@ fn main() {
         let mut _main_cam = cameras::craft(Vector2::new(width as f32, height as f32));
         _main_cam.look_at(Vector3::new(0.0, 0.0, 0.0));
         _main_cam.position = Vector3::new(5.0*t.sin(), 0.0, -6.0);
-        dbg!(5.0*t.sin());
+        // dbg!(5.0*t.sin());
         _main_cam.refresh();
 
         let light = [1.4, 0.4, 0.7f32];
