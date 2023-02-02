@@ -3,17 +3,18 @@ extern crate glium;
 
 use std::io::Cursor;
 
-use nalgebra::Vector2;
+use nalgebra::{Vector2, Vector3};
 
 mod cameras {
     use std::f32::consts::PI;
 
     use nalgebra::{Vector3, Vector2, Matrix4, Rotation, Rotation3, Matrix, Perspective3};
 
-    pub struct camera{
+    #[derive()]
+pub struct camera{
         pub name: String,
         pub projection: Perspective3<f32>,
-
+        pub view: Matrix4<f32>,
         pub position: Vector3<f32>,
         pub rotation: Rotation<f32,3>,
         pub up: Vector3<f32>,
@@ -23,30 +24,37 @@ mod cameras {
         pub fov: f32,
         pub aspect: f32
     }
+    impl camera {
+        pub fn look_at(&mut self, target: Vector3<f32>) {
+            let meow:Vector3<f32> = Vector3::new(self.position.x+target.x,self.position.y+target.y,self.position.z+target.z);
+            self.rotation = nalgebra::Rotation3::look_at_lh(&meow, &self.up);
+        }
+
+        pub fn project_drop(&self) -> [[f32; 4]; 4] {
+            let binding = self.projection.to_homogeneous();
+            let pogger = binding.as_ref();
+            *pogger
+        }
+
+        pub fn view_drop(&self) -> [[f32; 4]; 4] {
+            let pogger = self.view.try_into().unwrap();
+            // dbg!(pogger);
+            pogger
+        }
+
+        pub fn refresh(&mut self) {
+            let mut model = Matrix4::new_scaling(1.0);
+            model = model.append_translation(&self.position);
+            self.view = model;
+        }
+
+        pub fn reproject(&mut self, screen: Vector2<f32>) {
+            self.projection = Perspective3::new(screen.x/screen.y,radians(self.fov), self.near, self.far);
+        }
+    }
 
     fn radians(degrees: f32) -> f32 {
         degrees*PI/180.0
-    }
-
-    fn reproject(cam: &mut camera, screen: Vector2<f32>){
-        cam.projection = Perspective3::new(screen.x/screen.y,radians(cam.fov), cam.near, cam.far);
-    }
-
-    fn look_at(cam: &mut camera, target: Vector3<f32>){
-        let meow:Vector3<f32> = Vector3::new(cam.position.x+target.x,cam.position.y+target.y,cam.position.z+target.z);
-        cam.rotation = nalgebra::Rotation3::look_at_lh(&meow, &cam.up);
-    }
-
-    fn refresh(cam: &mut camera){
-        let mut model = Matrix4::new_scaling(1.0);
-        model.transform_vector(&cam.position);
-        println!("{}", model);
-    }
-
-    pub fn projectDROP(cam: camera) -> [[f32; 4]; 4] {
-        let binding = cam.projection.to_homogeneous();
-        let pogger =binding.as_ref();
-        *pogger
     }
 
     pub fn craft(screen: Vector2<f32>) -> camera {
@@ -59,8 +67,9 @@ mod cameras {
             position: Vector3::new(0.0, 0.0, 0.0),
             rotation: Rotation3::new(Vector3::new(0.0, 0.0, 0.0)),
             aspect: screen.x/screen.y,
+            view: Matrix4::new_scaling(1.0),
         };
-        reproject(&mut pog, screen);
+        pog.reproject(screen);
         pog
     }
 }
@@ -267,28 +276,12 @@ fn main() {
             [0.0, 0.0, 0.0, 1.0f32]
         ];
 
-        let view = view_matrix(&[0.5, 0.2, 9.0], &[-0.5, -0.2, 3.0], &[0.0, 1.0, 0.0]);
-
         let (width, height) = target.get_dimensions();
         let mut _main_cam = cameras::craft(Vector2::new(width as f32, height as f32));
-
-        let perspective = {
-            let (width, height) = target.get_dimensions();
-            let aspect_ratio = height as f32 / width as f32;
-
-            let fov: f32 = 3.141592 / 3.0;
-            let zfar = 1024.0;
-            let znear = 0.1;
-
-            let f = 1.0 / (fov / 2.0).tan();
-
-            [
-                [f *   aspect_ratio   ,    0.0,              0.0              ,   0.0],
-                [         0.0         ,     f ,              0.0              ,   0.0],
-                [         0.0         ,    0.0,  (zfar+znear)/(zfar-znear)    ,   1.0],
-                [         0.0         ,    0.0, -(2.0*zfar*znear)/(zfar-znear),   0.0],
-            ]
-        };
+        _main_cam.look_at(Vector3::new(0.0, 0.0, 0.0));
+        _main_cam.position = Vector3::new(5.0*t.sin(), 0.0, -6.0);
+        dbg!(5.0*t.sin());
+        _main_cam.refresh();
 
         let light = [1.4, 0.4, 0.7f32];
 
@@ -302,44 +295,9 @@ fn main() {
         };
 
         target.draw(&shape, glium::index::NoIndices(glium::index::PrimitiveType::TriangleStrip), &program,
-                    &uniform! { model: model, view: view, perspective: cameras::projectDROP(_main_cam),
+                    &uniform! { model: model, view: _main_cam.view_drop(), perspective: _main_cam.project_drop(),
                                 u_light: light, diffuse_tex: &diffuse_texture, normal_tex: &normal_map },
                     &params).unwrap();
         target.finish().unwrap();
     });
-}
-
-
-fn view_matrix(position: &[f32; 3], direction: &[f32; 3], up: &[f32; 3]) -> [[f32; 4]; 4] {
-    let f = {
-        let f = direction;
-        let len = f[0] * f[0] + f[1] * f[1] + f[2] * f[2];
-        let len = len.sqrt();
-        [f[0] / len, f[1] / len, f[2] / len]
-    };
-
-    let s = [up[1] * f[2] - up[2] * f[1],
-             up[2] * f[0] - up[0] * f[2],
-             up[0] * f[1] - up[1] * f[0]];
-
-    let s_norm = {
-        let len = s[0] * s[0] + s[1] * s[1] + s[2] * s[2];
-        let len = len.sqrt();
-        [s[0] / len, s[1] / len, s[2] / len]
-    };
-
-    let u = [f[1] * s_norm[2] - f[2] * s_norm[1],
-             f[2] * s_norm[0] - f[0] * s_norm[2],
-             f[0] * s_norm[1] - f[1] * s_norm[0]];
-
-    let p = [-position[0] * s_norm[0] - position[1] * s_norm[1] - position[2] * s_norm[2],
-             -position[0] * u[0] - position[1] * u[1] - position[2] * u[2],
-             -position[0] * f[0] - position[1] * f[1] - position[2] * f[2]];
-
-    [
-        [s_norm[0], u[0], f[0], 0.0],
-        [s_norm[1], u[1], f[1], 0.0],
-        [s_norm[2], u[2], f[2], 0.0],
-        [p[0], p[1], p[2], 1.0],
-    ]
 }
