@@ -3,7 +3,9 @@ extern crate glium;
 
 use std::io::Cursor;
 
-use nalgebra::{Vector2, Vector3};
+use nalgebra::{Vector2, Vector3, Rotation3};
+
+use crate::{props::render_prop, textures::Texture, models::Model};
 
 mod cameras {
     use std::f32::consts::PI;
@@ -197,19 +199,59 @@ mod models {
     }
 }
 
-mod props {
-    use nalgebra::Vector3;
+mod textures {
+    use std::path::Path;
 
-    use crate::{shaders::Shader, models::Model};
-
-    pub struct Prop<'a> {
-        model: &'a Model,
-        position: Vector3<f32>,
-        scale: Vector3<f32>
+    pub struct Texture {
+        pub name: String,
+        pub texture: glium::texture::SrgbTexture2d,
     }
 
-    pub fn render_prop(shader: &Shader, prop: &Prop, display: &glium::Display) {
+    pub fn craft(location: String, display: &glium::Display) -> Texture {
 
+        let image = image::open(&Path::new(&location)).ok().unwrap();
+        let mut img = image.into_rgba16();
+
+        let image_dimensions = img.dimensions();
+        let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&img.as_raw(), image_dimensions);
+        let map = glium::texture::SrgbTexture2d::new(display, image).unwrap();
+        Texture { 
+            name: String::from ("nya"),
+            texture: map,
+        }
+    }
+}
+
+mod props {
+    use std::ops::Add;
+
+    use glium::{Frame, DrawParameters, Surface};
+    use nalgebra::{Vector3, Matrix4, Rotation};
+
+    use crate::{shaders::{Shader, self}, models::Model, cameras::camera, textures::Texture};
+
+    pub struct Prop<'a> {
+        pub name: String,
+        pub model: &'a Model,
+        pub texture1: &'a Texture,
+        pub texture2: &'a Texture,
+        pub position: Vector3<f32>,
+        pub rotation: Vector3<f32>,
+        pub scale: Vector3<f32>
+    }
+
+    pub fn render_prop(target: &mut Frame, prop: &Prop, _main_cam: &camera,params: &DrawParameters, shader: &Shader) {
+
+        let mut model = Matrix4::new_scaling(1.0);
+        model = model.add(Matrix4::new_rotation(prop.rotation));
+        model = model.append_translation(&prop.position);
+        let binding = *model.as_ref();
+
+
+        target.draw(&prop.model.verts, glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList), &shader.program,
+                    &uniform! { model: binding, view: _main_cam.view_drop(), perspective: _main_cam.project_drop(),
+                                diffuse_tex: prop.texture1.texture, normal_tex: prop.texture2.texture },
+                    &params).unwrap();
     }
 }
 
@@ -222,24 +264,25 @@ fn main() {
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-    let a = models::load_obj(format!("./pig.obj"),&display);
-    let shape = a.verts;
+    let mut modelz:Vec<Model> = Vec::new();
+    let mut texturez:Vec<Texture> = Vec::new();
+
+    modelz.push(models::load_obj(format!("./pig.obj"),&display));
+    texturez.push(textures::craft(String::from("./engine_dependent/ellie_def/PiggoTexture.png"),&display));
+    texturez.push(textures::craft(String::from("./engine_dependent/ellie_def/PiggoTexture.png"),&display));
+
+    let pig = props::Prop{
+        name: String::from ("nya"),
+        model: &modelz[0],
+        position: Vector3::new(0.0,0.0,0.0),
+        scale: Vector3::new(1.0,1.0,1.0),
+        texture1: &texturez[0],
+        texture2: &texturez[0],
+        rotation: Vector3::new(0.0,0.0,0.0),
+    };
 
 
-    let image = image::load(Cursor::new(&include_bytes!("../engine_dependent/ellie_def/PiggoTexture.png")),
-                            image::ImageFormat::Png).unwrap().to_rgba8();
-    let image_dimensions = image.dimensions();
-    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-    let diffuse_texture = glium::texture::SrgbTexture2d::new(&display, image).unwrap();
-
-    let image = image::load(Cursor::new(&include_bytes!("../engine_dependent/ellie_def/PiggoTexture.png")),
-                            image::ImageFormat::Png).unwrap().to_rgba8();
-    let image_dimensions = image.dimensions();
-    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-    let normal_map = glium::texture::Texture2d::new(&display, image).unwrap();
-
-
-    let program = shaders::craft(format!("./shaders/base"), &display).program;
+    let program = shaders::craft(format!("./shaders/base"), &display);
 
     let start = std::time::Instant::now();
     event_loop.run(move |event, _, control_flow| {
@@ -269,7 +312,7 @@ fn main() {
         let t = (std::time::Instant::now() - start).as_secs_f32() * 2.0;
         let ang = t.sin();
         let (c, s) = (ang.cos(), ang.sin());
-        let model = [
+        let _model = [
             [  c, 0.0,   s, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [ -s, 0.0,   c, 0.0],
@@ -293,11 +336,7 @@ fn main() {
             },
             .. Default::default()
         };
-
-        target.draw(&shape, glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList), &program,
-                    &uniform! { model: model, view: _main_cam.view_drop(), perspective: _main_cam.project_drop(),
-                                u_light: light, diffuse_tex: &diffuse_texture, normal_tex: &normal_map },
-                    &params).unwrap();
+        render_prop(&mut target,&pig,&_main_cam,&params,&program);
         target.finish().unwrap();
     });
 }
