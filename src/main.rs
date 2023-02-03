@@ -1,15 +1,17 @@
 #[macro_use]
 extern crate glium;
 
-use std::io::Cursor;
+use std::{io::Cursor, collections::HashMap};
 
-use nalgebra::{Vector2, Vector3, Rotation3};
+use nalgebra::{Vector2, Vector3, Rotation3, Matrix4};
 
 pub mod cameras;
 pub mod shaders;
 pub mod models;
 pub mod textures;
 pub mod props;
+
+use {models::Model, textures::Texture, props::Prop, shaders::Shader};
 
 fn main() {
     #[allow(unused_imports)]
@@ -20,22 +22,26 @@ fn main() {
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-    let mut modelz:Vec<Model> = Vec::new();
-    let mut texturez:Vec<Texture> = Vec::new();
+    let mut propz: Vec<Prop> = Vec::new();
+    let mut modelz: HashMap<i32, Model> = HashMap::new();
+    let mut texturez: HashMap<i32, Texture> = HashMap::new();
 
-    modelz.push(models::load_obj(format!("./pig.obj"),&display));
-    texturez.push(textures::craft(String::from("./engine_dependent/ellie_def/PiggoTexture.png"),&display));
-    texturez.push(textures::craft(String::from("./engine_dependent/ellie_def/PiggoTexture.png"),&display));
+    modelz.insert(0, models::load_obj(format!("./pig.obj"),&display));
+
+    texturez.insert(0,textures::craft(String::from("./engine_dependent/ellie_def/PiggoTexture.png"),&display));
+    texturez.insert(1,textures::craft(String::from("./engine_dependent/ellie_def/PiggoTexture.png"),&display));
 
     let pig = props::Prop{
         name: String::from ("nya"),
-        model: &modelz[0],
+        model: 0,
         position: Vector3::new(0.0,0.0,0.0),
         scale: Vector3::new(1.0,1.0,1.0),
-        texture1: &texturez[0],
-        texture2: &texturez[0],
+        texture1: 0,
+        texture2: 1,
         rotation: Vector3::new(0.0,0.0,0.0),
     };
+
+    propz.push(pig);
 
 
     let program = shaders::craft(format!("./shaders/base"), &display);
@@ -66,14 +72,6 @@ fn main() {
         target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
 
         let t = (std::time::Instant::now() - start).as_secs_f32() * 2.0;
-        let ang = t.sin();
-        let (c, s) = (ang.cos(), ang.sin());
-        let _model = [
-            [  c, 0.0,   s, 0.0],
-            [0.0, 1.0, 0.0, 0.0],
-            [ -s, 0.0,   c, 0.0],
-            [0.0, 0.0, 0.0, 1.0f32]
-        ];
 
         let (width, height) = target.get_dimensions();
         let mut _main_cam = cameras::craft(Vector2::new(width as f32, height as f32));
@@ -92,7 +90,23 @@ fn main() {
             },
             .. Default::default()
         };
-        render_prop(&mut target,&pig,&_main_cam,&params,&program);
+        
+
+        for prop in &propz {
+            let mut model = Matrix4::new_scaling(1.0);
+            // model = model.add(Matrix4::new_rotation(prop.rotation));
+            model = model.append_translation(&prop.position);
+            let binding = *model.as_ref();
+
+
+            target.draw(&modelz.get(&prop.model).unwrap().verts, glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList), &program.program,
+            &uniform! { model: binding, view: _main_cam.view_drop(), perspective: _main_cam.project_drop(), u_light: light,
+                        diffuse_tex: &texturez.get(&prop.texture1).unwrap().texture, normal_tex: &texturez.get(&prop.texture2).unwrap().texture },
+            &params).unwrap();
+        }
+
+
+
         target.finish().unwrap();
     });
 }
