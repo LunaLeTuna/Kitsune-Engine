@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use std::{f32::consts::PI, ops::Add};
 
 use nalgebra::{Matrix4, Perspective3, Rotation, Rotation3, Vector2, Vector3};
 
@@ -7,7 +7,7 @@ pub struct Camera {
     pub projection: Perspective3<f32>,
     pub view: Matrix4<f32>,
     pub position: Vector3<f32>,
-    pub rotation: Rotation<f32, 3>,
+    pub rotation: Rotation3<f32>,
     pub up: Vector3<f32>,
 
     pub near: f32,
@@ -17,7 +17,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(screen: Vector2<f32>) -> Self {
+    pub fn craft(screen: Vector2<f32>) -> Self {
         let near = 0.1;
         let far = 1024.0;
         let fov = 60.0;
@@ -38,6 +38,10 @@ impl Camera {
         }
     }
 
+    pub fn set_rotation(&mut self, target: Vector3<f32>) {
+        self.rotation = nalgebra::Rotation3::new(target);
+    }
+
     pub fn look_at(&mut self, target: Vector3<f32>) {
         self.rotation = nalgebra::Rotation3::look_at_lh(&(self.position + target), &self.up);
     }
@@ -55,9 +59,8 @@ impl Camera {
     }
 
     pub fn refresh(&mut self) {
-        let mut model = Matrix4::new_scaling(1.0);
-
-        model = model.append_translation(&self.position);
+        let mut model = self.rotation.matrix().to_homogeneous();
+        model = model.prepend_translation(&self.position);
 
         self.view = model;
     }

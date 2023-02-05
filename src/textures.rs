@@ -7,7 +7,7 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn new(location: &str, display: &Display) -> Self {
+    pub fn craft(location: &str, display: &Display) -> Self {
         let image = image::open(location).ok().unwrap();
         let img = image.into_rgba16();
 
