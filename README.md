@@ -6,9 +6,15 @@ Now it's easy to compile on linux and windows.
 
 ## Building
 
-cargo run
+`$cargo run`
 
 ## Credits
 
+- [glium](https://github.com/glium/glium)
+- [nalgebra](https://nalgebra.org/)
+- [Rusty-V8](https://github.com/denoland/rusty_v8)
 - [Ty for pig "Ellie Pig" model](https://github.com/TyThePotato)
 
+## Project Ideas with KE
+- plug in the file system in to a git like repository
+- use wasm to allow for other programming languages

@@ -22,7 +22,7 @@ use nalgebra::{Matrix4, Vector2, Vector3, Rotation3};
 use textures::Texture;
 use winit::event::{Event, StartCause, WindowEvent};
 
-use v8;
+use v8::{self, Local};
 
 fn main() {
     //init gl and window
@@ -49,6 +49,7 @@ fn main() {
     let result = result.to_string(scope).unwrap();
     println!("{}", result.to_rust_string_lossy(scope));
 
+    //creates things
     let mut propz = HashMap::new();
     let mut modelz = HashMap::new();
     let mut texturez = HashMap::new();
@@ -80,6 +81,20 @@ fn main() {
 
     let start = Instant::now();
 
+    let key = v8::String::new(scope, "tick").unwrap();
+    let tick_funk = context.global(scope).get(scope, key.into()).unwrap();
+
+    //gotta shove this some how in to the actuall loop without being "static"
+    if tick_funk.is_function() {
+      let globe = context.global(scope);
+
+      let targ: v8::Local<v8::Value> = v8::Number::new(scope, 0.0).into();
+
+      let tick_object: v8::Local<v8::Object> = tick_funk.to_object(scope).unwrap();
+      let ftick_result = v8::Local::<v8::Function>::try_from(tick_object).unwrap().call(scope, globe.into(), &[targ]).unwrap();
+      dbg!(ftick_result.to_rust_string_lossy(scope));
+    }
+
     event_loop.run(move |event, _, control_flow| {
         let next_frame_time = Instant::now() + Duration::from_nanos(16_666_667);
 
@@ -89,6 +104,13 @@ fn main() {
             Event::WindowEvent { event, .. } => {
                 if event == WindowEvent::CloseRequested {
                     *control_flow = ControlFlow::Exit;
+
+                    //close v8
+                    unsafe {
+                      v8::V8::dispose();
+                    }
+                    v8::V8::dispose_platform();
+
                     return;
                 }
             }
@@ -141,6 +163,7 @@ fn main() {
                 view: main_cam.view_drop(),
                 perspective: main_cam.project_drop(),
                 u_light: light,
+                //not sure how I feel about getting over and over again
                 diffuse_tex: &texturez.get(&prop.texture1).unwrap().texture,
                 normal_tex: &texturez.get(&prop.texture2).unwrap().texture
             };
