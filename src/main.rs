@@ -39,15 +39,9 @@ fn main() {
     let isolate = &mut v8::Isolate::new(v8::CreateParams::default());
     let handle_scope = &mut v8::HandleScope::new(isolate);
     let context = v8::Context::new(handle_scope);
-    let scope = &mut v8::ContextScope::new(handle_scope, context);
+    let context_scope = &mut v8::ContextScope::new(handle_scope, context);
 
-    let js = fs::read_to_string(format!("./index.js")).unwrap();
-    let rogger = v8::String::new(scope, &js).unwrap();
-    let script = v8::Script::compile(scope, rogger, None).unwrap();
-    let result = script.run(scope).unwrap();
-
-    let result = result.to_string(scope).unwrap();
-    println!("{}", result.to_rust_string_lossy(scope));
+    fun_name(context_scope);
 
     //creates things
     let mut propz = HashMap::new();
@@ -81,20 +75,17 @@ fn main() {
 
     let start = Instant::now();
 
-    let key = v8::String::new(scope, "tick").unwrap();
-    let tick_funk = context.global(scope).get(scope, key.into()).unwrap();
-
-    //gotta shove this some how in to the actuall loop without being "static"
-    if tick_funk.is_function() {
-      let globe = context.global(scope);
-
-      let targ: v8::Local<v8::Value> = v8::Number::new(scope, 0.0).into();
-
-      let tick_object: v8::Local<v8::Object> = tick_funk.to_object(scope).unwrap();
-      let ftick_result = v8::Local::<v8::Function>::try_from(tick_object).unwrap().call(scope, globe.into(), &[targ]).unwrap();
-      dbg!(ftick_result.to_rust_string_lossy(scope));
+    /*
+    let mut i=0;
+    while 100>=i {
+        fun_name1(context_scope, context);
+        i+=1;
     }
+    */
 
+    fun_name1(context_scope, context); // I want this in the event loop
+
+    //this here does not return, borrowing variables not returning... I think
     event_loop.run(move |event, _, control_flow| {
         let next_frame_time = Instant::now() + Duration::from_nanos(16_666_667);
 
@@ -110,8 +101,6 @@ fn main() {
                       v8::V8::dispose();
                     }
                     v8::V8::dispose_platform();
-
-                    return;
                 }
             }
             Event::NewEvents(cause) => match cause {
@@ -181,4 +170,29 @@ fn main() {
 
         target.finish().unwrap();
     });
+}
+
+fn fun_name1(context_scope: &mut v8::ContextScope<v8::HandleScope>, context: Local<v8::Context>) {
+    let mut scope = v8::TryCatch::new(context_scope);
+    let key = v8::String::new(&mut scope, "tick").unwrap();
+    let tick_funk = context.global(&mut scope).get(&mut scope, key.into()).unwrap();
+    if tick_funk.is_function() {
+    let globe = context.global(&mut scope);
+
+    let targ: v8::Local<v8::Value> = v8::Number::new(&mut scope, 0.0).into();
+
+    let tick_object: v8::Local<v8::Object> = tick_funk.to_object(&mut scope).unwrap();
+    let ftick_result = v8::Local::<v8::Function>::try_from(tick_object).unwrap().call(&mut scope, globe.into(), &[targ]).unwrap();
+    dbg!(ftick_result.to_rust_string_lossy(&mut scope));
+    }
+}
+
+fn fun_name(context_scope: &mut v8::ContextScope<v8::HandleScope>) {
+    let mut scope = v8::TryCatch::new(context_scope);
+    let js = fs::read_to_string(format!("./index.js")).unwrap();
+    let rogger = v8::String::new(&mut scope, &js).unwrap();
+    let script = v8::Script::compile(&mut scope, rogger, None).unwrap();
+    let result = script.run(&mut scope).unwrap();
+    let result = result.to_string(&mut scope).unwrap();
+    println!("{}", result.to_rust_string_lossy(&mut scope));
 }

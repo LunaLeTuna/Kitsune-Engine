@@ -1,7 +1,8 @@
-
+var amongus = 0;
 
 function tick() {
-    return "awa"
+    amongus++;
+    return "awa "+amongus
 }
 
 "nya"+ " *exsplodes*"
