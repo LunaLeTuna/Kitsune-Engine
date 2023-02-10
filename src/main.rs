@@ -2,11 +2,12 @@
 extern crate glium;
 
 pub mod cameras;
-pub mod shaders;
 pub mod models;
-pub mod textures;
 pub mod props;
+pub mod shaders;
+pub mod textures;
 
+use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::fs;
 use std::time::{Duration, Instant};
@@ -18,20 +19,20 @@ use glium::glutin::window::WindowBuilder;
 use glium::glutin::ContextBuilder;
 use glium::index::{NoIndices, PrimitiveType};
 use glium::{Depth, Display, DrawParameters, Surface};
-use nalgebra::{Matrix4, Vector2, Vector3, Rotation3};
+use nalgebra::{Matrix4, Rotation3, Vector2, Vector3};
 use textures::Texture;
-use winit::event::{Event, StartCause, WindowEvent};
-
 use v8::{self, Local};
+use winit::event::{ElementState, Event, KeyboardInput, StartCause, VirtualKeyCode, WindowEvent};
+use winit::platform::run_return::EventLoopExtRunReturn;
 
 fn main() {
-    //init gl and window
-    let event_loop = EventLoop::new();
+    // init gl and window
+    let mut event_loop = EventLoop::new();
     let wb = WindowBuilder::new();
     let cb = ContextBuilder::new().with_depth_buffer(24);
     let display = Display::new(wb, cb, &event_loop).unwrap();
 
-    //init v8
+    // init v8
     let platform = v8::new_default_platform(0, false).make_shared();
     v8::V8::initialize_platform(platform);
     v8::V8::initialize();
@@ -43,7 +44,7 @@ fn main() {
 
     fun_name(context_scope);
 
-    //creates things
+    // creates things
     let mut propz = HashMap::new();
     let mut modelz = HashMap::new();
     let mut texturez = HashMap::new();
@@ -75,22 +76,8 @@ fn main() {
 
     let start = Instant::now();
 
-    /*
-    let mut i=0;
-    while 100>=i {
-        fun_name1(context_scope, context);
-        i+=1;
-    }
-    */
-
-    fun_name1(context_scope, context); // I want this in the event loop
-
-    //this here does not return, borrowing variables not returning... I think
-    event_loop.run(move |event, _, control_flow| {
-        let next_frame_time = Instant::now() + Duration::from_nanos(16_666_667);
-
-        *control_flow = ControlFlow::WaitUntil(next_frame_time);
-
+    event_loop.borrow_mut().run_return(|event, _, control_flow| {
+        *control_flow = ControlFlow::Poll;
         match event {
             Event::WindowEvent { event, .. } => {
                 if event == WindowEvent::CloseRequested {
@@ -111,6 +98,8 @@ fn main() {
             _ => {}
         }
 
+        fun_name1(context_scope, context);
+
         let mut target = display.draw();
         target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
 
@@ -120,7 +109,7 @@ fn main() {
 
         let mut main_cam = Camera::craft(Vector2::new(width as f32, height as f32));
 
-        pig.set_rotation(Vector3::new(3.14/2.0*t.sin(),0.0,0.0));
+        pig.set_rotation(Vector3::new(3.14 / 2.0 * t.sin(), 0.0, 0.0));
 
         main_cam.set_rotation(Vector3::new(0.0, 0.0, 0.0));
         main_cam.position = Vector3::new(0.0, 0.0, -6.0);
@@ -170,6 +159,10 @@ fn main() {
 
         target.finish().unwrap();
     });
+
+    // this here does not return, borrowing variables not returning... I think
+    // event_loop.run(move |event, _, control_flow| {
+    // });
 }
 
 fn fun_name1(context_scope: &mut v8::ContextScope<v8::HandleScope>, context: Local<v8::Context>) {
@@ -177,13 +170,16 @@ fn fun_name1(context_scope: &mut v8::ContextScope<v8::HandleScope>, context: Loc
     let key = v8::String::new(&mut scope, "tick").unwrap();
     let tick_funk = context.global(&mut scope).get(&mut scope, key.into()).unwrap();
     if tick_funk.is_function() {
-    let globe = context.global(&mut scope);
+        let globe = context.global(&mut scope);
 
-    let targ: v8::Local<v8::Value> = v8::Number::new(&mut scope, 0.0).into();
+        let targ: v8::Local<v8::Value> = v8::Number::new(&mut scope, 0.0).into();
 
-    let tick_object: v8::Local<v8::Object> = tick_funk.to_object(&mut scope).unwrap();
-    let ftick_result = v8::Local::<v8::Function>::try_from(tick_object).unwrap().call(&mut scope, globe.into(), &[targ]).unwrap();
-    dbg!(ftick_result.to_rust_string_lossy(&mut scope));
+        let tick_object: v8::Local<v8::Object> = tick_funk.to_object(&mut scope).unwrap();
+        let ftick_result = v8::Local::<v8::Function>::try_from(tick_object)
+            .unwrap()
+            .call(&mut scope, globe.into(), &[targ])
+            .unwrap();
+        // dbg!(ftick_result.to_rust_string_lossy(&mut scope));
     }
 }
 
