@@ -1,8 +1,7 @@
-var amongus = 0;
-
+let tether = 0;
 function tick() {
-    amongus++;
-    return "awa "+amongus
+    tether++;
+    return "loop "+tether;
 }
 
-"nya"+ " *exsplodes*"
+"avil"

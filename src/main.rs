@@ -21,7 +21,7 @@ use glium::index::{NoIndices, PrimitiveType};
 use glium::{Depth, Display, DrawParameters, Surface};
 use nalgebra::{Matrix4, Rotation3, Vector2, Vector3};
 use textures::Texture;
-use v8::{self, Local};
+use v8::{self, Local, Function};
 use winit::event::{ElementState, Event, KeyboardInput, StartCause, VirtualKeyCode, WindowEvent};
 use winit::platform::run_return::EventLoopExtRunReturn;
 
@@ -76,6 +76,18 @@ fn main() {
 
     let start = Instant::now();
 
+    let tick_funk = {
+        let mut scope = v8::TryCatch::new(context_scope);
+        let key = v8::String::new(&mut scope, "tick").unwrap();
+        let tick_funk = context.global(&mut scope).get(&mut scope, key.into()).unwrap();
+        let globe = context.global(&mut scope).clone();
+
+        let targ: v8::Local<v8::Value> = v8::Number::new(&mut scope, 0.0).into();
+
+        let tick_object: v8::Local<v8::Object> = tick_funk.to_object(&mut scope).unwrap();
+        v8::Local::<v8::Function>::try_from(tick_object).unwrap()
+    };
+
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
         match event {
@@ -98,7 +110,7 @@ fn main() {
             _ => {}
         }
 
-        fun_name1(context_scope, context);
+        fun_name1(context_scope, context, tick_funk);
 
         let mut target = display.draw();
         target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
@@ -165,22 +177,16 @@ fn main() {
     // });
 }
 
-fn fun_name1(context_scope: &mut v8::ContextScope<v8::HandleScope>, context: Local<v8::Context>) {
+fn fun_name1(context_scope: &mut v8::ContextScope<v8::HandleScope>, context: Local<v8::Context>, tick_funk: Local<Function>) {
     let mut scope = v8::TryCatch::new(context_scope);
-    let key = v8::String::new(&mut scope, "tick").unwrap();
-    let tick_funk = context.global(&mut scope).get(&mut scope, key.into()).unwrap();
-    if tick_funk.is_function() {
-        let globe = context.global(&mut scope);
+    let globe = context.global(&mut scope);
 
-        let targ: v8::Local<v8::Value> = v8::Number::new(&mut scope, 0.0).into();
-
-        let tick_object: v8::Local<v8::Object> = tick_funk.to_object(&mut scope).unwrap();
-        let ftick_result = v8::Local::<v8::Function>::try_from(tick_object)
-            .unwrap()
-            .call(&mut scope, globe.into(), &[targ])
-            .unwrap();
-        // dbg!(ftick_result.to_rust_string_lossy(&mut scope));
-    }
+    //let targ: v8::Local<v8::Value> = v8::Number::new(&mut scope, 0.0).into();
+    
+    let ftick_result = tick_funk
+        .call(&mut scope, globe.into(), &[])
+        .unwrap();
+    dbg!(ftick_result.to_rust_string_lossy(&mut scope));
 }
 
 fn fun_name(context_scope: &mut v8::ContextScope<v8::HandleScope>) {
