@@ -9,10 +9,14 @@ pub mod textures;
 
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
-use std::fs;
-use std::time::{Duration, Instant};
+use std::rc::Rc;
+use std::sync::mpsc;
+use std::sync::mpsc::Receiver;
+use std::time::Instant;
 
 use cameras::Camera;
+use deno_core::v8::{self, Local, Value};
+use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions};
 use glium::draw_parameters::DepthTest;
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::glutin::window::WindowBuilder;
@@ -21,9 +25,69 @@ use glium::index::{NoIndices, PrimitiveType};
 use glium::{Depth, Display, DrawParameters, Surface};
 use nalgebra::{Matrix4, Rotation3, Vector2, Vector3};
 use textures::Texture;
-use v8::{self, Local, Function};
-use winit::event::{ElementState, Event, KeyboardInput, StartCause, VirtualKeyCode, WindowEvent};
+use winit::event::{Event, StartCause, WindowEvent};
 use winit::platform::run_return::EventLoopExtRunReturn;
+
+async fn async_js_loop(file_path: &str, receiver: Receiver<()>) -> anyhow::Result<()> {
+    let mut js_runtime = JsRuntime::new(RuntimeOptions {
+        module_loader: Some(Rc::new(FsModuleLoader)),
+        ..Default::default()
+    });
+
+    let main_module = resolve_path(file_path)?;
+
+    let module_id = js_runtime.load_main_module(&main_module, None).await?;
+    let result = js_runtime.mod_evaluate(module_id);
+
+    js_runtime.run_event_loop(false).await?;
+
+    println!("loaded result {:?}", result.await);
+
+    let namespace = js_runtime.get_module_namespace(module_id)?;
+
+    let scope = &mut js_runtime.handle_scope();
+
+    let module_object = v8::Local::<v8::Object>::new(scope, namespace);
+
+    let module_properties = module_object.get_property_names(scope, Default::default()).unwrap();
+
+    println!("module properties: {}", module_properties.to_rust_string_lossy(scope));
+
+    let export_fn_name = v8::String::new(scope, "tick").unwrap();
+
+    dbg!(export_fn_name.to_rust_string_lossy(scope));
+
+    let export_fn = module_object
+        .get(scope, export_fn_name.into())
+        .expect("couldnt find fn");
+
+    let function = v8::Local::<v8::Function>::try_from(export_fn)?;
+
+    let empty: &[Local<Value>] = &[];
+    let recv: Local<Value> = module_object.into();
+
+    loop {
+        // if no message just fuck oiff until there is
+        if receiver.try_recv().is_err() {
+            continue;
+        }
+
+        let scope = &mut v8::HandleScope::new(scope);
+
+        function.call(scope, recv, empty);
+    }
+}
+
+fn js_thread(receiver: Receiver<()>) {
+    let tokio_thread = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+
+    tokio_thread.block_on(async_js_loop("./index.js", receiver)).unwrap();
+}
+
+fn create_js_thread(receiver: Receiver<()>) { let _ = std::thread::spawn(move || js_thread(receiver)); }
 
 fn main() {
     // init gl and window
@@ -31,18 +95,6 @@ fn main() {
     let wb = WindowBuilder::new();
     let cb = ContextBuilder::new().with_depth_buffer(24);
     let display = Display::new(wb, cb, &event_loop).unwrap();
-
-    // init v8
-    let platform = v8::new_default_platform(0, false).make_shared();
-    v8::V8::initialize_platform(platform);
-    v8::V8::initialize();
-
-    let isolate = &mut v8::Isolate::new(v8::CreateParams::default());
-    let handle_scope = &mut v8::HandleScope::new(isolate);
-    let context = v8::Context::new(handle_scope);
-    let context_scope = &mut v8::ContextScope::new(handle_scope, context);
-
-    fun_name(context_scope);
 
     // creates things
     let mut propz = HashMap::new();
@@ -61,7 +113,7 @@ fn main() {
     );
 
     let mut pig = props::Prop {
-        name: "nya".into(),
+        name: "nya",
         model: 0,
         position: Vector3::new(0.0, 0.0, 0.0),
         scale: Vector3::new(1.0, 1.0, 1.0),
@@ -76,17 +128,20 @@ fn main() {
 
     let start = Instant::now();
 
-    let tick_funk = {
-        let mut scope = v8::TryCatch::new(context_scope);
-        let key = v8::String::new(&mut scope, "tick").unwrap();
-        let tick_funk = context.global(&mut scope).get(&mut scope, key.into()).unwrap();
-        let globe = context.global(&mut scope).clone();
+    // ok so for the message sending probably want uhhhh the fucking thing
 
-        let targ: v8::Local<v8::Value> = v8::Number::new(&mut scope, 0.0).into();
+    // ok channel lets you send data
+    // do you have any data you want to send to js
 
-        let tick_object: v8::Local<v8::Object> = tick_funk.to_object(&mut scope).unwrap();
-        v8::Local::<v8::Function>::try_from(tick_object).unwrap()
-    };
+    // i think that might be wicked for having like
+    // function you call from js to rs to fetch that stuff
+    let (sender, receiver) = mpsc::channel::<()>();
+
+    // init v8/deno
+    // ok so this insta starts the tick loop which you probably dont want until the
+    // rest initializes also you probaly want to tie the tick to the render
+    // updates so youll need a way to like send messages tot htat thread
+    create_js_thread(receiver);
 
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
@@ -94,12 +149,6 @@ fn main() {
             Event::WindowEvent { event, .. } => {
                 if event == WindowEvent::CloseRequested {
                     *control_flow = ControlFlow::Exit;
-
-                    //close v8
-                    unsafe {
-                      v8::V8::dispose();
-                    }
-                    v8::V8::dispose_platform();
                 }
             }
             Event::NewEvents(cause) => match cause {
@@ -110,7 +159,9 @@ fn main() {
             _ => {}
         }
 
-        fun_name1(context_scope, context, tick_funk);
+        // this would send a message to tick to those threads but yeah
+        // game.tick()
+        // js.tick()
 
         let mut target = display.draw();
         target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
@@ -141,7 +192,11 @@ fn main() {
             ..Default::default()
         };
 
-        for (index, prop) in &propz {
+        // send message :)
+
+        sender.send(()).unwrap();
+
+        for (_index, prop) in &propz {
             let mut model = Matrix4::new_scaling(1.0);
 
             model = model.append_translation(&prop.position);
@@ -175,26 +230,4 @@ fn main() {
     // this here does not return, borrowing variables not returning... I think
     // event_loop.run(move |event, _, control_flow| {
     // });
-}
-
-fn fun_name1(context_scope: &mut v8::ContextScope<v8::HandleScope>, context: Local<v8::Context>, tick_funk: Local<Function>) {
-    let mut scope = v8::TryCatch::new(context_scope);
-    let globe = context.global(&mut scope);
-
-    //let targ: v8::Local<v8::Value> = v8::Number::new(&mut scope, 0.0).into();
-    
-    let ftick_result = tick_funk
-        .call(&mut scope, globe.into(), &[])
-        .unwrap();
-    dbg!(ftick_result.to_rust_string_lossy(&mut scope));
-}
-
-fn fun_name(context_scope: &mut v8::ContextScope<v8::HandleScope>) {
-    let mut scope = v8::TryCatch::new(context_scope);
-    let js = fs::read_to_string(format!("./index.js")).unwrap();
-    let rogger = v8::String::new(&mut scope, &js).unwrap();
-    let script = v8::Script::compile(&mut scope, rogger, None).unwrap();
-    let result = script.run(&mut scope).unwrap();
-    let result = result.to_string(&mut scope).unwrap();
-    println!("{}", result.to_rust_string_lossy(&mut scope));
 }

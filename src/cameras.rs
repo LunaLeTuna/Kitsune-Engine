@@ -1,6 +1,6 @@
-use std::{f32::consts::PI, ops::Add};
+use std::{f32::consts::PI};
 
-use nalgebra::{Matrix4, Perspective3, Rotation, Rotation3, Vector2, Vector3};
+use nalgebra::{Matrix4, Perspective3, Rotation3, Vector2, Vector3};
 
 pub struct Camera {
     pub name: String,
