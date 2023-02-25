@@ -141,7 +141,7 @@ fn main() {
 
     let start = Instant::now();
 
-    // ok so for the message sending probably want uhhhh the fucking thing
+    // ok so for the message sending probably want uhhhh the thing
 
     // ok channel lets you send data
     // do you have any data you want to send to js
