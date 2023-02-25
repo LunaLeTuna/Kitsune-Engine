@@ -28,66 +28,79 @@ use textures::Texture;
 use winit::event::{Event, StartCause, WindowEvent};
 use winit::platform::run_return::EventLoopExtRunReturn;
 
-async fn async_js_loop(file_path: &str, receiver: Receiver<()>) -> anyhow::Result<()> {
-    let mut js_runtime = JsRuntime::new(RuntimeOptions {
-        module_loader: Some(Rc::new(FsModuleLoader)),
-        ..Default::default()
-    });
+mod js_land{
+    use std::borrow::BorrowMut;
+    use std::collections::HashMap;
+    use std::rc::Rc;
+    use std::sync::mpsc;
+    use std::sync::mpsc::Receiver;
+    use std::time::Instant;
 
-    let main_module = resolve_path(file_path)?;
 
-    let module_id = js_runtime.load_main_module(&main_module, None).await?;
-    let result = js_runtime.mod_evaluate(module_id);
+    use deno_core::v8::{self, Local, Value};
+    use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions};
 
-    js_runtime.run_event_loop(false).await?;
+    async fn async_js_loop(file_path: &str, receiver: Receiver<()>) -> anyhow::Result<()> {
+        let mut js_runtime = JsRuntime::new(RuntimeOptions {
+            module_loader: Some(Rc::new(FsModuleLoader)),
+            ..Default::default()
+        });
 
-    println!("loaded result {:?}", result.await);
+        let main_module = resolve_path(file_path)?;
 
-    let namespace = js_runtime.get_module_namespace(module_id)?;
+        let module_id = js_runtime.load_main_module(&main_module, None).await?;
+        let result = js_runtime.mod_evaluate(module_id);
 
-    let scope = &mut js_runtime.handle_scope();
+        js_runtime.run_event_loop(false).await?;
 
-    let module_object = v8::Local::<v8::Object>::new(scope, namespace);
+        println!("loaded result {:?}", result.await);
 
-    let module_properties = module_object.get_property_names(scope, Default::default()).unwrap();
+        let namespace = js_runtime.get_module_namespace(module_id)?;
 
-    println!("module properties: {}", module_properties.to_rust_string_lossy(scope));
+        let scope = &mut js_runtime.handle_scope();
 
-    let export_fn_name = v8::String::new(scope, "tick").unwrap();
+        let module_object = v8::Local::<v8::Object>::new(scope, namespace);
 
-    dbg!(export_fn_name.to_rust_string_lossy(scope));
+        let module_properties = module_object.get_property_names(scope, Default::default()).unwrap();
 
-    let export_fn = module_object
-        .get(scope, export_fn_name.into())
-        .expect("couldnt find fn");
+        println!("module properties: {}", module_properties.to_rust_string_lossy(scope));
 
-    let function = v8::Local::<v8::Function>::try_from(export_fn)?;
+        let export_fn_name = v8::String::new(scope, "tick").unwrap();
 
-    let empty: &[Local<Value>] = &[];
-    let recv: Local<Value> = module_object.into();
+        dbg!(export_fn_name.to_rust_string_lossy(scope));
 
-    loop {
-        // if no message just fuck oiff until there is
-        if receiver.try_recv().is_err() {
-            continue;
+        let export_fn = module_object
+            .get(scope, export_fn_name.into())
+            .expect("couldnt find fn");
+
+        let function = v8::Local::<v8::Function>::try_from(export_fn)?;
+
+        let empty: &[Local<Value>] = &[];
+        let recv: Local<Value> = module_object.into();
+
+        loop {
+            // if no message just dont until there is
+            if receiver.try_recv().is_err() {
+                continue;
+            }
+
+            let scope = &mut v8::HandleScope::new(scope);
+
+            function.call(scope, recv, empty);
         }
-
-        let scope = &mut v8::HandleScope::new(scope);
-
-        function.call(scope, recv, empty);
     }
+
+    fn js_thread(receiver: Receiver<()>) {
+        let tokio_thread = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        tokio_thread.block_on(async_js_loop("./index.js", receiver)).unwrap();
+    }
+
+    pub fn create_js_thread(receiver: Receiver<()>) { let _ = std::thread::spawn(move || js_thread(receiver)); }
 }
-
-fn js_thread(receiver: Receiver<()>) {
-    let tokio_thread = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .unwrap();
-
-    tokio_thread.block_on(async_js_loop("./index.js", receiver)).unwrap();
-}
-
-fn create_js_thread(receiver: Receiver<()>) { let _ = std::thread::spawn(move || js_thread(receiver)); }
 
 fn main() {
     // init gl and window
@@ -141,7 +154,7 @@ fn main() {
     // ok so this insta starts the tick loop which you probably dont want until the
     // rest initializes also you probaly want to tie the tick to the render
     // updates so youll need a way to like send messages tot htat thread
-    create_js_thread(receiver);
+    js_land::create_js_thread(receiver);
 
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
