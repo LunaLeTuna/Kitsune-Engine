@@ -23,7 +23,9 @@ use glium::glutin::window::WindowBuilder;
 use glium::glutin::ContextBuilder;
 use glium::index::{NoIndices, PrimitiveType};
 use glium::{Depth, Display, DrawParameters, Surface};
+use js_land::KE_THREAD_INFORMER;
 use nalgebra::{Matrix4, Rotation3, Vector2, Vector3};
+use props::Prop;
 use textures::Texture;
 use winit::event::{Event, StartCause, WindowEvent};
 use winit::platform::run_return::EventLoopExtRunReturn;
@@ -40,7 +42,20 @@ mod js_land{
     use deno_core::v8::{self, Local, Value};
     use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions};
 
-    async fn async_js_loop(file_path: &str, receiver: Receiver<()>) -> anyhow::Result<()> {
+    //basically this enum allows the js thread to have access to the diffrent prop and resource has maps
+    pub enum KE_THREAD_INFORMER {
+        Swag(String),
+        Based(u32),
+        Awa,
+    }
+
+    enum KE_THREAD_WIN {
+        Swag(String),
+        Based(u32),
+        Awa,
+    }
+
+    async fn async_js_loop(file_path: &str, receiver: Receiver<KE_THREAD_INFORMER>) -> anyhow::Result<()> {
         let mut js_runtime = JsRuntime::new(RuntimeOptions {
             module_loader: Some(Rc::new(FsModuleLoader)),
             ..Default::default()
@@ -90,7 +105,7 @@ mod js_land{
         }
     }
 
-    fn js_thread(receiver: Receiver<()>) {
+    fn js_thread(receiver: Receiver<KE_THREAD_INFORMER>) {
         let tokio_thread = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -99,7 +114,7 @@ mod js_land{
         tokio_thread.block_on(async_js_loop("./index.js", receiver)).unwrap();
     }
 
-    pub fn create_js_thread(receiver: Receiver<()>) { let _ = std::thread::spawn(move || js_thread(receiver)); }
+    pub fn create_js_thread(receiver: Receiver<KE_THREAD_INFORMER>) { let _ = std::thread::spawn(move || js_thread(receiver)); }
 }
 
 fn main() {
@@ -125,7 +140,8 @@ fn main() {
         Texture::craft("./engine_dependent/ellie_def/PiggoTexture.png", &display),
     );
 
-    let mut pig = props::Prop {
+
+    let mut pig = Prop {
         name: "nya",
         model: 0,
         position: Vector3::new(0.0, 0.0, 0.0),
@@ -134,7 +150,7 @@ fn main() {
         texture2: 1,
         rotation: Rotation3::new(Vector3::zeros()),
     };
-
+    
     propz.insert(0, pig);
 
     let program = shaders::craft("./shaders/base", &display);
@@ -148,13 +164,15 @@ fn main() {
 
     // i think that might be wicked for having like
     // function you call from js to rs to fetch that stuff
-    let (sender, receiver) = mpsc::channel::<()>();
+    let (sender, receiver) = mpsc::channel::<KE_THREAD_INFORMER>();
 
     // init v8/deno
     // ok so this insta starts the tick loop which you probably dont want until the
     // rest initializes also you probaly want to tie the tick to the render
     // updates so youll need a way to like send messages tot htat thread
     js_land::create_js_thread(receiver);
+
+    let mut az: f32 = 0.0;
 
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
@@ -172,6 +190,8 @@ fn main() {
             _ => {}
         }
 
+        az=az+1f32;
+
         // this would send a message to tick to those threads but yeah
         // game.tick()
         // js.tick()
@@ -185,7 +205,8 @@ fn main() {
 
         let mut main_cam = Camera::craft(Vector2::new(width as f32, height as f32));
 
-        pig.set_rotation(Vector3::new(3.14 / 2.0 * t.sin(), 0.0, 0.0));
+        propz.get_mut(&0).unwrap().set_rotation(Vector3::new(3.14 / 2.0 * az.sin(), 0.0, 0.0));
+        propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 2.0 * az.sin(), 0.0, 0.0);
 
         main_cam.set_rotation(Vector3::new(0.0, 0.0, 0.0));
         main_cam.position = Vector3::new(0.0, 0.0, -6.0);
@@ -207,7 +228,7 @@ fn main() {
 
         // send message :)
 
-        sender.send(()).unwrap();
+        sender.send(KE_THREAD_INFORMER::Awa).unwrap();
 
         for (_index, prop) in &propz {
             let mut model = Matrix4::new_scaling(1.0);

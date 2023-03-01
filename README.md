@@ -19,9 +19,9 @@ run this:
 
 ## Credits
 
-- [glium](https://github.com/glium/glium)
-- [nalgebra](https://nalgebra.org/)
-- [Rusty-V8](https://github.com/denoland/rusty_v8)
+- [Glium](https://github.com/glium/glium)
+- [Nalgebra](https://nalgebra.org/)
+- [Deno](https://github.com/denoland/)
 - [Ty for pig "Ellie Pig" model](https://github.com/TyThePotato)
 
 ## Project Ideas with KE
