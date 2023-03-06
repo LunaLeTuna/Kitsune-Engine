@@ -120,17 +120,17 @@ mod js_land{
                         let mut propz = propz.write().expect("RwLock poisoned");
 
                         propz.get_mut(&0).unwrap().set_rotation(Vector3::new(2.0, 0.0, 0.0));
-                        propz.get_mut(&0).unwrap().position = Vector3::new(1.0, 0.0, 0.0);
+                        propz.get_mut(&0).unwrap().position = Vector3::new(4.0, 0.0, 0.0);
 
 
                         has_propz = true;
+                        println!("meow");
                     },
                     KE_THREAD_INFORMER::Awa => (),
                 }
             }
 
             if has_propz {
-                print!("meow");
                 //let propz = propz.write().expect("RwLock poisoned");
                 // propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));
                 // propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
