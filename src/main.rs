@@ -10,7 +10,7 @@ pub mod textures;
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc, RwLock};
 use std::sync::mpsc::Receiver;
 use std::time::Instant;
 
@@ -34,6 +34,7 @@ mod js_land{
     use std::borrow::BorrowMut;
     use std::collections::HashMap;
     use std::rc::Rc;
+    use std::sync::{Arc, RwLock};
     use std::sync::mpsc::{self, Sender};
     use std::sync::mpsc::Receiver;
     use std::time::Instant;
@@ -42,10 +43,12 @@ mod js_land{
     use deno_core::v8::{self, Local, Value};
     use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions};
 
+    use crate::props::Prop;
+
     //basically this enum allows the js thread to have access to the diffrent prop and resource has maps
-    pub enum KE_THREAD_INFORMER {
+    pub enum KE_THREAD_INFORMER<'a> {
         Swag(String),
-        Based(u32),
+        propz_list(Arc<RwLock<HashMap<i32, Prop<'a>>>>),
         Awa,
     }
 
@@ -56,7 +59,7 @@ mod js_land{
         Awa,
     }
 
-    async fn async_js_loop(file_path: &str, receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>) -> anyhow::Result<()> {
+    async fn async_js_loop(file_path: &str, receiver: Receiver<KE_THREAD_INFORMER<'_>>, sender: Sender<KE_THREAD_WIN>) -> anyhow::Result<()> {
         let mut js_runtime = JsRuntime::new(RuntimeOptions {
             module_loader: Some(Rc::new(FsModuleLoader)),
             ..Default::default()
@@ -96,10 +99,32 @@ mod js_land{
 
         sender.send(KE_THREAD_WIN::js_ready).unwrap();
 
+        let mut has_propz = false;
+        let mut propz: Arc<RwLock<HashMap<i32, Prop<'_>>>>;
+
         loop {
             // if no message just dont until there is
-            if receiver.try_recv().is_err() {
+
+            let thread_mail = receiver.try_recv();
+
+            if thread_mail.is_err() {
                 continue;
+            }else{
+                match thread_mail.unwrap() {
+                    KE_THREAD_INFORMER::Swag(_) => (),
+                    KE_THREAD_INFORMER::propz_list(props) => {
+                        println!("KE JS THREAD got prop list!");
+                        propz = props;
+                        has_propz = true;
+                    },
+                    KE_THREAD_INFORMER::Awa => (),
+                }
+            }
+
+            if has_propz {
+                //let propz = propz.write().expect("RwLock poisoned");
+                // propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));
+                // propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
             }
 
             let scope = &mut v8::HandleScope::new(scope);
@@ -117,7 +142,7 @@ mod js_land{
         tokio_thread.block_on(async_js_loop("./index.js", receiver, sender)).unwrap();
     }
 
-    pub fn create_js_thread(receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>) { let _ = std::thread::spawn(move || js_thread(receiver, sender)); }
+    pub fn create_js_thread(receiver: Receiver<KE_THREAD_INFORMER<'static>>, sender: Sender<KE_THREAD_WIN>) { let _ = std::thread::spawn(move || js_thread(receiver, sender)); }
 }
 
 fn main() {
@@ -128,7 +153,7 @@ fn main() {
     let display = Display::new(wb, cb, &event_loop).unwrap();
 
     // creates things
-    let mut propz = HashMap::new();
+    let propz: Arc<RwLock<HashMap<i32, Prop<'static>>>> = Arc::new(RwLock::new(HashMap::new()));
     let mut modelz = HashMap::new();
     let mut texturez = HashMap::new();
 
@@ -144,17 +169,20 @@ fn main() {
     );
 
 
-    let mut pig = Prop {
-        name: "nya",
-        model: 0,
-        position: Vector3::new(0.0, 0.0, 0.0),
-        scale: Vector3::new(1.0, 1.0, 1.0),
-        texture1: 0,
-        texture2: 1,
-        rotation: Rotation3::new(Vector3::zeros()),
-    };
-    
-    propz.insert(0, pig);
+    {
+        let mut propz = propz.write().expect("RwLock poisoned");
+        let pig = Prop {
+            name: "nya",
+            model: 0,
+            position: Vector3::new(0.0, 0.0, 0.0),
+            scale: Vector3::new(1.0, 1.0, 1.0),
+            texture1: 0,
+            texture2: 1,
+            rotation: Rotation3::new(Vector3::zeros()),
+        };
+        
+        propz.insert(0, pig);
+    }
 
     let program = shaders::craft("./shaders/base", &display);
 
@@ -175,6 +203,8 @@ fn main() {
     // rest initializes also you probaly want to tie the tick to the render
     // updates so youll need a way to like send messages tot htat thread
     js_land::create_js_thread(receiver, senderb);
+
+    sender.send(KE_THREAD_INFORMER::propz_list(propz.clone()));
 
     let mut az: f32 = 0.0;
 
@@ -198,13 +228,23 @@ fn main() {
 
         az=az+1f32;
 
-        if !js_ready {
-            if receiverb.try_recv().is_err() {
-                return;
-            }else{
-                js_ready = true;
+        let thread_mail = receiverb.try_recv();
+
+        if thread_mail.is_err() {
+            return;
+        }else{
+            match thread_mail.unwrap() {
+                KE_THREAD_WIN::js_ready => {
+                    println!("nya!");
+                    js_ready = true;
+                },
+                KE_THREAD_WIN::Swag(_) => (),
+                KE_THREAD_WIN::Based(_) => (),
+                KE_THREAD_WIN::Awa => (),
             }
         }
+
+        let propz = propz.read().expect("RwLock poisoned");
 
         // this would send a message to tick to those threads but yeah
         // game.tick()
@@ -219,8 +259,8 @@ fn main() {
 
         let mut main_cam = Camera::craft(Vector2::new(width as f32, height as f32));
 
-        propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));
-        propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
+        // propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));
+        // propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
 
         main_cam.set_rotation(Vector3::new(0.0, 0.0, 0.0));
         main_cam.position = Vector3::new(0.0, 0.0, -6.0);
@@ -244,7 +284,7 @@ fn main() {
 
         sender.send(KE_THREAD_INFORMER::Awa).unwrap();
 
-        for (_index, prop) in &propz {
+        propz.iter().for_each(|(_index, prop)| {
 
             let model = &prop.rotation.matrix().to_homogeneous().append_translation(&prop.position);
 
@@ -269,7 +309,7 @@ fn main() {
                     &params,
                 )
                 .unwrap();
-        }
+        });
 
         target.finish().unwrap();
     });
