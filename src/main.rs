@@ -124,7 +124,7 @@ mod js_land{
 
 
                         has_propz = true;
-                        println!("meow");
+                        //println!("meow");
                     },
                     KE_THREAD_INFORMER::Awa => (),
                 }
@@ -239,9 +239,7 @@ fn main() {
 
         let thread_mail = receiverb.try_recv();
 
-        if thread_mail.is_err() {
-            return;
-        }else{
+        if !thread_mail.is_err() {
             match thread_mail.unwrap() {
                 KE_THREAD_WIN::js_ready => {
                     println!("nya!");
