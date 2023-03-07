@@ -47,9 +47,8 @@ mod js_land{
     use crate::props::Prop;
 
     //basically this enum allows the js thread to have access to the diffrent prop and resource has maps
-    pub enum KE_THREAD_INFORMER<'a> {
+    pub enum KE_THREAD_INFORMER {
         Swag(String),
-        propz_list(Arc<RwLock<HashMap<i32, Prop<'a>>>>),
         Awa,
     }
 
@@ -60,7 +59,7 @@ mod js_land{
         Awa,
     }
 
-    async fn async_js_loop(file_path: &str, receiver: Receiver<KE_THREAD_INFORMER<'_>>, sender: Sender<KE_THREAD_WIN>) -> anyhow::Result<()> {
+    async fn async_js_loop(file_path: &str, receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop<'_>>>>) -> anyhow::Result<()> {
         let mut js_runtime = JsRuntime::new(RuntimeOptions {
             module_loader: Some(Rc::new(FsModuleLoader)),
             ..Default::default()
@@ -100,10 +99,10 @@ mod js_land{
 
         sender.send(KE_THREAD_WIN::js_ready).unwrap();
 
-        let mut has_propz = false;
-        let mut propz: Arc<RwLock<HashMap<i32, Prop<'_>>>>;
+        let mut az: f32 = 0.0;
 
         loop {
+            az=az+1f32;
             // if no message just dont until there is
 
             let thread_mail = receiver.try_recv();
@@ -112,29 +111,14 @@ mod js_land{
                 continue;
             }else{
                 match thread_mail.unwrap() {
-                    KE_THREAD_INFORMER::Swag(_) => (),
-                    KE_THREAD_INFORMER::propz_list(props) => {
-                        println!("KE JS THREAD got prop list!");
-                        propz = props;
-
-                        let mut propz = propz.write().expect("RwLock poisoned");
-
-                        propz.get_mut(&0).unwrap().set_rotation(Vector3::new(2.0, 0.0, 0.0));
-                        propz.get_mut(&0).unwrap().position = Vector3::new(4.0, 0.0, 0.0);
-
-
-                        has_propz = true;
-                        //println!("meow");
-                    },
                     KE_THREAD_INFORMER::Awa => (),
+                    KE_THREAD_INFORMER::Swag(_) => todo!(),
                 }
             }
 
-            if has_propz {
-                //let propz = propz.write().expect("RwLock poisoned");
-                // propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));
-                // propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
-            }
+            let mut propz = propz.write().expect("RwLock poisoned");
+            propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));
+            propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
 
             let scope = &mut v8::HandleScope::new(scope);
 
@@ -142,16 +126,16 @@ mod js_land{
         }
     }
 
-    fn js_thread(receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>) {
+    fn js_thread(receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop<'_>>>>) {
         let tokio_thread = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .unwrap();
 
-        tokio_thread.block_on(async_js_loop("./index.js", receiver, sender)).unwrap();
+        tokio_thread.block_on(async_js_loop("./index.js", receiver, sender, propz)).unwrap();
     }
 
-    pub fn create_js_thread(receiver: Receiver<KE_THREAD_INFORMER<'static>>, sender: Sender<KE_THREAD_WIN>) { let _ = std::thread::spawn(move || js_thread(receiver, sender)); }
+    pub fn create_js_thread(receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop<'static>>>>) { let _ = std::thread::spawn(move || js_thread(receiver, sender, propz)); }
 }
 
 fn main() {
@@ -211,11 +195,7 @@ fn main() {
     // ok so this insta starts the tick loop which you probably dont want until the
     // rest initializes also you probaly want to tie the tick to the render
     // updates so youll need a way to like send messages tot htat thread
-    js_land::create_js_thread(receiver, senderb);
-
-    sender.send(KE_THREAD_INFORMER::propz_list(propz.clone()));
-
-    let mut az: f32 = 0.0;
+    js_land::create_js_thread(receiver, senderb, propz.clone());
 
     let mut js_ready = false;
 
@@ -234,8 +214,6 @@ fn main() {
             },
             _ => {}
         }
-
-        az=az+1f32;
 
         let thread_mail = receiverb.try_recv();
 
