@@ -1,5 +1,7 @@
 let tether = 0;
 
+Deno.core.ops.create_prop();
+
 export function tick() {
   tether++;
 
@@ -7,6 +9,7 @@ export function tick() {
   //   swag: "wicked",
   //   tether,
   // };
+  //Deno.core.print(tether+"\n");
   return tether;
 }
 

@@ -14,16 +14,18 @@ use std::sync::{mpsc, Arc, RwLock};
 use std::sync::mpsc::Receiver;
 use std::time::Instant;
 
+#[macro_use]
+extern crate lazy_static;
 use cameras::Camera;
 use deno_core::v8::{self, Local, Value};
-use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions};
+use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions, op};
 use glium::draw_parameters::DepthTest;
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::glutin::window::WindowBuilder;
 use glium::glutin::ContextBuilder;
 use glium::index::{NoIndices, PrimitiveType};
 use glium::{Depth, Display, DrawParameters, Surface};
-use js_land::{KE_THREAD_INFORMER, KE_THREAD_WIN};
+use js_land::{KE_THREAD_INFORMER, KE_THREAD_WIN, propi};
 use nalgebra::{Matrix4, Rotation3, Vector2, Vector3};
 use props::Prop;
 use textures::Texture;
@@ -41,9 +43,10 @@ mod js_land{
 
 
     use deno_core::v8::{self, Local, Value};
-    use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions};
-    use nalgebra::Vector3;
+    use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions, op, Extension};
+    use nalgebra::{Vector3, Rotation3};
 
+    use crate::models::Model;
     use crate::props::Prop;
 
     //basically this enum allows the js thread to have access to the diffrent prop and resource has maps
@@ -59,8 +62,52 @@ mod js_land{
         Awa,
     }
 
+    lazy_static! {
+        pub static ref propi: Arc<RwLock<HashMap<i32, Prop<'static>>>> = Arc::new(RwLock::new(HashMap::new()));
+    }
+
+    #[op]
+    fn op_sum(nums: Vec<f64>) -> Result<f64, deno_core::error::AnyError> {
+    // Sum inputs
+    let sum = nums.iter().fold(0.0, |a, v| a + v);
+    // return as a Result<f64, AnyError>
+    Ok(sum)
+    }
+
+    #[op]
+    fn create_prop() -> Result<f64, deno_core::error::AnyError> {
+        let mut propz = propi.write().expect("RwLock poisoned");
+        let pig = Prop {
+            name: "nya",
+            model: 0,
+            position: Vector3::new(0.0, 0.0, 0.0),
+            scale: Vector3::new(1.0, 1.0, 1.0),
+            texture1: 0,
+            texture2: 1,
+            rotation: Rotation3::new(Vector3::zeros()),
+        };
+
+        let wopper = propz.len() as i32;
+        propz.insert(wopper, pig);
+        
+        Ok(0.0)
+    }
+
+
     async fn async_js_loop(file_path: &str, receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop<'_>>>>) -> anyhow::Result<()> {
+        
+        let ext = Extension::builder("my_ext")
+        .ops(vec![
+          // An op for summing an array of numbers
+          // The op-layer automatically deserializes inputs
+          // and serializes the returned Result & value
+          create_prop::decl(),
+          op_sum::decl(),
+        ])
+        .build();
+        
         let mut js_runtime = JsRuntime::new(RuntimeOptions {
+            extensions: vec![ext],
             module_loader: Some(Rc::new(FsModuleLoader)),
             ..Default::default()
         });
@@ -102,7 +149,7 @@ mod js_land{
         let mut az: f32 = 0.0;
 
         loop {
-            az=az+1f32;
+            az=az+0.0001;
             // if no message just dont until there is
 
             let thread_mail = receiver.try_recv();
@@ -121,6 +168,10 @@ mod js_land{
             propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
 
             let scope = &mut v8::HandleScope::new(scope);
+
+            if az > 1000.0 {az = 0.0}
+
+            //println!("meow {}", az);
 
             function.call(scope, recv, empty);
         }
@@ -146,7 +197,7 @@ fn main() {
     let display = Display::new(wb, cb, &event_loop).unwrap();
 
     // creates things
-    let propz: Arc<RwLock<HashMap<i32, Prop<'static>>>> = Arc::new(RwLock::new(HashMap::new()));
+    let mut propz = propi.clone();
     let mut modelz = HashMap::new();
     let mut texturez = HashMap::new();
 

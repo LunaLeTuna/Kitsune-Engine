@@ -15,15 +15,15 @@ pub fn convert_ke_to_gl(ver: &[Vertex], display: &glium::Display) -> VertexBuffe
     VertexBuffer::new(display, ver).unwrap()
 }
 
-pub struct Model {
-    pub name: String,
+pub struct Model<'a> {
+    pub name: &'a str,
     pub verts: VertexBuffer<Vertex>,
 }
 
 fn parsef(string: &str) -> f32 { string.parse().unwrap_or(-1.0) }
 fn parse(string: &str) -> usize { string.parse().unwrap_or(0) }
 
-pub fn load_obj(location: &str, display: &glium::Display) -> Model {
+pub fn load_obj<'a>(location: &'a str, display: &'a glium::Display) -> Model<'a> {
     let file = fs::read_to_string(location).unwrap();
 
     let mut pos = vec![];

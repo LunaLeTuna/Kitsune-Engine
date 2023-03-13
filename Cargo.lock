@@ -1126,6 +1126,7 @@ dependencies = [
  "glium",
  "glutin 0.30.3",
  "image",
+ "lazy_static",
  "nalgebra",
  "tokio",
  "winit",
