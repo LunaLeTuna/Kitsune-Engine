@@ -9,6 +9,7 @@ pub struct Prop<'a> {
     pub position: Vector3<f32>,
     pub rotation: Rotation3<f32>,
     pub scale: Vector3<f32>,
+    pub render: bool
 }
 impl Prop<'_> {
     pub fn set_rotation(&mut self, target: Vector3<f32>) {

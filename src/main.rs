@@ -42,9 +42,11 @@ mod js_land{
     use std::time::Instant;
 
 
+    use deno_core::serde::Serialize;
     use deno_core::v8::{self, Local, Value};
-    use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions, op, Extension};
+    use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions, op, Extension, ResourceId};
     use nalgebra::{Vector3, Rotation3};
+    use serde::Deserialize;
 
     use crate::models::Model;
     use crate::props::Prop;
@@ -74,10 +76,51 @@ mod js_land{
     Ok(sum)
     }
 
+
+    #[derive(Deserialize, Default, Debug)]
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Vec3 {
+    x: f32,
+    y: f32,
+    z: f32,
+    }
+
     #[op]
-    fn create_prop() -> Result<f64, deno_core::error::AnyError> {
+    fn create_vec3(x: f32, y: f32, z: f32) -> Result<Vec3, deno_core::error::AnyError> {
+        
+        Ok(Vec3{
+            x:x,
+            y:y,
+            z:z
+        })
+    }
+
+    #[derive(Deserialize, Default, Debug)]
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    
+    pub struct PropV8 {
+        rid: ResourceId
+    }
+
+    #[op]
+    fn mod_prop_pos(prop: PropV8, vec3: Vec3) -> Result<(), deno_core::error::AnyError> {
         let mut propz = propi.write().expect("RwLock poisoned");
-        let pig = Prop {
+
+        let prop_id = prop.rid as i32;
+
+        dbg!("awa", prop_id);
+
+        propz.get_mut(&prop_id).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        
+        Ok(())
+    }
+
+    #[op]
+    fn create_prop() -> Result<PropV8, deno_core::error::AnyError> {
+        let mut propz = propi.write().expect("RwLock poisoned");
+        let new_prop = Prop {
             name: "nya",
             model: 0,
             position: Vector3::new(0.0, 0.0, 0.0),
@@ -85,12 +128,17 @@ mod js_land{
             texture1: 0,
             texture2: 1,
             rotation: Rotation3::new(Vector3::zeros()),
+            render: true
         };
 
         let wopper = propz.len() as i32;
-        propz.insert(wopper, pig);
+        propz.insert(wopper, new_prop);
+
+        let wopper = wopper as u32;
         
-        Ok(0.0)
+        Ok(PropV8{
+            rid: wopper
+        })
     }
 
 
@@ -101,6 +149,8 @@ mod js_land{
           // An op for summing an array of numbers
           // The op-layer automatically deserializes inputs
           // and serializes the returned Result & value
+          create_vec3::decl(),
+          mod_prop_pos::decl(),
           create_prop::decl(),
           op_sum::decl(),
         ])
@@ -163,9 +213,9 @@ mod js_land{
                 }
             }
 
-            let mut propz = propz.write().expect("RwLock poisoned");
-            propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));
-            propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
+            // let mut propz = propz.write().expect("RwLock poisoned");
+            // propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));
+            // propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
 
             let scope = &mut v8::HandleScope::new(scope);
 
@@ -213,20 +263,21 @@ fn main() {
     );
 
 
-    {
-        let mut propz = propz.write().expect("RwLock poisoned");
-        let pig = Prop {
-            name: "nya",
-            model: 0,
-            position: Vector3::new(0.0, 0.0, 0.0),
-            scale: Vector3::new(1.0, 1.0, 1.0),
-            texture1: 0,
-            texture2: 1,
-            rotation: Rotation3::new(Vector3::zeros()),
-        };
+    // {
+    //     let mut propz = propz.write().expect("RwLock poisoned");
+    //     let pig = Prop {
+    //         name: "nya",
+    //         model: 0,
+    //         position: Vector3::new(0.0, 0.0, 0.0),
+    //         scale: Vector3::new(1.0, 1.0, 1.0),
+    //         texture1: 0,
+    //         texture2: 1,
+    //         rotation: Rotation3::new(Vector3::zeros()),
+    //         render: false
+    //     };
         
-        propz.insert(0, pig);
-    }
+    //     propz.insert(0, pig);
+    // }
 
     let program = shaders::craft("./shaders/base", &display);
 
