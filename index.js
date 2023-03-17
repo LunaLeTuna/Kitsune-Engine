@@ -1,21 +1,37 @@
+const core = Deno.core;
+const ops = core.ops;
+
+class Vector3 {
+  constructor(x,y,z) {
+      this.x = x;
+      this.y = y;
+      this.z = z;
+  }
+}
+
+class Prop {
+  set position(vec3i){
+      ops.mod_prop_pos(this._KE_Prop, vec3i);
+  }
+
+  get position(){
+      return ops.get_prop_pos(this._KE_Prop);
+  }
+
+  constructor() {
+      this._KE_Prop = new ops.create_prop();
+  }
+}
+
 let tether = 0;
 
-var pig = new Deno.core.ops.create_prop();
-
-var nya = new Deno.core.ops.create_vec3(1,0,-6);
+var pig = new Prop();
 
 export function tick() {
-  tether++;
-  nya.x=Math.sin(tether*0.001)*2;
-  nya.y=Math.cos(tether*0.001);
+  tether+=0.001;
 
-  Deno.core.ops.mod_prop_pos(pig, nya);
-
-  // return {
-  //   swag: "wicked",
-  //   tether,
-  // };
-  Deno.core.print(`${nya.x} ${nya.y} ${nya.z}\n`);
+  //pig.position = new Vector3(Math.sin(tether), Math.cos(tether), 0);
+  
   return tether;
 }
 

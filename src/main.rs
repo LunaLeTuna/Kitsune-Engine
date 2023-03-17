@@ -44,7 +44,7 @@ mod js_land{
 
     use deno_core::serde::Serialize;
     use deno_core::v8::{self, Local, Value};
-    use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions, op, Extension, ResourceId};
+    use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions, op, Extension, ResourceId, include_js_files};
     use nalgebra::{Vector3, Rotation3};
     use serde::Deserialize;
 
@@ -110,11 +110,25 @@ mod js_land{
 
         let prop_id = prop.rid as i32;
 
-        dbg!("awa", prop_id);
+        //dbg!("awa", prop_id);
 
         propz.get_mut(&prop_id).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
         
         Ok(())
+    }
+
+    #[op]
+    fn get_prop_pos(prop: PropV8) -> Result<Vec3, deno_core::error::AnyError> {
+        let mut propz = propi.read().expect("RwLock poisoned");
+
+        let prop_id = prop.rid as i32;
+        let pos = propz.get(&prop_id).unwrap().position;
+        
+        Ok(Vec3{
+            x:pos.x,
+            y:pos.y,
+            z:pos.z
+        })
     }
 
     #[op]
@@ -144,20 +158,22 @@ mod js_land{
 
     async fn async_js_loop(file_path: &str, receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop<'_>>>>) -> anyhow::Result<()> {
         
-        let ext = Extension::builder("my_ext")
+        let ext = Extension::builder("KE_OBjects")
         .ops(vec![
           // An op for summing an array of numbers
           // The op-layer automatically deserializes inputs
           // and serializes the returned Result & value
           create_vec3::decl(),
           mod_prop_pos::decl(),
+          get_prop_pos::decl(),
           create_prop::decl(),
           op_sum::decl(),
         ])
+        .js(include_js_files!(dir "KE", "ke_wrap.js",))
         .build();
         
         let mut js_runtime = JsRuntime::new(RuntimeOptions {
-            extensions: vec![ext],
+            extensions_with_js: vec![ext],
             module_loader: Some(Rc::new(FsModuleLoader)),
             ..Default::default()
         });
@@ -322,7 +338,6 @@ fn main() {
         if !thread_mail.is_err() {
             match thread_mail.unwrap() {
                 KE_THREAD_WIN::js_ready => {
-                    println!("nya!");
                     js_ready = true;
                 },
                 KE_THREAD_WIN::Swag(_) => (),
