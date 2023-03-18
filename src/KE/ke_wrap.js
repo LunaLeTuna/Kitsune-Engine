@@ -1,4 +1,3 @@
-
 const core = globalThis.Deno.core;
 const ops = core.ops;
 
@@ -24,7 +23,7 @@ class Prop {
     }
 }
 
-export {
-    Vector3,
-    Prop
-};
+// export {
+//     Vector3,
+//     Prop
+// };
