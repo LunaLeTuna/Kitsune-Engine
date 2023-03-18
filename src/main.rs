@@ -105,24 +105,29 @@ mod js_land{
     }
 
     #[op]
-    fn mod_prop_pos(prop: PropV8, vec3: Vec3) -> Result<(), deno_core::error::AnyError> {
-        let mut propz = propi.write().expect("RwLock poisoned");
+    fn mod_prop_pos(prop: i32, vec3: Vec3) -> Result<i32, deno_core::error::AnyError>{
 
-        let prop_id = prop.rid as i32;
+        match propi.write() {
+            Ok(mut n) => {
+                let a = n.get_mut(&prop);
+                let b = Vector3::new(vec3.x, vec3.y, vec3.z);
+                let c = a.unwrap().position = b;
 
-        //dbg!("awa", prop_id);
+                drop(n);
+            },
+            Err(_) => (),
+        };
 
-        propz.get_mut(&prop_id).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
-        
-        Ok(())
+        //propz.get_mut(&prop).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        //drop(propz);
+        Ok(prop)
     }
 
     #[op]
-    fn get_prop_pos(prop: PropV8) -> Result<Vec3, deno_core::error::AnyError> {
-        let mut propz = propi.read().expect("RwLock poisoned");
+    fn get_prop_pos(prop: i32) -> Result<Vec3, deno_core::error::AnyError> {
+        let propz = propi.read().expect("RwLock poisoned");
 
-        let prop_id = prop.rid as i32;
-        let pos = propz.get(&prop_id).unwrap().position;
+        let pos = propz.get(&prop).unwrap().position;
         
         Ok(Vec3{
             x:pos.x,
@@ -132,7 +137,7 @@ mod js_land{
     }
 
     #[op]
-    fn create_prop() -> Result<PropV8, deno_core::error::AnyError> {
+    fn create_prop() -> Result<i32, deno_core::error::AnyError> {
         let mut propz = propi.write().expect("RwLock poisoned");
         let new_prop = Prop {
             name: "nya",
@@ -145,14 +150,12 @@ mod js_land{
             render: true
         };
 
+        dbg!("nya");
+
         let wopper = propz.len() as i32;
         propz.insert(wopper, new_prop);
-
-        let wopper = wopper as u32;
         
-        Ok(PropV8{
-            rid: wopper
-        })
+        Ok(wopper)
     }
 
 
@@ -240,6 +243,7 @@ mod js_land{
             //println!("meow {}", az);
 
             function.call(scope, recv, empty);
+            drop(scope);
         }
     }
 
@@ -346,8 +350,6 @@ fn main() {
             }
         }
 
-        let propz = propz.read().expect("RwLock poisoned");
-
         // this would send a message to tick to those threads but yeah
         // game.tick()
         // js.tick()
@@ -386,32 +388,39 @@ fn main() {
 
         sender.send(KE_THREAD_INFORMER::Awa).unwrap();
 
-        propz.iter().for_each(|(_index, prop)| {
+        match propi.try_read() {
+            Ok(n) => {
+                n.iter().for_each(|(_index, prop)| {
 
-            let model = &prop.rotation.matrix().to_homogeneous().append_translation(&prop.position);
+                    let model = &prop.rotation.matrix().to_homogeneous().append_translation(&prop.position);
+        
+                    let binding = *model.as_ref();
+        
+                    let uniform = uniform! {
+                        model: binding,
+                        view: main_cam.view_drop(),
+                        perspective: main_cam.project_drop(),
+                        u_light: light,
+                        //not sure how I feel about getting over and over again
+                        diffuse_tex: &texturez.get(&prop.texture1).unwrap().texture,
+                        normal_tex: &texturez.get(&prop.texture2).unwrap().texture
+                    };
+        
+                    target
+                        .draw(
+                            &modelz.get(&prop.model).unwrap().verts,
+                            NoIndices(PrimitiveType::TrianglesList),
+                            &program.program,
+                            &uniform,
+                            &params,
+                        )
+                        .unwrap();
+                });
 
-            let binding = *model.as_ref();
-
-            let uniform = uniform! {
-                model: binding,
-                view: main_cam.view_drop(),
-                perspective: main_cam.project_drop(),
-                u_light: light,
-                //not sure how I feel about getting over and over again
-                diffuse_tex: &texturez.get(&prop.texture1).unwrap().texture,
-                normal_tex: &texturez.get(&prop.texture2).unwrap().texture
-            };
-
-            target
-                .draw(
-                    &modelz.get(&prop.model).unwrap().verts,
-                    NoIndices(PrimitiveType::TrianglesList),
-                    &program.program,
-                    &uniform,
-                    &params,
-                )
-                .unwrap();
-        });
+                drop(n);
+            },
+            Err(_) => (),
+        };
 
         target.finish().unwrap();
     });

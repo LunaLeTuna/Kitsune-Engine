@@ -1,4 +1,4 @@
-const core = globalThis.Deno.core;
+const core = Deno.core;
 const ops = core.ops;
 
 class Vector3 {
