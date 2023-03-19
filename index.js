@@ -2,14 +2,16 @@ let tether = 0;
 
 var pig = new Prop();
 
-var box = new Model("./box.obj");
-pig.model = box;
+var sus = new Prop();
+
+var box = new Model("./susan.obj");
+sus.model = box;
 
 export function tick() {
   tether+=0.001;
 
-  pig.position = new Vector3(Math.sin(tether), Math.cos(tether), 0);
-  pig.rotation = new Vector3(Math.sin(tether)/2, 0, 0);
+  sus.position = new Vector3(Math.sin(tether), Math.cos(tether), 0);
+  sus.rotation = new Vector3(Math.sin(tether)/2, 0, 0);
   //pig.position = av;
   
   return tether;

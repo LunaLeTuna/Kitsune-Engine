@@ -41,7 +41,7 @@ class Prop {
     }
 
     constructor() {
-        this._KE_Prop = new ops.create_prop();
+        this._KE_Prop = ops.create_prop();
     }
 }
 
