@@ -38,6 +38,14 @@ class Prop {
         return ops.get_prop_rot(this._KE_Prop);
     }
 
+    set scale(vec3i){
+        ops.mod_prop_scale(this._KE_Prop, vec3i);
+    }
+
+    get scale(){
+        return ops.get_prop_scale(this._KE_Prop);
+    }
+
     set model(modeli){
         ops.mod_prop_model(this._KE_Prop, modeli.ID);
     }

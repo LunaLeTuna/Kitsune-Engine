@@ -9,6 +9,7 @@ pub mod textures;
 
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
+use std::ops::Mul;
 use std::rc::Rc;
 use std::sync::{mpsc, Arc, RwLock};
 use std::sync::mpsc::Receiver;
@@ -188,6 +189,38 @@ mod js_land{
     }
 
     #[op]
+    fn mod_prop_scale(prop: i32, vec3: Vec3) -> Result<i32, deno_core::error::AnyError>{
+
+        match propi.write() {
+            Ok(mut n) => {
+                let a = n.get_mut(&prop);
+                let b = Vector3::new(vec3.x, vec3.y, vec3.z);
+                let c = a.unwrap().scale = b;
+
+                drop(n);
+            },
+            Err(_) => (),
+        };
+
+        //propz.get_mut(&prop).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        //drop(propz);
+        Ok(prop)
+    }
+
+    #[op]
+    fn get_prop_scale(prop: i32) -> Result<Vec3, deno_core::error::AnyError> {
+        let propz = propi.read().expect("RwLock poisoned");
+
+        let pos = propz.get(&prop).unwrap().scale;
+        
+        Ok(Vec3{
+            x:pos.x,
+            y:pos.y,
+            z:pos.z
+        })
+    }
+
+    #[op]
     fn mod_prop_model(prop: i32, modelc: i32) -> Result<i32, deno_core::error::AnyError>{
         match propi.write() {
             Ok(mut n) => {
@@ -248,8 +281,6 @@ mod js_land{
             rotation: Rotation3::new(Vector3::zeros()),
             render: true
         };
-
-        dbg!("nya");
 
         let wopper = propz.len() as i32;
         propz.insert(wopper, new_prop);
@@ -314,6 +345,8 @@ mod js_land{
           get_prop_rot::decl(),
           mod_prop_pos::decl(),
           get_prop_pos::decl(),
+          mod_prop_scale::decl(),
+          get_prop_scale::decl(),
           mod_prop_model::decl(),
           get_prop_model::decl(),
           mod_prop_texture::decl(),
@@ -505,24 +538,8 @@ fn main() {
         // game.tick()
         // js.tick()
 
-        let mut target = display.draw();
-        target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
-
-        let t = (Instant::now() - start).as_secs_f32() * 2.0;
-
-        let (width, height) = target.get_dimensions();
-
-        let mut main_cam = Camera::craft(Vector2::new(width as f32, height as f32));
-
         // propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));
         // propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
-
-        main_cam.set_rotation(Vector3::new(0.0, 0.0, 0.0));
-        main_cam.position = Vector3::new(0.0, 0.0, -6.0);
-
-        // dbg!(5.0*t.sin());
-
-        main_cam.refresh();
 
         let light = [1.4, 0.4, 0.7f32];
 
@@ -565,9 +582,29 @@ fn main() {
 
         match propi.try_read() {
             Ok(n) => {
+
+                let mut target = display.draw();
+                target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
+        
+                let t = (Instant::now() - start).as_secs_f32() * 2.0;
+        
+                let (width, height) = target.get_dimensions();
+
+                let mut main_cam = Camera::craft(Vector2::new(width as f32, height as f32));
+
+
+                main_cam.set_rotation(Vector3::new(0.0, 0.0, 0.0));
+                main_cam.position = Vector3::new(0.0, 0.0, -6.0);
+
+                // dbg!(5.0*t.sin());
+
+                main_cam.refresh();
+
                 n.iter().for_each(|(_index, prop)| {
 
-                    let model = &prop.rotation.matrix().to_homogeneous().append_translation(&prop.position);
+                    let model = &mut prop.rotation.matrix().to_homogeneous().append_translation(&prop.position);
+                    
+                    model.append_nonuniform_scaling_mut(&prop.scale);
         
                     let binding = *model.as_ref();
         
@@ -593,11 +630,11 @@ fn main() {
                 });
 
                 drop(n);
+                target.finish().unwrap();
             },
             Err(_) => (),
         };
 
-        target.finish().unwrap();
     });
 
     // this here does not return, borrowing variables not returning... I think
