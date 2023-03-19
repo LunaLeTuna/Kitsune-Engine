@@ -294,7 +294,7 @@ mod js_land{
         let mut wopper = model_amount.write().expect("RwLock poisoned");
         *wopper+=1;
 
-        wopper;
+        wopper; //DO NOT REMOVE THIS WOPPER, for some reason it works with it here
 
         let wopper = *model_amount.read().unwrap();
 
@@ -316,7 +316,7 @@ mod js_land{
         let mut wopper = model_amount.write().expect("RwLock poisoned");
         *wopper+=1;
 
-        wopper;
+        wopper; //NORE CAN YOU REMOVE THIS WOPPER, I have no idea why it works but it does
 
         let wopper = *model_amount.read().unwrap();
 
