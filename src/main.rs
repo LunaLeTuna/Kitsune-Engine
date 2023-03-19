@@ -602,9 +602,11 @@ fn main() {
 
                 n.iter().for_each(|(_index, prop)| {
 
-                    let model = &mut prop.rotation.matrix().to_homogeneous().append_translation(&prop.position);
+                    let model = &mut prop.rotation.matrix().to_homogeneous();
                     
                     model.append_nonuniform_scaling_mut(&prop.scale);
+
+                    let model = model.append_translation(&prop.position);
         
                     let binding = *model.as_ref();
         

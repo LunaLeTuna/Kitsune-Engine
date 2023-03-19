@@ -39,7 +39,7 @@ for (let i = 0; i < width*length*height; i++) {
 }
 
 export function tick() {
-  tether+=0.0001;
+  tether+=0.0006;
 
   sus.position = new Vector3(Math.sin(tether)*4, Math.cos(tether)*3, 0);
   sus.rotation = new Vector3(Math.sin(tether), 0, 0);
@@ -48,7 +48,8 @@ export function tick() {
   box.rotation = new Vector3(tether, tether*Math.sin(tether+3), tether*2);
   //pig.position = av;
 
-  wopes.forEach(a => {
+  wopes.forEach((a, index) => {
+    a.position = new Vector3(Math.sin(tether+index)*4, Math.cos(tether+index)*3, 0);
     a.rotation = new Vector3(tether, tether*Math.sin(tether+3), tether*2);
   });
   
