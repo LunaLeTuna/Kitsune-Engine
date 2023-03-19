@@ -212,6 +212,30 @@ mod js_land{
     }
 
     #[op]
+    fn mod_prop_texture(prop: i32, modelc: i32) -> Result<i32, deno_core::error::AnyError>{
+        match propi.write() {
+            Ok(mut n) => {
+                let a = n.get_mut(&prop);
+                a.unwrap().texture1 = modelc;
+
+                drop(n);
+            },
+            Err(_) => (),
+        };
+
+        //propz.get_mut(&prop).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        //drop(propz);
+        Ok(prop)
+    }
+
+    #[op]
+    fn get_prop_texture(prop: i32) -> Result<i32, deno_core::error::AnyError> {
+        let propz = propi.read().expect("RwLock poisoned");
+        
+        Ok(propz.get(&prop).unwrap().texture1)
+    }
+
+    #[op]
     fn create_prop() -> Result<i32, deno_core::error::AnyError> {
         let mut propz = propi.write().expect("RwLock poisoned");
         let new_prop = Prop {
@@ -255,6 +279,28 @@ mod js_land{
         Ok(wopper)
     }
 
+    #[op]
+    fn create_texture(url: String) -> Result<i32, deno_core::error::AnyError> {
+        let mut modelreq = MAKE_REQUEST.write().expect("RwLock poisoned");
+        let mut wopper = model_amount.write().expect("RwLock poisoned");
+        *wopper+=1;
+
+        wopper;
+
+        let wopper = *model_amount.read().unwrap();
+
+        let new_req = RequestNewObj {
+            rType: REQUEST_TYPE::Texture,
+            url: String::from(url),
+            ID: wopper
+        };
+
+        let woppera = modelreq.len() as i32;
+        modelreq.insert(woppera, new_req);
+        
+        Ok(wopper)
+    }
+
 
     async fn async_js_loop(file_path: &str, receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop<'_>>>>) -> anyhow::Result<()> {
         
@@ -270,8 +316,11 @@ mod js_land{
           get_prop_pos::decl(),
           mod_prop_model::decl(),
           get_prop_model::decl(),
+          mod_prop_texture::decl(),
+          get_prop_texture::decl(),
           create_prop::decl(),
           create_model::decl(),
+          create_texture::decl(),
           op_sum::decl(),
         ])
         .js(include_js_files!(dir "KE", "ke_wrap.js",))
@@ -499,7 +548,10 @@ fn main() {
                                 let url = newer.url.as_str();
                                 modelz.insert(newer.ID, models::load_obj(url, &display));
                             },
-                            REQUEST_TYPE::Texture => (),
+                            REQUEST_TYPE::Texture => {
+                                let url = newer.url.as_str();
+                                texturez.insert(newer.ID, Texture::craft(url, &display));
+                            },
                         }
                     });
 

@@ -15,6 +15,12 @@ class Model {
     }
 }
 
+class Texture {
+    constructor(url) {
+        this.ID = ops.create_texture(url);
+    }
+}
+
 class Prop {
     set position(vec3i){
         ops.mod_prop_pos(this._KE_Prop, vec3i);
@@ -38,6 +44,14 @@ class Prop {
 
     get model(){
         return ops.get_prop_model(this._KE_Prop);
+    }
+
+    set texture(modeli){
+        ops.mod_prop_texture(this._KE_Prop, modeli.ID);
+    }
+
+    get texture(){
+        return ops.get_prop_texture(this._KE_Prop);
     }
 
     constructor() {

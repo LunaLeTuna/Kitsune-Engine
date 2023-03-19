@@ -5,13 +5,15 @@ var pig = new Prop();
 var sus = new Prop();
 
 var box = new Model("./susan.obj");
+var nya = new Texture("./wtf.png");
 sus.model = box;
+sus.texture = nya;
 
 export function tick() {
-  tether+=0.001;
+  tether+=0.0001;
 
-  sus.position = new Vector3(Math.sin(tether), Math.cos(tether), 0);
-  sus.rotation = new Vector3(Math.sin(tether)/2, 0, 0);
+  sus.position = new Vector3(Math.sin(tether)*4, Math.cos(tether)*3, 0);
+  sus.rotation = new Vector3(Math.sin(tether), 0, 0);
   //pig.position = av;
   
   return tether;
