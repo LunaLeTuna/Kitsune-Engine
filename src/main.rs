@@ -24,8 +24,10 @@ use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::glutin::window::WindowBuilder;
 use glium::glutin::ContextBuilder;
 use glium::index::{NoIndices, PrimitiveType};
-use glium::{Depth, Display, DrawParameters, Surface};
-use js_land::{KE_THREAD_INFORMER, KE_THREAD_WIN, propi};
+use glium::texture::SrgbTexture2d;
+use glium::{Depth, Display, DrawParameters, Surface, VertexBuffer};
+use js_land::{KE_THREAD_INFORMER, KE_THREAD_WIN, propi, MAKE_REQUEST, REQUEST_TYPE, model_amount};
+use models::Model;
 use nalgebra::{Matrix4, Rotation3, Vector2, Vector3};
 use props::Prop;
 use textures::Texture;
@@ -36,6 +38,7 @@ mod js_land{
     use std::borrow::BorrowMut;
     use std::collections::HashMap;
     use std::rc::Rc;
+    use std::string;
     use std::sync::{Arc, RwLock};
     use std::sync::mpsc::{self, Sender};
     use std::sync::mpsc::Receiver;
@@ -64,8 +67,22 @@ mod js_land{
         Awa,
     }
 
+    pub enum REQUEST_TYPE {
+        Model,
+        Texture
+    }
+
+    pub struct RequestNewObj {
+        pub rType: REQUEST_TYPE,
+        pub url: String,
+        pub ID: i32
+    }
+
     lazy_static! {
         pub static ref propi: Arc<RwLock<HashMap<i32, Prop<'static>>>> = Arc::new(RwLock::new(HashMap::new()));
+        pub static ref MAKE_REQUEST: Arc<RwLock<HashMap<i32, RequestNewObj>>> = Arc::new(RwLock::new(HashMap::new()));
+        pub static ref model_amount: RwLock<i32> = RwLock::new(0);
+        pub static ref texture_amount: Arc<RwLock<i32>> = Arc::new(RwLock::new(0));
     }
 
     #[op]
@@ -104,6 +121,40 @@ mod js_land{
         rid: ResourceId
     }
 
+
+    //I feel like there is some way to auto make these mod_props with macros, but idk lol
+    #[op]
+    fn mod_prop_rot(prop: i32, vec3: Vec3) -> Result<i32, deno_core::error::AnyError>{
+
+        match propi.write() {
+            Ok(mut n) => {
+                let a = n.get_mut(&prop);
+                let b = Vector3::new(vec3.x, vec3.y, vec3.z);
+                let c = a.unwrap().set_rotation(b);
+
+                drop(n);
+            },
+            Err(_) => (),
+        };
+
+        //propz.get_mut(&prop).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        //drop(propz);
+        Ok(prop)
+    }
+
+    #[op]
+    fn get_prop_rot(prop: i32) -> Result<Vec3, deno_core::error::AnyError> {
+        let propz = propi.read().expect("RwLock poisoned");
+
+        let pos = propz.get(&prop).unwrap().rotation.euler_angles();
+        
+        Ok(Vec3{
+            x:pos.0,
+            y:pos.1,
+            z:pos.2
+        })
+    }
+
     #[op]
     fn mod_prop_pos(prop: i32, vec3: Vec3) -> Result<i32, deno_core::error::AnyError>{
 
@@ -137,6 +188,30 @@ mod js_land{
     }
 
     #[op]
+    fn mod_prop_model(prop: i32, modelc: i32) -> Result<i32, deno_core::error::AnyError>{
+        match propi.write() {
+            Ok(mut n) => {
+                let a = n.get_mut(&prop);
+                a.unwrap().model = modelc;
+
+                drop(n);
+            },
+            Err(_) => (),
+        };
+
+        //propz.get_mut(&prop).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        //drop(propz);
+        Ok(prop)
+    }
+
+    #[op]
+    fn get_prop_model(prop: i32) -> Result<i32, deno_core::error::AnyError> {
+        let propz = propi.read().expect("RwLock poisoned");
+        
+        Ok(propz.get(&prop).unwrap().model)
+    }
+
+    #[op]
     fn create_prop() -> Result<i32, deno_core::error::AnyError> {
         let mut propz = propi.write().expect("RwLock poisoned");
         let new_prop = Prop {
@@ -158,6 +233,28 @@ mod js_land{
         Ok(wopper)
     }
 
+    #[op]
+    fn create_model(url: String) -> Result<i32, deno_core::error::AnyError> {
+        let mut modelreq = MAKE_REQUEST.write().expect("RwLock poisoned");
+        let mut wopper = model_amount.write().expect("RwLock poisoned");
+        *wopper+=1;
+
+        wopper;
+
+        let wopper = *model_amount.read().unwrap();
+
+        let new_req = RequestNewObj {
+            rType: REQUEST_TYPE::Model,
+            url: String::from(url),
+            ID: wopper
+        };
+
+        let woppera = modelreq.len() as i32;
+        modelreq.insert(woppera, new_req);
+        
+        Ok(wopper)
+    }
+
 
     async fn async_js_loop(file_path: &str, receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop<'_>>>>) -> anyhow::Result<()> {
         
@@ -167,9 +264,14 @@ mod js_land{
           // The op-layer automatically deserializes inputs
           // and serializes the returned Result & value
           create_vec3::decl(),
+          mod_prop_rot::decl(),
+          get_prop_rot::decl(),
           mod_prop_pos::decl(),
           get_prop_pos::decl(),
+          mod_prop_model::decl(),
+          get_prop_model::decl(),
           create_prop::decl(),
+          create_model::decl(),
           op_sum::decl(),
         ])
         .js(include_js_files!(dir "KE", "ke_wrap.js",))
@@ -388,6 +490,27 @@ fn main() {
 
         sender.send(KE_THREAD_INFORMER::Awa).unwrap();
 
+        match MAKE_REQUEST.try_write() {
+            Ok(mut n) => {
+                if !n.is_empty() {
+                    n.iter().for_each(|(_index, newer)| {
+                        match newer.rType {
+                            REQUEST_TYPE::Model => {
+                                let url = newer.url.as_str();
+                                modelz.insert(newer.ID, models::load_obj(url, &display));
+                            },
+                            REQUEST_TYPE::Texture => (),
+                        }
+                    });
+
+                    n.clear();
+                }
+
+                drop(n);
+            },
+            Err(_) => (),
+        }
+
         match propi.try_read() {
             Ok(n) => {
                 n.iter().for_each(|(_index, prop)| {
@@ -402,13 +525,13 @@ fn main() {
                         perspective: main_cam.project_drop(),
                         u_light: light,
                         //not sure how I feel about getting over and over again
-                        diffuse_tex: &texturez.get(&prop.texture1).unwrap().texture,
-                        normal_tex: &texturez.get(&prop.texture2).unwrap().texture
+                        diffuse_tex: is_texture_real(&texturez, prop),
+                        normal_tex: is_texture2_real(&texturez, prop)
                     };
         
                     target
                         .draw(
-                            &modelz.get(&prop.model).unwrap().verts,
+                            is_model_real(&modelz, prop),
                             NoIndices(PrimitiveType::TrianglesList),
                             &program.program,
                             &uniform,
@@ -428,4 +551,35 @@ fn main() {
     // this here does not return, borrowing variables not returning... I think
     // event_loop.run(move |event, _, control_flow| {
     // });
+}
+
+fn is_model_real<'a>(modelz: &'a HashMap<i32, Model>, prop: &'a Prop<'a>) -> &'a VertexBuffer<models::Vertex> {
+    //dbg!(&prop.model);
+    let m = modelz.get(&prop.model);
+    let real = match m {
+        Some(a) => true,
+        None => false
+    };
+    if real == false {return &modelz.get(&0).unwrap().verts};
+    &m.unwrap().verts
+}
+
+fn is_texture_real<'a>(texturez: &'a HashMap<i32, Texture>, prop: &'a Prop<'a>) -> &'a SrgbTexture2d {
+    let m = texturez.get(&prop.texture1);
+    let real = match m {
+        Some(a) => true,
+        None => false
+    };
+    if real == false {return &texturez.get(&0).unwrap().texture};
+    &m.unwrap().texture
+}
+
+fn is_texture2_real<'a>(texturez: &'a HashMap<i32, Texture>, prop: &'a Prop<'a>) -> &'a SrgbTexture2d {
+    let m = texturez.get(&prop.texture2);
+    let real = match m {
+        Some(a) => true,
+        None => false
+    };
+    if real == false {return &texturez.get(&0).unwrap().texture};
+    &m.unwrap().texture
 }

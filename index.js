@@ -1,13 +1,15 @@
 let tether = 0;
 
-var pig = new ops.create_prop();
+var pig = new Prop();
+
+var box = new Model("./box.obj");
+pig.model = box;
 
 export function tick() {
   tether+=0.001;
 
-  let av ={x:Math.sin(tether), y:0, z:0};
-
-  Deno.core.ops.mod_prop_pos(pig, av);
+  pig.position = new Vector3(Math.sin(tether), Math.cos(tether), 0);
+  pig.rotation = new Vector3(Math.sin(tether)/2, 0, 0);
   //pig.position = av;
   
   return tether;
