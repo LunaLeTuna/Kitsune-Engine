@@ -3,6 +3,7 @@ use nalgebra::{Vector3, Rotation3};
 #[derive(Clone, Copy)]
 pub struct Prop<'a> {
     pub name: &'a str,
+    pub shader: i32,
     pub model: i32,
     pub texture1: i32,
     pub texture2: i32,

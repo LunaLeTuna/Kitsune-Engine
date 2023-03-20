@@ -26,11 +26,12 @@ use glium::glutin::window::WindowBuilder;
 use glium::glutin::ContextBuilder;
 use glium::index::{NoIndices, PrimitiveType};
 use glium::texture::SrgbTexture2d;
-use glium::{Depth, Display, DrawParameters, Surface, VertexBuffer};
+use glium::{Depth, Display, DrawParameters, Surface, VertexBuffer, Program};
 use js_land::{KE_THREAD_INFORMER, KE_THREAD_WIN, propi, MAKE_REQUEST, REQUEST_TYPE, model_amount};
 use models::Model;
 use nalgebra::{Matrix4, Rotation3, Vector2, Vector3};
 use props::Prop;
+use shaders::Shader;
 use textures::Texture;
 use winit::event::{Event, StartCause, WindowEvent};
 use winit::platform::run_return::EventLoopExtRunReturn;
@@ -70,7 +71,8 @@ mod js_land{
 
     pub enum REQUEST_TYPE {
         Model,
-        Texture
+        Texture,
+        Shader,
     }
 
     pub struct RequestNewObj {
@@ -82,6 +84,7 @@ mod js_land{
     lazy_static! {
         pub static ref propi: Arc<RwLock<HashMap<i32, Prop<'static>>>> = Arc::new(RwLock::new(HashMap::new()));
         pub static ref MAKE_REQUEST: Arc<RwLock<HashMap<i32, RequestNewObj>>> = Arc::new(RwLock::new(HashMap::new()));
+        pub static ref shader_amount: RwLock<i32> = RwLock::new(0);
         pub static ref model_amount: RwLock<i32> = RwLock::new(0);
         pub static ref texture_amount: Arc<RwLock<i32>> = Arc::new(RwLock::new(0));
     }
@@ -221,6 +224,30 @@ mod js_land{
     }
 
     #[op]
+    fn mod_prop_shader(prop: i32, shaderc: i32) -> Result<i32, deno_core::error::AnyError>{
+        match propi.write() {
+            Ok(mut n) => {
+                let a = n.get_mut(&prop);
+                a.unwrap().shader = shaderc;
+
+                drop(n);
+            },
+            Err(_) => (),
+        };
+
+        //propz.get_mut(&prop).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        //drop(propz);
+        Ok(prop)
+    }
+
+    #[op]
+    fn get_prop_shader(prop: i32, which: i32) -> Result<i32, deno_core::error::AnyError> {
+        let propz = propi.read().expect("RwLock poisoned");
+        
+        Ok(propz.get(&prop).unwrap().shader)
+    }
+
+    #[op]
     fn mod_prop_model(prop: i32, modelc: i32) -> Result<i32, deno_core::error::AnyError>{
         match propi.write() {
             Ok(mut n) => {
@@ -238,18 +265,22 @@ mod js_land{
     }
 
     #[op]
-    fn get_prop_model(prop: i32) -> Result<i32, deno_core::error::AnyError> {
+    fn get_prop_model(prop: i32, which: i32) -> Result<i32, deno_core::error::AnyError> {
         let propz = propi.read().expect("RwLock poisoned");
         
         Ok(propz.get(&prop).unwrap().model)
     }
 
     #[op]
-    fn mod_prop_texture(prop: i32, modelc: i32) -> Result<i32, deno_core::error::AnyError>{
+    fn mod_prop_texture(prop: i32, which: i32, modelc: i32) -> Result<i32, deno_core::error::AnyError>{
         match propi.write() {
             Ok(mut n) => {
                 let a = n.get_mut(&prop);
-                a.unwrap().texture1 = modelc;
+                match which {
+                    0 => a.unwrap().texture1 = modelc,
+                    1 => a.unwrap().texture2 = modelc,
+                    _ => ()
+                }
 
                 drop(n);
             },
@@ -273,6 +304,7 @@ mod js_land{
         let mut propz = propi.write().expect("RwLock poisoned");
         let new_prop = Prop {
             name: "nya",
+            shader: 0,
             model: 0,
             position: Vector3::new(0.0, 0.0, 0.0),
             scale: Vector3::new(1.0, 1.0, 1.0),
@@ -284,6 +316,28 @@ mod js_land{
 
         let wopper = propz.len() as i32;
         propz.insert(wopper, new_prop);
+        
+        Ok(wopper)
+    }
+
+    #[op]
+    fn create_shader(url: String) -> Result<i32, deno_core::error::AnyError> {
+        let mut modelreq = MAKE_REQUEST.write().expect("RwLock poisoned");
+        let mut wopper = shader_amount.write().expect("RwLock poisoned");
+        *wopper+=1;
+
+        wopper; //DO NOT REMOVE THIS WOPPER, for some reason it works with it here
+
+        let wopper = *shader_amount.read().unwrap();
+
+        let new_req = RequestNewObj {
+            rType: REQUEST_TYPE::Shader,
+            url: String::from(url),
+            ID: wopper
+        };
+
+        let woppera = modelreq.len() as i32;
+        modelreq.insert(woppera, new_req);
         
         Ok(wopper)
     }
@@ -347,11 +401,14 @@ mod js_land{
           get_prop_pos::decl(),
           mod_prop_scale::decl(),
           get_prop_scale::decl(),
+          mod_prop_shader::decl(),
+          get_prop_shader::decl(),
           mod_prop_model::decl(),
           get_prop_model::decl(),
           mod_prop_texture::decl(),
           get_prop_texture::decl(),
           create_prop::decl(),
+          create_shader::decl(),
           create_model::decl(),
           create_texture::decl(),
           op_sum::decl(),
@@ -428,6 +485,7 @@ mod js_land{
 
             function.call(scope, recv, empty);
             drop(scope);
+            sender.send(KE_THREAD_WIN::Awa).unwrap();
         }
     }
 
@@ -454,6 +512,7 @@ fn main() {
     let mut propz = propi.clone();
     let mut modelz = HashMap::new();
     let mut texturez = HashMap::new();
+    let mut shaderz = HashMap::new();
 
     modelz.insert(0, models::load_obj("./pig.obj", &display));
 
@@ -483,7 +542,10 @@ fn main() {
     //     propz.insert(0, pig);
     // }
 
-    let program = shaders::craft("./shaders/base", &display);
+    shaderz.insert(
+        0,
+        shaders::craft("./shaders/base", &display)
+    );
 
     let start = Instant::now();
 
@@ -532,6 +594,8 @@ fn main() {
                 KE_THREAD_WIN::Based(_) => (),
                 KE_THREAD_WIN::Awa => (),
             }
+        }else{
+            return
         }
 
         // this would send a message to tick to those threads but yeah
@@ -561,6 +625,10 @@ fn main() {
                 if !n.is_empty() {
                     n.iter().for_each(|(_index, newer)| {
                         match newer.rType {
+                            REQUEST_TYPE::Shader => {
+                                let url = newer.url.as_str();
+                                shaderz.insert(newer.ID, shaders::craft(url, &display));
+                            },
                             REQUEST_TYPE::Model => {
                                 let url = newer.url.as_str();
                                 modelz.insert(newer.ID, models::load_obj(url, &display));
@@ -624,7 +692,7 @@ fn main() {
                         .draw(
                             is_model_real(&modelz, prop),
                             NoIndices(PrimitiveType::TrianglesList),
-                            &program.program,
+                            is_shader_real(&shaderz, prop),
                             &uniform,
                             &params,
                         )
@@ -642,6 +710,17 @@ fn main() {
     // this here does not return, borrowing variables not returning... I think
     // event_loop.run(move |event, _, control_flow| {
     // });
+}
+
+fn is_shader_real<'a>(shadersz: &'a HashMap<i32, Shader>, prop: &'a Prop<'a>) -> &'a Program {
+    //dbg!(&prop.model);
+    let m = shadersz.get(&prop.shader);
+    let real = match m {
+        Some(a) => true,
+        None => false
+    };
+    if real == false {return &shadersz.get(&0).unwrap().program};
+    &m.unwrap().program
 }
 
 fn is_model_real<'a>(modelz: &'a HashMap<i32, Model>, prop: &'a Prop<'a>) -> &'a VertexBuffer<models::Vertex> {

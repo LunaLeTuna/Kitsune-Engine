@@ -9,6 +9,12 @@ class Vector3 {
     }
 }
 
+class Shader {
+    constructor(url) {
+        this.ID = ops.create_shader(url);
+    }
+}
+
 class Model {
     constructor(url) {
         this.ID = ops.create_model(url);
@@ -46,6 +52,14 @@ class Prop {
         return ops.get_prop_scale(this._KE_Prop);
     }
 
+    set shader(modeli){
+        ops.mod_prop_shader(this._KE_Prop, modeli.ID);
+    }
+
+    get shader(){
+        return ops.get_prop_shader(this._KE_Prop);
+    }
+
     set model(modeli){
         ops.mod_prop_model(this._KE_Prop, modeli.ID);
     }
@@ -55,11 +69,19 @@ class Prop {
     }
 
     set texture(modeli){
-        ops.mod_prop_texture(this._KE_Prop, modeli.ID);
+        ops.mod_prop_texture(this._KE_Prop, 0, modeli.ID);
     }
 
     get texture(){
-        return ops.get_prop_texture(this._KE_Prop);
+        return ops.get_prop_texture(this._KE_Prop, 0);
+    }
+
+    set texture2(modeli){
+        ops.mod_prop_texture(this._KE_Prop, 1, modeli.ID);
+    }
+
+    get texture2(){
+        return ops.get_prop_texture(this._KE_Prop, 1);
     }
 
     constructor() {

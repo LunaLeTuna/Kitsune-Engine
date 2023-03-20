@@ -7,35 +7,30 @@ var sus = new Prop();
 var box = new Prop();
 
 var susan = new Model("./susan.obj");
+var red = new Shader("./shaders/av");
 sus.model = susan;
+sus.shader = red;
 
 var cube = new Model("./box.obj");
 var nya = new Texture("./wtf.png");
 box.model = cube;
 box.texture = nya;
+box.texture2 = nya;
 
 var wopes = [];
 
-var width = 5;
-var length = 5;
-var height = 5;
-
+var axmax = 20;
 var ax = 0;
-var bx = 0;
-var cx = 0;
 
 var move_over = new Vector3(0,0,-7)
 
-for (let i = 0; i < width*length*height; i++) {
+for (let i = 0; i < axmax; i++) {
   var yippe = new Prop();
-  if(ax >= width) ax = 0;
-  if(bx >= length) {bx = 0; ax++}
-  if(cx >= height) {cx = 0; bx ++}
-  yippe.position = new Vector3(move_over.x+ax, move_over.y+bx, move_over.z+cx);
-  yippe.scale = new Vector3(0.3, 0.3, 0.3);
+  yippe.position = new Vector3(move_over.x+ax, move_over.y+ax, move_over.z+ax);
+  yippe.scale = new Vector3(0.2, 0.2, 0.2);
   wopes.push(yippe);
   yippe.model = cube;
-  cx++;
+  ax++;
 }
 
 export function tick() {
@@ -49,7 +44,7 @@ export function tick() {
   //pig.position = av;
 
   wopes.forEach((a, index) => {
-    a.position = new Vector3(Math.sin(tether+index)*4, Math.cos(tether+index)*3, 0);
+    a.position = new Vector3(Math.sin(tether+index)*4, Math.cos(tether+index)*3, Math.tan(tether+index)*1+Math.sin(tether+index)*4);
     a.rotation = new Vector3(tether, tether*Math.sin(tether+3), tether*2);
   });
   
