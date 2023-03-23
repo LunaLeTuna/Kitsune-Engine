@@ -6,6 +6,7 @@ pub mod models;
 pub mod props;
 pub mod shaders;
 pub mod textures;
+pub mod dynamic_uniform;
 
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
@@ -21,18 +22,20 @@ extern crate lazy_static;
 use cameras::Camera;
 use deno_core::v8::{self, Local, Value};
 use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions, op};
+use dynamic_uniform::DynamicUniforms;
 use glium::draw_parameters::DepthTest;
 use glium::glutin::event_loop::{ControlFlow, EventLoop};
 use glium::glutin::window::WindowBuilder;
 use glium::glutin::ContextBuilder;
 use glium::index::{NoIndices, PrimitiveType};
 use glium::texture::SrgbTexture2d;
+use glium::uniforms::{UniformsStorage, AsUniformValue};
 use glium::{Depth, Display, DrawParameters, Surface, VertexBuffer, Program};
 use js_land::{KE_THREAD_INFORMER, KE_THREAD_WIN, propi, MAKE_REQUEST, REQUEST_TYPE, model_amount, RequestNewObj, shader_amount};
 use models::Model;
 use nalgebra::{Matrix4, Rotation3, Vector2, Vector3};
 use props::Prop;
-use shaders::{Shader, craft};
+use shaders::{Shader, craft, shadvType};
 use textures::Texture;
 use winit::event::{Event, StartCause, WindowEvent};
 use winit::platform::run_return::EventLoopExtRunReturn;
@@ -52,12 +55,12 @@ mod js_land{
     use deno_core::serde::Serialize;
     use deno_core::v8::{self, Local, Value};
     use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions, op, Extension, ResourceId, include_js_files};
-    use nalgebra::{Vector3, Rotation3};
+    use nalgebra::{Vector3, Rotation3, Vector2};
     use serde::Deserialize;
 
     use crate::models::Model;
     use crate::props::Prop;
-    use crate::shaders::ShaderVar;
+    use crate::shaders::{shadvType};
 
     //basically this enum allows the js thread to have access to the diffrent prop and resource has maps
     pub enum KE_THREAD_INFORMER {
@@ -86,7 +89,7 @@ mod js_land{
 
     lazy_static! {
         pub static ref propi: Arc<RwLock<HashMap<i32, Prop>>> = Arc::new(RwLock::new(HashMap::new()));
-        pub static ref shaderi: Arc<RwLock<HashMap<i32, ShaderVar>>> = Arc::new(RwLock::new(HashMap::new()));
+        pub static ref shaderi: Arc<RwLock<HashMap<i32, shadvType>>> = Arc::new(RwLock::new(HashMap::new()));
         pub static ref MAKE_REQUEST: Arc<RwLock<HashMap<i32, RequestNewObj>>> = Arc::new(RwLock::new(HashMap::new()));
         pub static ref shader_amount: RwLock<i32> = RwLock::new(0);
         pub static ref model_amount: RwLock<i32> = RwLock::new(0);
@@ -101,6 +104,13 @@ mod js_land{
     Ok(sum)
     }
 
+    #[derive(Deserialize, Default, Debug)]
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Vec2 {
+    x: f32,
+    y: f32,
+    }
 
     #[derive(Deserialize, Default, Debug)]
     #[derive(Serialize)]
@@ -252,6 +262,76 @@ mod js_land{
     }
 
     #[op]
+    fn mod_prop_shader_var_int(prop: i32, name: String, data: i32) -> Result<i32, deno_core::error::AnyError>{
+        match propi.write() {
+            Ok(mut n) => {
+                let a = n.get_mut(&prop);
+                a.unwrap().shader_vars.insert(name, shadvType::integer(data));
+
+                drop(n);
+            },
+            Err(_) => (),
+        };
+
+        //propz.get_mut(&prop).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        //drop(propz);
+        Ok(prop)
+    }
+
+    #[op]
+    fn mod_prop_shader_var_float(prop: i32, name: String, data: f32) -> Result<i32, deno_core::error::AnyError>{
+        match propi.write() {
+            Ok(mut n) => {
+                let a = n.get_mut(&prop);
+                a.unwrap().shader_vars.insert(name, shadvType::float(data));
+
+                drop(n);
+            },
+            Err(_) => (),
+        };
+
+        //propz.get_mut(&prop).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        //drop(propz);
+        Ok(prop)
+    }
+
+    #[op]
+    fn mod_prop_shader_var_vec2(prop: i32, name: String, data: Vec2) -> Result<i32, deno_core::error::AnyError>{
+        let data = Vector2::new(data.x, data.y);
+        match propi.write() {
+            Ok(mut n) => {
+                let a = n.get_mut(&prop);
+                a.unwrap().shader_vars.insert(name, shadvType::vec2(data));
+
+                drop(n);
+            },
+            Err(_) => (),
+        };
+
+        //propz.get_mut(&prop).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        //drop(propz);
+        Ok(prop)
+    }
+
+    #[op]
+    fn mod_prop_shader_var_vec3(prop: i32, name: String, data: Vec3) -> Result<i32, deno_core::error::AnyError>{
+        let data = Vector3::new(data.x, data.y, data.z);
+        match propi.write() {
+            Ok(mut n) => {
+                let a = n.get_mut(&prop);
+                a.unwrap().shader_vars.insert(name, shadvType::vec3(data));
+
+                drop(n);
+            },
+            Err(_) => (),
+        };
+
+        //propz.get_mut(&prop).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        //drop(propz);
+        Ok(prop)
+    }
+
+    #[op]
     fn mod_prop_model(prop: i32, modelc: i32) -> Result<i32, deno_core::error::AnyError>{
         match propi.write() {
             Ok(mut n) => {
@@ -397,6 +477,10 @@ mod js_land{
           get_prop_scale::decl(),
           mod_prop_shader::decl(),
           get_prop_shader::decl(),
+          mod_prop_shader_var_int::decl(),
+          mod_prop_shader_var_float::decl(),
+          mod_prop_shader_var_vec2::decl(),
+          mod_prop_shader_var_vec3::decl(),
           mod_prop_model::decl(),
           get_prop_model::decl(),
           mod_prop_texture::decl(),
@@ -701,16 +785,40 @@ fn main() {
         
                     let binding = *model.as_ref();
         
-                    let uniform = uniform! {
-                        model: binding,
-                        view: main_cam.view_drop(),
-                        perspective: main_cam.project_drop(),
-                        u_light: light,
-                        //not sure how I feel about getting over and over again
-                        diffuse_tex: is_texture_real(&texturez, prop),
-                        normal_tex: is_texture2_real(&texturez, prop)
-                    };
-        
+                    let mut uniform = dynamic_uniform::DynamicUniforms::new();
+                    let view = main_cam.view_drop();
+                    uniform.add("view", &view);
+                    let perspective = main_cam.project_drop();
+                    uniform.add("perspective", &perspective);
+                    uniform.add("model", &binding);
+                    uniform.add("u_light", &light);
+                    uniform.add("diffuse_tex", is_texture_real(&texturez, prop));
+                    uniform.add("normal_tex", is_texture2_real(&texturez, prop));
+
+                    //let uniform = 
+                    
+                    for (name, value) in &prop.shader_vars {
+                        match value {
+                            shadvType::bool(value) => {
+                                uniform.add(&name, value);
+                            },
+                            shadvType::integer(value) => {
+                                uniform.add(&name, value);
+                            },
+                            shadvType::float(value) => {
+                                uniform.add(&name, value);
+                            },
+                            shadvType::vec2(value) => {
+                                uniform.add(&name, value.as_ref());
+                            },
+                            shadvType::vec3(value) => {
+                                uniform.add(&name, value.as_ref());
+                            },
+                            _ => println!("how"),
+
+                        }
+                    }
+
                     target
                         .draw(
                             is_model_real(&modelz, prop),

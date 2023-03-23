@@ -13,5 +13,5 @@ uniform sampler2D normal_tex;
 const vec3 specular_color = vec3(1.0, 1.0, 1.0);
 
 void main() {
-   color = vec4(v_normal+specular_color, 1.0);
+   color = vec4(v_normal, 1.0);
 }

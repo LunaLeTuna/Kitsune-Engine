@@ -60,6 +60,22 @@ class Prop {
         return ops.get_prop_shader(this._KE_Prop);
     }
 
+    shader_int(name, data) {
+        ops.mod_prop_shader_var_int(this._KE_Prop, name, data);
+    }
+
+    shader_float(name, data) {
+        ops.mod_prop_shader_var_float(this._KE_Prop, name, data);
+    }
+
+    shader_vec2(name, data) {
+        ops.mod_prop_shader_var_vec2(this._KE_Prop, name, data);
+    }
+
+    shader_vec3(name, data) {
+        ops.mod_prop_shader_var_vec3(this._KE_Prop, name, data);
+    }
+
     set model(modeli){
         ops.mod_prop_model(this._KE_Prop, modeli.ID);
     }

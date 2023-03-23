@@ -27,12 +27,6 @@ pub enum shadvType {
     vec3(Vector3<f32>)
 }
 
-#[derive(Clone)]
-pub struct ShaderVar {
-    pub name: String,
-    pub var: shadvType
-}
-
 pub fn craft(location: &str, display: &glium::Display) -> Shader {
     let vert_sause = fs::read_to_string(format!("{location}.vert")).unwrap();
 

@@ -35,6 +35,7 @@ for (let i = 0; i < axmax; i++) {
 
 export function tick() {
   tether+=0.0006;
+  sus.shader_float("poggers", tether);
 
   sus.position = new Vector3(Math.sin(tether)*4, Math.cos(tether)*3, 0);
   sus.rotation = new Vector3(Math.sin(tether), 0, 0);

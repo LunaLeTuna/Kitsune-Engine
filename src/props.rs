@@ -2,13 +2,13 @@ use std::{sync::{Arc, RwLock}, collections::HashMap};
 
 use nalgebra::{Vector3, Rotation3};
 
-use crate::shaders::ShaderVar;
+use crate::shaders::{shadvType};
 
 #[derive(Clone)]
 pub struct Prop {
     pub name: String,
     pub shader: i32,
-    pub shader_vars: HashMap<String, ShaderVar>,
+    pub shader_vars: HashMap<String, shadvType>,
     pub model: i32,
     pub texture1: i32,
     pub texture2: i32,
