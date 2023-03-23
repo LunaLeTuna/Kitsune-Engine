@@ -51,18 +51,6 @@ export function tick() {
   return tether;
 }
 
-export function tick2() {
-  tether++;
-
-  return `loop ${tether}`;
-}
-
-export function tick3() {
-  tether++;
-
-  return `loop ${tether}`;
-}
-
 Deno.core.print("swag\n\n");
 
 // return "awa";

@@ -9,6 +9,7 @@ pub mod textures;
 
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
+use std::fs;
 use std::ops::Mul;
 use std::rc::Rc;
 use std::sync::{mpsc, Arc, RwLock};
@@ -27,11 +28,11 @@ use glium::glutin::ContextBuilder;
 use glium::index::{NoIndices, PrimitiveType};
 use glium::texture::SrgbTexture2d;
 use glium::{Depth, Display, DrawParameters, Surface, VertexBuffer, Program};
-use js_land::{KE_THREAD_INFORMER, KE_THREAD_WIN, propi, MAKE_REQUEST, REQUEST_TYPE, model_amount};
+use js_land::{KE_THREAD_INFORMER, KE_THREAD_WIN, propi, MAKE_REQUEST, REQUEST_TYPE, model_amount, RequestNewObj, shader_amount};
 use models::Model;
 use nalgebra::{Matrix4, Rotation3, Vector2, Vector3};
 use props::Prop;
-use shaders::Shader;
+use shaders::{Shader, craft};
 use textures::Texture;
 use winit::event::{Event, StartCause, WindowEvent};
 use winit::platform::run_return::EventLoopExtRunReturn;
@@ -39,6 +40,7 @@ use winit::platform::run_return::EventLoopExtRunReturn;
 mod js_land{
     use std::borrow::BorrowMut;
     use std::collections::HashMap;
+    use std::hash::Hash;
     use std::rc::Rc;
     use std::string;
     use std::sync::{Arc, RwLock};
@@ -55,6 +57,7 @@ mod js_land{
 
     use crate::models::Model;
     use crate::props::Prop;
+    use crate::shaders::ShaderVar;
 
     //basically this enum allows the js thread to have access to the diffrent prop and resource has maps
     pub enum KE_THREAD_INFORMER {
@@ -82,7 +85,8 @@ mod js_land{
     }
 
     lazy_static! {
-        pub static ref propi: Arc<RwLock<HashMap<i32, Prop<'static>>>> = Arc::new(RwLock::new(HashMap::new()));
+        pub static ref propi: Arc<RwLock<HashMap<i32, Prop>>> = Arc::new(RwLock::new(HashMap::new()));
+        pub static ref shaderi: Arc<RwLock<HashMap<i32, ShaderVar>>> = Arc::new(RwLock::new(HashMap::new()));
         pub static ref MAKE_REQUEST: Arc<RwLock<HashMap<i32, RequestNewObj>>> = Arc::new(RwLock::new(HashMap::new()));
         pub static ref shader_amount: RwLock<i32> = RwLock::new(0);
         pub static ref model_amount: RwLock<i32> = RwLock::new(0);
@@ -302,17 +306,7 @@ mod js_land{
     #[op]
     fn create_prop() -> Result<i32, deno_core::error::AnyError> {
         let mut propz = propi.write().expect("RwLock poisoned");
-        let new_prop = Prop {
-            name: "nya",
-            shader: 0,
-            model: 0,
-            position: Vector3::new(0.0, 0.0, 0.0),
-            scale: Vector3::new(1.0, 1.0, 1.0),
-            texture1: 0,
-            texture2: 1,
-            rotation: Rotation3::new(Vector3::zeros()),
-            render: true
-        };
+        let new_prop = Prop::new("nya".into());
 
         let wopper = propz.len() as i32;
         propz.insert(wopper, new_prop);
@@ -387,7 +381,7 @@ mod js_land{
     }
 
 
-    async fn async_js_loop(file_path: &str, receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop<'_>>>>) -> anyhow::Result<()> {
+    async fn async_js_loop(file_path: &str, receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop>>>) -> anyhow::Result<()> {
         
         let ext = Extension::builder("KE_OBjects")
         .ops(vec![
@@ -489,7 +483,7 @@ mod js_land{
         }
     }
 
-    fn js_thread(receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop<'_>>>>) {
+    fn js_thread(receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop>>>) {
         let tokio_thread = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -498,7 +492,7 @@ mod js_land{
         tokio_thread.block_on(async_js_loop("./index.js", receiver, sender, propz)).unwrap();
     }
 
-    pub fn create_js_thread(receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop<'static>>>>) { let _ = std::thread::spawn(move || js_thread(receiver, sender, propz)); }
+    pub fn create_js_thread(receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop>>>) { let _ = std::thread::spawn(move || js_thread(receiver, sender, propz)); }
 }
 
 fn main() {
@@ -620,6 +614,35 @@ fn main() {
 
         sender.send(KE_THREAD_INFORMER::Awa).unwrap();
 
+        #[cfg(debug_assertions)]
+        {
+            for (index, sh) in &shaderz {
+                let name = sh.url.clone();
+                let metadataF = fs::metadata(format!("{name}.frag")).expect("failed to check shader file");
+                let metadataV = fs::metadata(format!("{name}.vert")).expect("failed to check shader file");
+
+                if(metadataF.modified().unwrap() != sh.timeChangedF || metadataV.modified().unwrap() != sh.timeChangedV) {
+                    let mut modelreq = MAKE_REQUEST.write().expect("RwLock poisoned");
+                    let mut wopper = shader_amount.write().expect("RwLock poisoned");
+                    *wopper+=1;
+
+                    wopper; //DO NOT REMOVE THIS WOPPER, for some reason it works with it here
+
+                    let wopper = *shader_amount.read().unwrap();
+
+                    let new_req = RequestNewObj {
+                        rType: REQUEST_TYPE::Shader,
+                        url: String::from(&sh.url),
+                        ID: *index
+                    };
+
+                    let woppera = modelreq.len() as i32;
+                    modelreq.insert(woppera, new_req);
+                    println!("{} has been updated", name);
+                }
+            }
+        }
+
         match MAKE_REQUEST.try_write() {
             Ok(mut n) => {
                 if !n.is_empty() {
@@ -707,12 +730,9 @@ fn main() {
 
     });
 
-    // this here does not return, borrowing variables not returning... I think
-    // event_loop.run(move |event, _, control_flow| {
-    // });
 }
 
-fn is_shader_real<'a>(shadersz: &'a HashMap<i32, Shader>, prop: &'a Prop<'a>) -> &'a Program {
+fn is_shader_real<'a>(shadersz: &'a HashMap<i32, Shader>, prop: &Prop) -> &'a Program {
     //dbg!(&prop.model);
     let m = shadersz.get(&prop.shader);
     let real = match m {
@@ -723,7 +743,7 @@ fn is_shader_real<'a>(shadersz: &'a HashMap<i32, Shader>, prop: &'a Prop<'a>) ->
     &m.unwrap().program
 }
 
-fn is_model_real<'a>(modelz: &'a HashMap<i32, Model>, prop: &'a Prop<'a>) -> &'a VertexBuffer<models::Vertex> {
+fn is_model_real<'a>(modelz: &'a HashMap<i32, Model>, prop: &Prop) -> &'a VertexBuffer<models::Vertex> {
     //dbg!(&prop.model);
     let m = modelz.get(&prop.model);
     let real = match m {
@@ -734,7 +754,7 @@ fn is_model_real<'a>(modelz: &'a HashMap<i32, Model>, prop: &'a Prop<'a>) -> &'a
     &m.unwrap().verts
 }
 
-fn is_texture_real<'a>(texturez: &'a HashMap<i32, Texture>, prop: &'a Prop<'a>) -> &'a SrgbTexture2d {
+fn is_texture_real<'a>(texturez: &'a HashMap<i32, Texture>, prop: &Prop) -> &'a SrgbTexture2d {
     let m = texturez.get(&prop.texture1);
     let real = match m {
         Some(a) => true,
@@ -744,7 +764,7 @@ fn is_texture_real<'a>(texturez: &'a HashMap<i32, Texture>, prop: &'a Prop<'a>) 
     &m.unwrap().texture
 }
 
-fn is_texture2_real<'a>(texturez: &'a HashMap<i32, Texture>, prop: &'a Prop<'a>) -> &'a SrgbTexture2d {
+fn is_texture2_real<'a>(texturez: &'a HashMap<i32, Texture>, prop: &Prop) -> &'a SrgbTexture2d {
     let m = texturez.get(&prop.texture2);
     let real = match m {
         Some(a) => true,
