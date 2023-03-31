@@ -3,6 +3,8 @@ use std::{fs, time::SystemTime};
 use glium::Program;
 use nalgebra::{Vector3, Vector2};
 
+use crate::js_land::shaderi;
+
 #[cfg(debug_assertions)]
 pub struct Shader {
     pub name: String,
@@ -25,6 +27,10 @@ pub enum shadvType {
     float(f32),
     vec2(Vector2<f32>),
     vec3(Vector3<f32>)
+}
+
+pub struct shader_var {
+    pub data: shadvType,
 }
 
 pub fn craft(location: &str, display: &glium::Display) -> Shader {

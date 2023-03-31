@@ -15,7 +15,8 @@ pub struct Prop {
     pub position: Vector3<f32>,
     pub rotation: Rotation3<f32>,
     pub scale: Vector3<f32>,
-    pub render: bool
+    pub render: bool,
+    pub phys_ID: i32
 }
 
 impl Prop {
@@ -30,7 +31,8 @@ impl Prop {
             texture1: 0,
             texture2: 1,
             rotation: Rotation3::new(Vector3::zeros()),
-            render: true
+            render: true,
+            phys_ID: -1
         }
     }
 

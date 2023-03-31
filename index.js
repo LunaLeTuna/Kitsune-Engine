@@ -35,6 +35,7 @@ for (let i = 0; i < axmax; i++) {
 
 export function tick() {
   tether+=0.0006;
+  red.shader_float("awa", tether);
   sus.shader_float("poggers", tether);
 
   sus.position = new Vector3(Math.sin(tether)*4, Math.cos(tether)*3, 0);
@@ -46,7 +47,7 @@ export function tick() {
 
   wopes.forEach((a, index) => {
     a.position = new Vector3(Math.sin(tether+index)*4, Math.cos(tether+index)*3, Math.tan(tether+index)*1+Math.sin(tether+index)*4);
-    a.rotation = new Vector3(tether, tether*Math.sin(tether+3), tether*2);
+    a.rotation = new Vector3(tether, tether*0.3, tether*2);
   });
   
   return tether;

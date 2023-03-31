@@ -9,6 +9,7 @@ out vec4 color;
 uniform vec3 u_light;
 uniform sampler2D diffuse_tex;
 uniform sampler2D normal_tex;
+uniform float awa;
 
 const vec3 specular_color = vec3(1.0, 1.0, 1.0);
 

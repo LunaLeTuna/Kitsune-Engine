@@ -1,6 +1,13 @@
 const core = Deno.core;
 const ops = core.ops;
 
+class Vector2 {
+    constructor(x,y) {
+        this.x = x;
+        this.y = y;
+    }
+}
+
 class Vector3 {
     constructor(x,y,z) {
         this.x = x;
@@ -12,6 +19,21 @@ class Vector3 {
 class Shader {
     constructor(url) {
         this.ID = ops.create_shader(url);
+    }
+    shader_int(name, data) {
+        ops.mod_shader_var_int(this.ID, name, data);
+    }
+
+    shader_float(name, data) {
+        ops.mod_shader_var_float(this.ID, name, data);
+    }
+
+    shader_vec2(name, data) {
+        ops.mod_shader_var_vec2(this.ID, name, data);
+    }
+
+    shader_vec3(name, data) {
+        ops.mod_shader_var_vec3(this.ID, name, data);
     }
 }
 
@@ -105,7 +127,9 @@ class Prop {
     }
 }
 
-// export {
-//     Vector3,
-//     Prop
-// };
+//now not 100% sure how to emplement this in deno properly
+//so this is the next best thing I can think of lmao to add "global" events
+function _KE_EVENT_PUSH(){
+    Deno.core.print("name");
+    //dispatchEvent(new CustomEvent(name, data))
+}
