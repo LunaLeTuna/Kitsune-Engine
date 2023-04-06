@@ -9,12 +9,14 @@
     use std::time::Instant;
 
 
+    use deno_ast::swc::ast::Function;
     use deno_core::serde::Serialize;
-    use deno_core::v8::{self, Local, Value};
-    use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions, op, Extension, ResourceId, include_js_files};
+    use deno_core::v8::{self, Local, Value, Isolate, Object};
+    use deno_core::{anyhow, resolve_path, FsModuleLoader, JsRuntime, RuntimeOptions, op, Extension, ResourceId, include_js_files, ZeroCopyBuf, OpState, serde_v8};
     use glium::program::ShaderType;
     use nalgebra::{Vector3, Rotation3, Vector2};
     use serde::Deserialize;
+    use tokio::runtime;
 
     use crate::models::Model;
     use crate::props::Prop;
@@ -493,40 +495,51 @@
         Ok(wopper)
     }
 
+    // #[op]
+    // fn add_event_listener<FP, 'scope>(  
+    //     state: &mut OpState,
+    //     scope: &mut v8::HandleScope<'scope>,
+    //     cb: serde_v8::Value<'scope>,) -> Result<(), deno_core::error::AnyError> {
+    //     let awa = state.borrow::<String>();
+    //     println!("{}", awa);
+    //     Ok({})
+    // }
 
     async fn async_js_loop(file_path: &str, receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop>>>) -> anyhow::Result<()> {
         
         let ext = Extension::builder("KE_OBjects")
         .ops(vec![
-          mod_prop_rot::decl(),
-          get_prop_rot::decl(),
-          mod_prop_pos::decl(),
-          get_prop_pos::decl(),
+            //add_event_listener::decl(),
 
-          mod_prop_scale::decl(),
-          get_prop_scale::decl(),
-          mod_prop_shader::decl(),
-          get_prop_shader::decl(),
-          mod_prop_shader_var_int::decl(),
-          mod_prop_shader_var_float::decl(),
-          mod_prop_shader_var_vec2::decl(),
-          mod_prop_shader_var_vec3::decl(),
-          mod_prop_model::decl(),
-          get_prop_model::decl(),
-          mod_prop_texture::decl(),
-          get_prop_texture::decl(),
-          create_prop::decl(),
+            mod_prop_rot::decl(),
+            get_prop_rot::decl(),
+            mod_prop_pos::decl(),
+            get_prop_pos::decl(),
 
-          mod_shader_var_int::decl(),
-          mod_shader_var_float::decl(),
-          mod_shader_var_vec2::decl(),
-          mod_shader_var_vec3::decl(),
-          create_shader::decl(),
+            mod_prop_scale::decl(),
+            get_prop_scale::decl(),
+            mod_prop_shader::decl(),
+            get_prop_shader::decl(),
+            mod_prop_shader_var_int::decl(),
+            mod_prop_shader_var_float::decl(),
+            mod_prop_shader_var_vec2::decl(),
+            mod_prop_shader_var_vec3::decl(),
+            mod_prop_model::decl(),
+            get_prop_model::decl(),
+            mod_prop_texture::decl(),
+            get_prop_texture::decl(),
+            create_prop::decl(),
 
-          create_model::decl(),
-          create_texture::decl(),
+            mod_shader_var_int::decl(),
+            mod_shader_var_float::decl(),
+            mod_shader_var_vec2::decl(),
+            mod_shader_var_vec3::decl(),
+            create_shader::decl(),
 
-          op_sum::decl(),
+            create_model::decl(),
+            create_texture::decl(),
+
+            op_sum::decl(),
         ])
         .js(include_js_files!(dir "KE", "ke_wrap.js",))
         .build();
@@ -555,6 +568,7 @@
         let module_properties = module_object.get_property_names(scope, Default::default()).unwrap();
 
         println!("module properties: {}", module_properties.to_rust_string_lossy(scope));
+
 
 
         //get tick function
@@ -598,8 +612,20 @@
             match mouse_pos.try_read() {
                 Ok(mut n) => {
                     if n.x!=mouse_last_pos.x||n.y!=mouse_last_pos.y {
-                        println!("nya {} {}", n.x, n.y);
-                        mouse_last_pos = Vec2{x:n.x,y:n.y};
+                        let scope = &mut v8::HandleScope::new(scope);
+                        //println!("nya {} {}", n.x, n.y);
+                        //mouse_last_pos = Vec2{x:n.x,y:n.y};
+
+                        let mole = v8::ObjectTemplate::new(scope);
+                        let lename = v8::String::new(scope, "x").unwrap();
+                        mole.set(lename.into(), v8::Number::new(scope, n.x.into()).into());
+                        let lename = v8::String::new(scope, "y").unwrap();
+                        mole.set(lename.into(), v8::Number::new(scope, n.y.into()).into());
+                        
+                        let real = mole.new_instance(scope).unwrap().into();
+
+                        //get input function
+                        fun_name(scope, module_object, recv, "mousemove".to_owned(), real)?;
                     }
                     drop(n);
                 },
@@ -610,16 +636,31 @@
             // propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));
             // propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
 
+
             let scope = &mut v8::HandleScope::new(scope);
+            
 
             if az > 1000.0 {az = 0.0}
 
             //println!("meow {}", az);
 
+
+
             function.call(scope, recv, empty);
             //drop(scope);
             sender.send(KE_THREAD_WIN::Awa).unwrap();
         }
+    }
+
+    fn fun_name(scope: &mut v8::HandleScope, module_object: Local<Object>, recv: Local<Value>, name: String, data: Local<Value>) -> Result<(), anyhow::Error> {
+        let export_fn_name = v8::String::new(scope, "_KE_EVENT_PUSH").unwrap();
+        let export_fn = module_object
+            .get(scope, export_fn_name.into())
+            .expect("couldnt find fn");
+        let function = v8::Local::<v8::Function>::try_from(export_fn)?;
+        let awa = v8::String::new(scope, &name).unwrap();
+        function.call(scope, recv, &[awa.into(), data]);
+        Ok(())
     }
 
     pub fn js_thread(receiver: Receiver<KE_THREAD_INFORMER>, sender: Sender<KE_THREAD_WIN>, propz: Arc<RwLock<HashMap<i32, Prop>>>) {

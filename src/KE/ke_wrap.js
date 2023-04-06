@@ -127,9 +127,20 @@ class Prop {
     }
 }
 
-//now not 100% sure how to emplement this in deno properly
-//so this is the next best thing I can think of lmao to add "global" events
-function _KE_EVENT_PUSH(){
-    Deno.core.print("name");
-    //dispatchEvent(new CustomEvent(name, data))
+var _KE_EVENT_LIST = {};
+
+function addEventListener(name, fn){
+    if(_KE_EVENT_LIST.hasOwnProperty(name)){
+        _KE_EVENT_LIST[name].push(fn);
+    }else{
+        _KE_EVENT_LIST[name] = [];
+        _KE_EVENT_LIST[name].push(fn);
+    }
+}
+
+function dispatchEvent(name, data){
+    if(!_KE_EVENT_LIST.hasOwnProperty(name)) return;
+    _KE_EVENT_LIST[name].forEach(element => {
+        element(data)
+    });
 }

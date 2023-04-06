@@ -33,6 +33,11 @@ for (let i = 0; i < axmax; i++) {
   ax++;
 }
 
+function move_pig(e){
+  pig.position = new Vector3(e.x*0.001,e.y*-0.001,0)
+}
+addEventListener("mousemove", move_pig)
+
 export function tick() {
   tether+=0.0006;
   red.shader_float("awa", tether);
@@ -55,4 +60,13 @@ export function tick() {
 
 Deno.core.print("swag\n\n");
 
+//Deno.core.ops.add_event_listener("awa", 0);
+
 // return "awa";
+
+
+//now not 100% sure how to emplement this in deno properly
+//so this is the next best thing I can think of lmao to add "global" events
+export function _KE_EVENT_PUSH(name, data){
+  dispatchEvent(name, data);
+}
