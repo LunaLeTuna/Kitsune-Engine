@@ -17,6 +17,7 @@
     use nalgebra::{Vector3, Rotation3, Vector2};
     use serde::Deserialize;
     use tokio::runtime;
+    use winit::event::{DeviceEvent, KeyboardInput, DeviceId, VirtualKeyCode};
 
     use crate::models::Model;
     use crate::props::Prop;
@@ -47,6 +48,12 @@
         pub ID: i32
     }
 
+    pub struct KeyEvnt {
+        pub device_id: DeviceId,
+        pub input: KeyboardInput,
+        pub is_synthetic: bool
+    }
+
     lazy_static! {
         //asset management
         pub static ref propi: Arc<RwLock<HashMap<i32, Prop>>> = Arc::new(RwLock::new(HashMap::new()));
@@ -57,7 +64,8 @@
         pub static ref texture_amount: Arc<RwLock<i32>> = Arc::new(RwLock::new(0));
 
         //input stuff
-        pub static ref mouse_pos: Arc<RwLock<Vec2>> = Arc::new(RwLock::new(Vec2 { x: 0.0, y: 0.0 }));
+        pub static ref mouse_pos: Arc<RwLock<Vec2>> = Arc::new(RwLock::new(Vec2 { x: 0.0, y: 0.0 })); //some day add DeviceID for multiplayer with multimouses on x11 :3
+        pub static ref key_events: Arc<RwLock<Vec<KeyEvnt>>> = Arc::new(RwLock::new(Vec::new()));
     }
 
     #[op]
@@ -594,6 +602,14 @@
 
         let mut mouse_last_pos = Vec2{x:0.0,y:0.0};
 
+        let mouseenv = v8::ObjectTemplate::new(scope);
+        let xname = v8::String::new(scope, "x").unwrap();
+        mouseenv.set(xname.into(), v8::Number::new(scope, 0.into()).into());
+        let yname = v8::String::new(scope, "y").unwrap();
+        mouseenv.set(yname.into(), v8::Number::new(scope, 0.into()).into());
+        
+        let mouseenv = mouseenv.new_instance(scope).unwrap();
+
         loop {
             az=az+0.0001;
             // if no message just dont until there is
@@ -609,6 +625,8 @@
                 }
             }
 
+            // not 100% sure there may be a mem leak here, keep 85 eyes open at all times  :::::::::::;::::::::::::::::::::::::::::::3
+
             match mouse_pos.try_read() {
                 Ok(mut n) => {
                     if n.x!=mouse_last_pos.x||n.y!=mouse_last_pos.y {
@@ -616,21 +634,44 @@
                         //println!("nya {} {}", n.x, n.y);
                         //mouse_last_pos = Vec2{x:n.x,y:n.y};
 
-                        let mole = v8::ObjectTemplate::new(scope);
-                        let lename = v8::String::new(scope, "x").unwrap();
-                        mole.set(lename.into(), v8::Number::new(scope, n.x.into()).into());
-                        let lename = v8::String::new(scope, "y").unwrap();
-                        mole.set(lename.into(), v8::Number::new(scope, n.y.into()).into());
-                        
-                        let real = mole.new_instance(scope).unwrap().into();
+                        let x = v8::Number::new(scope, n.x as f64).into();
+                        mouseenv.set(scope, xname.into(), x);
+                        let y = v8::Number::new(scope, n.y as f64).into();
+                        mouseenv.set(scope, yname.into(), y);
 
                         //get input function
-                        fun_name(scope, module_object, recv, "mousemove".to_owned(), real)?;
+                        fun_name(scope, module_object, recv, "mousemove".to_owned(), mouseenv.into())?;
+                        
                     }
                     drop(n);
                 },
                 Err(_) => (),
             }
+
+            // match key_events.try_read() {
+            //     Ok(mut n) => {
+            //         if n.len()!=0 {
+            //             n.iter().for_each(|evnt| {
+            //                 let scope = &mut v8::HandleScope::new(scope);
+            //                 //println!("nya {} {}", n.x, n.y);
+            //                 //mouse_last_pos = Vec2{x:n.x,y:n.y};
+
+            //                 let mole = v8::ObjectTemplate::new(scope);
+            //                 let lename = v8::String::new(scope, "keyID").unwrap(); //.name().into()
+            //                 let key = v8::Number::new(scope, evnt.input.scancode.into());
+            //                 mole.set(lename.into(), key.into());
+                            
+            //                 let real = mole.new_instance(scope).unwrap().into();
+
+            //                 //get input function
+            //                 fun_name(scope, module_object, recv, "keydown".to_owned(), real);
+            //                 ()
+            //             });
+            //         }
+            //         drop(n);
+            //     },
+            //     Err(_) => (),
+            // }
 
             // let mut propz = propz.write().expect("RwLock poisoned");
             // propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));

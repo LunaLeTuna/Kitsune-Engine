@@ -99,7 +99,7 @@ fn main() {
                 match event {
                     WindowEvent::CursorMoved { device_id, position, modifiers } => {
                         //sender.send(KE_THREAD_INFORMER::MouseMoved(Vec2{x: position.x as f32, y: position.y as f32})).unwrap();
-                        match mouse_pos.write() {
+                        match mouse_pos.try_write() {
                             Ok(mut n) => {
                                 *n = Vec2{x: position.x as f32, y: position.y as f32};
                                 drop(n);
@@ -107,6 +107,16 @@ fn main() {
                             Err(_) => (),
                         }
                     }
+                    // WindowEvent::KeyboardInput { device_id, input, is_synthetic } => {
+                    //     //sender.send(KE_THREAD_INFORMER::MouseMoved(Vec2{x: position.x as f32, y: position.y as f32})).unwrap();
+                    //     match mouse_pos.write() {
+                    //         Ok(mut n) => {
+                    //             *n = Vec2{x: position.x as f32, y: position.y as f32};
+                    //             drop(n);
+                    //         },
+                    //         Err(_) => (),
+                    //     }
+                    // }
                     WindowEvent::CloseRequested { .. } => {
                         *control_flow = ControlFlow::Exit;
                     },
