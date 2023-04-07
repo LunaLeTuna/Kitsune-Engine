@@ -127,6 +127,10 @@ class Prop {
     }
 }
 
+function print(a){
+    Deno.core.print(a)
+}
+
 var _KE_EVENT_LIST = {};
 
 function addEventListener(name, fn){

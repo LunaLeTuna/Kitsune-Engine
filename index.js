@@ -38,6 +38,11 @@ function move_pig(e){
 }
 addEventListener("mousemove", move_pig)
 
+function kb(e){
+  print("awawa "+e.keycode)
+}
+addEventListener("keydown", kb)
+
 export function tick() {
   tether+=0.0006;
   red.shader_float("awa", tether);

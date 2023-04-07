@@ -65,7 +65,7 @@
 
         //input stuff
         pub static ref mouse_pos: Arc<RwLock<Vec2>> = Arc::new(RwLock::new(Vec2 { x: 0.0, y: 0.0 })); //some day add DeviceID for multiplayer with multimouses on x11 :3
-        pub static ref key_events: Arc<RwLock<Vec<KeyEvnt>>> = Arc::new(RwLock::new(Vec::new()));
+        pub static ref key_events: Arc<RwLock<HashMap<u32, KeyEvnt>>> = Arc::new(RwLock::new(HashMap::new()));
     }
 
     #[op]
@@ -610,6 +610,12 @@
         
         let mouseenv = mouseenv.new_instance(scope).unwrap();
 
+        let keyenv = v8::ObjectTemplate::new(scope);
+        let codename = v8::String::new(scope, "keycode").unwrap();
+        keyenv.set(xname.into(), v8::Number::new(scope, 0.into()).into());
+        
+        let keyenv = keyenv.new_instance(scope).unwrap();
+
         loop {
             az=az+0.0001;
             // if no message just dont until there is
@@ -672,6 +678,32 @@
             //     },
             //     Err(_) => (),
             // }
+
+            match key_events.try_write() {
+                Ok(mut n) => {
+                    if n.len()!=0 {
+                        n.iter().for_each(|(_index, evnt)| {
+                            let scope = &mut v8::HandleScope::new(scope);
+                            //println!("nya {} {}", n.x, n.y);
+                            //mouse_last_pos = Vec2{x:n.x,y:n.y};
+
+                            let x = v8::Number::new(scope, evnt.input.scancode as f64).into();
+                            keyenv.set(scope, codename.into(), x);
+
+                            //get input function
+                            match evnt.input.state {
+                                winit::event::ElementState::Pressed => fun_name(scope, module_object, recv, "keydown".to_owned(), keyenv.into()),
+                                winit::event::ElementState::Released => fun_name(scope, module_object, recv, "keyup".to_owned(), keyenv.into()),
+                            };
+
+                            ()
+                        });
+                    }
+                    n.drain();
+                    drop(n);
+                },
+                Err(_) => (),
+            }
 
             // let mut propz = propz.write().expect("RwLock poisoned");
             // propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));

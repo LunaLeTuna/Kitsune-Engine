@@ -33,7 +33,7 @@ use glium::index::{NoIndices, PrimitiveType};
 use glium::texture::SrgbTexture2d;
 use glium::uniforms::{UniformsStorage, AsUniformValue};
 use glium::{Depth, Display, DrawParameters, Surface, VertexBuffer, Program};
-use js_land::{KE_THREAD_INFORMER, KE_THREAD_WIN, propi, MAKE_REQUEST, REQUEST_TYPE, model_amount, RequestNewObj, shader_amount, shaderi, Vec2, create_js_thread, mouse_pos};
+use js_land::{KE_THREAD_INFORMER, KE_THREAD_WIN, propi, MAKE_REQUEST, REQUEST_TYPE, model_amount, RequestNewObj, shader_amount, shaderi, Vec2, create_js_thread, mouse_pos, KeyEvnt, key_events};
 use models::Model;
 use nalgebra::{Matrix4, Rotation3, Vector2, Vector3};
 use props::Prop;
@@ -107,16 +107,16 @@ fn main() {
                             Err(_) => (),
                         }
                     }
-                    // WindowEvent::KeyboardInput { device_id, input, is_synthetic } => {
-                    //     //sender.send(KE_THREAD_INFORMER::MouseMoved(Vec2{x: position.x as f32, y: position.y as f32})).unwrap();
-                    //     match mouse_pos.write() {
-                    //         Ok(mut n) => {
-                    //             *n = Vec2{x: position.x as f32, y: position.y as f32};
-                    //             drop(n);
-                    //         },
-                    //         Err(_) => (),
-                    //     }
-                    // }
+                    WindowEvent::KeyboardInput { device_id, input, is_synthetic } => {
+                        //sender.send(KE_THREAD_INFORMER::MouseMoved(Vec2{x: position.x as f32, y: position.y as f32})).unwrap();
+                        match key_events.try_write() {
+                            Ok(mut n) => {
+                                n.insert(input.scancode, KeyEvnt{ is_synthetic, input: input, device_id });
+                                drop(n);
+                            },
+                            Err(_) => (),
+                        }
+                    }
                     WindowEvent::CloseRequested { .. } => {
                         *control_flow = ControlFlow::Exit;
                     },
