@@ -2,6 +2,8 @@ use std::{f32::consts::PI};
 
 use nalgebra::{Matrix4, Perspective3, Rotation3, Vector2, Vector3};
 
+use crate::js_land::Vec2;
+
 pub struct Camera {
     pub name: String,
     pub projection: Perspective3<f32>,
@@ -17,7 +19,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn craft(screen: Vector2<f32>) -> Self {
+    pub fn craft(screen: Vec2) -> Self {
         let near = 0.1;
         let far = 1024.0;
         let fov = 60.0;
@@ -65,7 +67,7 @@ impl Camera {
         self.view = model;
     }
 
-    pub fn reproject(&mut self, screen: Vector2<f32>) {
+    pub fn reproject(&mut self, screen: Vec2) {
         self.projection = Perspective3::new(screen.x / screen.y, radians(self.fov), self.near, self.far);
     }
 }

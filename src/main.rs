@@ -33,7 +33,7 @@ use glium::index::{NoIndices, PrimitiveType};
 use glium::texture::SrgbTexture2d;
 use glium::uniforms::{UniformsStorage, AsUniformValue};
 use glium::{Depth, Display, DrawParameters, Surface, VertexBuffer, Program};
-use js_land::{KE_THREAD_INFORMER, KE_THREAD_WIN, propi, MAKE_REQUEST, REQUEST_TYPE, model_amount, RequestNewObj, shader_amount, shaderi, Vec2, create_js_thread, mouse_pos, KeyEvnt, key_events};
+use js_land::{KE_THREAD_INFORMER, KE_THREAD_WIN, propi, MAKE_REQUEST, REQUEST_TYPE, model_amount, RequestNewObj, shader_amount, shaderi, Vec2, create_js_thread, mouse_pos, KeyEvnt, key_events, camerai, MAIN_CAMERA, SCREEN_SIZE};
 use models::Model;
 use nalgebra::{Matrix4, Rotation3, Vector2, Vector3};
 use props::Prop;
@@ -83,6 +83,22 @@ fn main() {
     // function you call from js to rs to fetch that stuff
     let (sender, receiver) = mpsc::channel::<KE_THREAD_INFORMER>();
     let (senderb, receiverb) = mpsc::channel::<KE_THREAD_WIN>();
+
+    match camerai.try_write() {
+        Ok(mut n) => {
+            let (width, height) = display.get_framebuffer_dimensions();
+            let mut main_cam = Camera::craft(Vec2{x:width as f32,y: height as f32});
+
+            main_cam.set_rotation(Vector3::new(0.0, 0.0, 0.0));
+            main_cam.position = Vector3::new(0.0, 0.0, -6.0);
+
+            // dbg!(5.0*t.sin());
+
+            main_cam.refresh();
+            n.insert(0, main_cam);
+        },
+        Err(_) => (),
+    }
 
     // init v8/deno
     // ok so this insta starts the tick loop which you probably dont want until the
@@ -227,88 +243,104 @@ fn main() {
             Err(_) => (),
         }
 
-        match propi.try_read() {
-            Ok(n) => {
+        match MAIN_CAMERA.try_read() {
+            Ok(thecam) => {
+                match camerai.try_write() {
+                    Ok(mut n) => {
+                        //maybe not do this every frame... later...
+                        let (width, height) = display.get_framebuffer_dimensions();
 
-                let mut target = display.draw();
-                target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
-        
-                let t = (Instant::now() - start).as_secs_f32() * 2.0;
-        
-                let (width, height) = target.get_dimensions();
-
-                let mut main_cam = Camera::craft(Vector2::new(width as f32, height as f32));
-
-
-                main_cam.set_rotation(Vector3::new(0.0, 0.0, 0.0));
-                main_cam.position = Vector3::new(0.0, 0.0, -6.0);
-
-                // dbg!(5.0*t.sin());
-
-                main_cam.refresh();
-
-                n.iter().for_each(|(_index, prop)| {
-
-                    let model = &mut prop.rotation.matrix().to_homogeneous();
+                        let main_cam = n.get_mut(&thecam).unwrap();
+                        main_cam.reproject(Vec2{x: width as f32, y: height as f32});
                     
-                    model.append_nonuniform_scaling_mut(&prop.scale);
 
-                    let model = model.append_translation(&prop.position);
-        
-                    let binding = *model.as_ref();
-        
-                    let mut uniform = dynamic_uniform::DynamicUniforms::new();
-                    let view = main_cam.view_drop();
-                    uniform.add("view", &view);
-                    let perspective = main_cam.project_drop();
-                    uniform.add("perspective", &perspective);
-                    uniform.add("model", &binding);
-                    uniform.add("u_light", &light);
-                    uniform.add("diffuse_tex", is_texture_real(&texturez, prop));
-                    uniform.add("normal_tex", is_texture2_real(&texturez, prop));
+                match propi.try_read() {
+                    Ok(n) => {
 
-                    //shader globle vars (TODO)
+                        let mut target = display.draw();
+                        target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
+                
+                        let t = (Instant::now() - start).as_secs_f32() * 2.0;
+                
+                        let (width, height) = target.get_dimensions();
 
-
-                    //prop spesific shader vars
-                    for (name, value) in &prop.shader_vars {
-                        match value {
-                            shadvType::bool(value) => {
-                                uniform.add(&name, value);
+                        match SCREEN_SIZE.write() {
+                            Ok(mut n) => {
+                                *n = Vec2{x: width as f32, y: height as f32};
+                
+                                drop(n);
                             },
-                            shadvType::integer(value) => {
-                                uniform.add(&name, value);
-                            },
-                            shadvType::float(value) => {
-                                uniform.add(&name, value);
-                            },
-                            shadvType::vec2(value) => {
-                                uniform.add(&name, value.as_ref());
-                            },
-                            shadvType::vec3(value) => {
-                                uniform.add(&name, value.as_ref());
-                            },
-                            _ => println!("how"),
-
+                            Err(_) => (),
                         }
-                    }
 
-                    target
-                        .draw(
-                            is_model_real(&modelz, prop),
-                            NoIndices(PrimitiveType::TrianglesList),
-                            is_shader_real(&shaderz, prop),
-                            &uniform,
-                            &params,
-                        )
-                        .unwrap();
-                });
+                        n.iter().for_each(|(_index, prop)| {
 
-                drop(n);
-                target.finish().unwrap();
+                            let model = &mut prop.rotation.matrix().to_homogeneous();
+                            
+                            model.append_nonuniform_scaling_mut(&prop.scale);
+
+                            let model = model.append_translation(&prop.position);
+                
+                            let binding = *model.as_ref();
+                
+                            let mut uniform = dynamic_uniform::DynamicUniforms::new();
+                            let view = main_cam.view_drop();
+                            uniform.add("view", &view);
+                            let perspective = main_cam.project_drop();
+                            uniform.add("perspective", &perspective);
+                            uniform.add("model", &binding);
+                            uniform.add("u_light", &light);
+                            uniform.add("diffuse_tex", is_texture_real(&texturez, prop));
+                            uniform.add("normal_tex", is_texture2_real(&texturez, prop));
+
+                            //shader globle vars (TODO)
+
+
+                            //prop spesific shader vars
+                            for (name, value) in &prop.shader_vars {
+                                match value {
+                                    shadvType::bool(value) => {
+                                        uniform.add(&name, value);
+                                    },
+                                    shadvType::integer(value) => {
+                                        uniform.add(&name, value);
+                                    },
+                                    shadvType::float(value) => {
+                                        uniform.add(&name, value);
+                                    },
+                                    shadvType::vec2(value) => {
+                                        uniform.add(&name, value.as_ref());
+                                    },
+                                    shadvType::vec3(value) => {
+                                        uniform.add(&name, value.as_ref());
+                                    },
+                                    _ => println!("how"),
+
+                                }
+                            }
+
+                            target
+                                .draw(
+                                    is_model_real(&modelz, prop),
+                                    NoIndices(PrimitiveType::TrianglesList),
+                                    is_shader_real(&shaderz, prop),
+                                    &uniform,
+                                    &params,
+                                )
+                                .unwrap();
+                        });
+
+                        drop(n);
+                        target.finish().unwrap();
+                    },
+                    Err(_) => (),
+                };
             },
             Err(_) => (),
-        };
+        }
+        },
+        Err(_) => (),
+        }
 
     });
 

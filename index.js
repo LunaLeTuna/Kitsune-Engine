@@ -1,5 +1,10 @@
 let tether = 0;
 
+
+var le_cam = new Camera();
+SetMainCam(le_cam);
+
+
 var pig = new Prop();
 
 var sus = new Prop();
@@ -35,6 +40,7 @@ for (let i = 0; i < axmax; i++) {
 
 function move_pig(e){
   pig.position = new Vector3(e.x*0.001,e.y*-0.001,0)
+  le_cam.position = new Vector3(e.x*0.001,e.y*-0.001,6);
 }
 addEventListener("mousemove", move_pig)
 

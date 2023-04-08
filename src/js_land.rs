@@ -19,6 +19,7 @@
     use tokio::runtime;
     use winit::event::{DeviceEvent, KeyboardInput, DeviceId, VirtualKeyCode};
 
+    use crate::cameras::Camera;
     use crate::models::Model;
     use crate::props::Prop;
     use crate::shaders::{shadvType, shader_var};
@@ -54,6 +55,11 @@
         pub is_synthetic: bool
     }
 
+    pub struct ScreenSize {
+        pub x: u32,
+        pub y: u32
+    }
+
     lazy_static! {
         //asset management
         pub static ref propi: Arc<RwLock<HashMap<i32, Prop>>> = Arc::new(RwLock::new(HashMap::new()));
@@ -63,9 +69,14 @@
         pub static ref model_amount: RwLock<i32> = RwLock::new(0);
         pub static ref texture_amount: Arc<RwLock<i32>> = Arc::new(RwLock::new(0));
 
+        pub static ref camerai: Arc<RwLock<HashMap<i32, Camera>>> = Arc::new(RwLock::new(HashMap::new()));
+        pub static ref MAIN_CAMERA: RwLock<i32> = RwLock::new(0);
+
         //input stuff
         pub static ref mouse_pos: Arc<RwLock<Vec2>> = Arc::new(RwLock::new(Vec2 { x: 0.0, y: 0.0 })); //some day add DeviceID for multiplayer with multimouses on x11 :3
         pub static ref key_events: Arc<RwLock<HashMap<u32, KeyEvnt>>> = Arc::new(RwLock::new(HashMap::new()));
+
+        pub static ref SCREEN_SIZE: Arc<RwLock<Vec2>> = Arc::new(RwLock::new(Vec2 { x: 0.0, y: 0.0 }));
     }
 
     #[op]
@@ -76,7 +87,7 @@
     Ok(sum)
     }
 
-    #[derive(Deserialize, Default, Debug)]
+    #[derive(Deserialize, Default, Debug, Clone, Copy)]
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
     pub struct Vec2 {
@@ -120,7 +131,7 @@
             Ok(mut n) => {
                 let a = n.get_mut(&prop);
                 let b = Vector3::new(vec3.x, vec3.y, vec3.z);
-                let c = a.unwrap().set_rotation(b);
+                a.unwrap().set_rotation(b);
 
                 drop(n);
             },
@@ -152,7 +163,7 @@
             Ok(mut n) => {
                 let a = n.get_mut(&prop);
                 let b = Vector3::new(vec3.x, vec3.y, vec3.z);
-                let c = a.unwrap().position = b;
+                a.unwrap().position = b;
 
                 drop(n);
             },
@@ -503,6 +514,106 @@
         Ok(wopper)
     }
 
+    #[op]
+    fn mod_cam_rot(cam: i32, vec3: Vec3) -> Result<(), deno_core::error::AnyError>{
+
+        match camerai.write() {
+            Ok(mut n) => {
+                let a = n.get_mut(&cam).unwrap();
+                let b = Vector3::new(vec3.x, vec3.y, vec3.z);
+                a.set_rotation(b);
+                a.refresh();
+
+                drop(n);
+            },
+            Err(_) => (),
+        };
+
+        //propz.get_mut(&prop).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        //drop(propz);
+        Ok(())
+    }
+
+    #[op]
+    fn get_cam_rot(cam: i32) -> Result<Vec3, deno_core::error::AnyError> {
+        let propz = camerai.read().expect("RwLock poisoned");
+
+        let pos = propz.get(&cam).unwrap().rotation.euler_angles();
+        
+        Ok(Vec3{
+            x:pos.0,
+            y:pos.1,
+            z:pos.2
+        })
+    }
+
+    #[op]
+    fn mod_cam_pos(cam: i32, vec3: Vec3) -> Result<(), deno_core::error::AnyError>{
+
+        match camerai.write() {
+            Ok(mut n) => {
+                let a = n.get_mut(&cam).unwrap();
+                let b = Vector3::new(-vec3.x, -vec3.y, -vec3.z);
+                a.position = b;
+                a.refresh();
+
+                drop(n);
+            },
+            Err(_) => (),
+        };
+
+        //propz.get_mut(&prop).unwrap().position = Vector3::new(vec3.x, vec3.y, vec3.z);
+        //drop(propz);
+        Ok(())
+    }
+
+    #[op]
+    fn get_cam_pos(cam: i32) -> Result<Vec3, deno_core::error::AnyError> {
+        let propz = camerai.read().expect("RwLock poisoned");
+
+        let pos = propz.get(&cam).unwrap().position;
+        
+        Ok(Vec3{
+            x:pos.x,
+            y:pos.y,
+            z:pos.z
+        })
+    }
+
+    #[op]
+    fn create_camera() -> Result<i32, deno_core::error::AnyError> {
+        match SCREEN_SIZE.try_read() {
+            Ok(n) => {
+                let mut cameraz = camerai.write().expect("RwLock poisoned");
+                let new_cam = Camera::craft(*n);
+
+                let wopper = cameraz.len() as i32;
+                cameraz.insert(wopper, new_cam);
+
+                drop(n);
+                return Ok(wopper);
+            },
+            Err(_) => (),
+        }
+        Ok(0)
+    }
+
+    #[op]
+    fn set_main_camera(cam: i32) -> Result<(), deno_core::error::AnyError> {
+        match SCREEN_SIZE.try_read() {
+            Ok(n) => {
+                let mut camz = MAIN_CAMERA.write().expect("RwLock poisoned");
+
+                *camz = cam;
+
+                drop(n);
+            },
+            Err(_) => (),
+        }
+        
+        Ok(())
+    }
+
     // #[op]
     // fn add_event_listener<FP, 'scope>(  
     //     state: &mut OpState,
@@ -517,7 +628,12 @@
         
         let ext = Extension::builder("KE_OBjects")
         .ops(vec![
-            //add_event_listener::decl(),
+            mod_cam_pos::decl(),
+            get_cam_pos::decl(),
+            mod_cam_rot::decl(),
+            get_cam_rot::decl(),
+            create_camera::decl(),
+            set_main_camera::decl(),
 
             mod_prop_rot::decl(),
             get_prop_rot::decl(),

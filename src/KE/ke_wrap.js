@@ -127,6 +127,32 @@ class Prop {
     }
 }
 
+class Camera {
+    set position(vec3i){
+        ops.mod_cam_pos(this._KE_Prop, vec3i);
+    }
+
+    get position(){
+        return ops.get_cam_pos(this._KE_Prop);
+    }
+
+    set rotation(vec3i){
+        ops.mod_cam_rot(this._KE_Prop, vec3i);
+    }
+
+    get rotation(){
+        return ops.get_cam_rot(this._KE_Prop);
+    }
+
+    constructor() {
+        this._KE_Prop = ops.create_camera();
+    }
+}
+
+function SetMainCam(av){
+    ops.set_main_camera(av._KE_Prop);
+}
+
 function print(a){
     Deno.core.print(a)
 }
