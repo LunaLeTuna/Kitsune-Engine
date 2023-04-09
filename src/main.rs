@@ -341,7 +341,7 @@ fn main() {
         },
         Err(_) => (),
         }
-
+        sender.send(KE_THREAD_INFORMER::Awa).unwrap();
     });
 
 }

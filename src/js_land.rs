@@ -738,105 +738,81 @@
             
             let thread_mail = receiver.try_recv();
 
-            if thread_mail.is_err() {
+            if !thread_mail.is_err() {
                 continue;
             }else{
-                match thread_mail.unwrap() {
-                    KE_THREAD_INFORMER::Awa => (),
-                    KE_THREAD_INFORMER::Swag(_) => todo!()
-                }
-            }
+                // match thread_mail.unwrap() {
+                //     KE_THREAD_INFORMER::Awa => (),
+                //     KE_THREAD_INFORMER::Swag(_) => todo!()
+                // }
+            
 
-            // not 100% sure there may be a mem leak here, keep 85 eyes open at all times  :::::::::::;::::::::::::::::::::::::::::::3
+                // not 100% sure there may be a mem leak here, keep 85 eyes open at all times  :::::::::::;::::::::::::::::::::::::::::::3
 
-            match mouse_pos.try_read() {
-                Ok(mut n) => {
-                    if n.x!=mouse_last_pos.x||n.y!=mouse_last_pos.y {
-                        let scope = &mut v8::HandleScope::new(scope);
-                        //println!("nya {} {}", n.x, n.y);
-                        //mouse_last_pos = Vec2{x:n.x,y:n.y};
-
-                        let x = v8::Number::new(scope, n.x as f64).into();
-                        mouseenv.set(scope, xname.into(), x);
-                        let y = v8::Number::new(scope, n.y as f64).into();
-                        mouseenv.set(scope, yname.into(), y);
-
-                        //get input function
-                        fun_name(scope, module_object, recv, "mousemove".to_owned(), mouseenv.into())?;
-                        
-                    }
-                    drop(n);
-                },
-                Err(_) => (),
-            }
-
-            // match key_events.try_read() {
-            //     Ok(mut n) => {
-            //         if n.len()!=0 {
-            //             n.iter().for_each(|evnt| {
-            //                 let scope = &mut v8::HandleScope::new(scope);
-            //                 //println!("nya {} {}", n.x, n.y);
-            //                 //mouse_last_pos = Vec2{x:n.x,y:n.y};
-
-            //                 let mole = v8::ObjectTemplate::new(scope);
-            //                 let lename = v8::String::new(scope, "keyID").unwrap(); //.name().into()
-            //                 let key = v8::Number::new(scope, evnt.input.scancode.into());
-            //                 mole.set(lename.into(), key.into());
-                            
-            //                 let real = mole.new_instance(scope).unwrap().into();
-
-            //                 //get input function
-            //                 fun_name(scope, module_object, recv, "keydown".to_owned(), real);
-            //                 ()
-            //             });
-            //         }
-            //         drop(n);
-            //     },
-            //     Err(_) => (),
-            // }
-
-            match key_events.try_write() {
-                Ok(mut n) => {
-                    if n.len()!=0 {
-                        n.iter().for_each(|(_index, evnt)| {
+                match mouse_pos.try_read() {
+                    Ok(mut n) => {
+                        if n.x!=mouse_last_pos.x||n.y!=mouse_last_pos.y {
                             let scope = &mut v8::HandleScope::new(scope);
                             //println!("nya {} {}", n.x, n.y);
                             //mouse_last_pos = Vec2{x:n.x,y:n.y};
 
-                            let x = v8::Number::new(scope, evnt.input.scancode as f64).into();
-                            keyenv.set(scope, codename.into(), x);
+                            let x = v8::Number::new(scope, n.x as f64).into();
+                            mouseenv.set(scope, xname.into(), x);
+                            let y = v8::Number::new(scope, n.y as f64).into();
+                            mouseenv.set(scope, yname.into(), y);
 
                             //get input function
-                            match evnt.input.state {
-                                winit::event::ElementState::Pressed => fun_name(scope, module_object, recv, "keydown".to_owned(), keyenv.into()),
-                                winit::event::ElementState::Released => fun_name(scope, module_object, recv, "keyup".to_owned(), keyenv.into()),
-                            };
+                            fun_name(scope, module_object, recv, "mousemove".to_owned(), mouseenv.into())?;
+                            
+                        }
+                        drop(n);
+                    },
+                    Err(_) => (),
+                }
 
-                            ()
-                        });
-                    }
-                    n.drain();
-                    drop(n);
-                },
-                Err(_) => (),
+                match key_events.try_write() {
+                    Ok(mut n) => {
+                        if n.len()!=0 {
+                            n.iter().for_each(|(_index, evnt)| {
+                                let scope = &mut v8::HandleScope::new(scope);
+                                //println!("nya {} {}", n.x, n.y);
+                                //mouse_last_pos = Vec2{x:n.x,y:n.y};
+
+                                let x = v8::Number::new(scope, evnt.input.scancode as f64).into();
+                                keyenv.set(scope, codename.into(), x);
+
+                                //get input function
+                                match evnt.input.state {
+                                    winit::event::ElementState::Pressed => fun_name(scope, module_object, recv, "keydown".to_owned(), keyenv.into()),
+                                    winit::event::ElementState::Released => fun_name(scope, module_object, recv, "keyup".to_owned(), keyenv.into()),
+                                };
+
+                                ()
+                            });
+                        }
+                        n.drain();
+                        drop(n);
+                    },
+                    Err(_) => (),
+                }
+
+                // let mut propz = propz.write().expect("RwLock poisoned");
+                // propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));
+                // propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
+
+
+                let scope = &mut v8::HandleScope::new(scope);
+                
+
+                if az > 1000.0 {az = 0.0}
+
+                //println!("meow {}", az);
+
+
+
+                function.call(scope, recv, empty);
+                //drop(scope);
             }
-
-            // let mut propz = propz.write().expect("RwLock poisoned");
-            // propz.get_mut(&0).unwrap().set_rotation(Vector3::new(az.sin()/2.0, 0.0, 0.0));
-            // propz.get_mut(&0).unwrap().position = Vector3::new(3.14 / 9.0 * az.sin(), 0.0, 0.0);
-
-
-            let scope = &mut v8::HandleScope::new(scope);
-            
-
-            if az > 1000.0 {az = 0.0}
-
-            //println!("meow {}", az);
-
-
-
-            function.call(scope, recv, empty);
-            //drop(scope);
             sender.send(KE_THREAD_WIN::Awa).unwrap();
         }
     }
