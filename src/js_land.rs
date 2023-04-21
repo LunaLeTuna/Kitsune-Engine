@@ -732,6 +732,9 @@
         
         let keyenv = keyenv.new_instance(scope).unwrap();
 
+        let mouse_poss = mouse_pos.clone();
+        let key_event = key_events.clone();
+
         loop {
             az=az+0.0001;
             // if no message just dont until there is
@@ -749,7 +752,7 @@
 
                 // not 100% sure there may be a mem leak here, keep 85 eyes open at all times  :::::::::::;::::::::::::::::::::::::::::::3
 
-                match mouse_pos.try_read() {
+                match mouse_poss.try_read() {
                     Ok(mut n) => {
                         if n.x!=mouse_last_pos.x||n.y!=mouse_last_pos.y {
                             let scope = &mut v8::HandleScope::new(scope);
@@ -770,7 +773,7 @@
                     Err(_) => (),
                 }
 
-                match key_events.try_write() {
+                match key_event.try_write() {
                     Ok(mut n) => {
                         if n.len()!=0 {
                             n.iter().for_each(|(_index, evnt)| {

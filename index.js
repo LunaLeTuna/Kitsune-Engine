@@ -24,7 +24,7 @@ box.texture2 = nya;
 
 var wopes = [];
 
-var axmax = 100;
+var axmax = 20;
 var ax = 0;
 
 var move_over = new Vector3(0,0,-7)
