@@ -81,7 +81,7 @@ pub fn load_obj<'a>(location: &str, display: &'a glium::Display) -> Model<'a> {
     }
 
     Model {
-        name: "nya".into(),
+        name: "nya",
         verts: convert_ke_to_gl(&final_v, display),
     }
 }

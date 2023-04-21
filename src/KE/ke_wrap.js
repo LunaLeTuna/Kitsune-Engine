@@ -2,14 +2,14 @@ const core = Deno.core;
 const ops = core.ops;
 
 class Vector2 {
-    constructor(x,y) {
+    constructor(x, y) {
         this.x = x;
         this.y = y;
     }
 }
 
 class Vector3 {
-    constructor(x,y,z) {
+    constructor(x, y, z) {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -50,35 +50,35 @@ class Texture {
 }
 
 class Prop {
-    set position(vec3i){
+    set position(vec3i) {
         ops.mod_prop_pos(this._KE_Prop, vec3i);
     }
 
-    get position(){
+    get position() {
         return ops.get_prop_pos(this._KE_Prop);
     }
 
-    set rotation(vec3i){
+    set rotation(vec3i) {
         ops.mod_prop_rot(this._KE_Prop, vec3i);
     }
 
-    get rotation(){
+    get rotation() {
         return ops.get_prop_rot(this._KE_Prop);
     }
 
-    set scale(vec3i){
+    set scale(vec3i) {
         ops.mod_prop_scale(this._KE_Prop, vec3i);
     }
 
-    get scale(){
+    get scale() {
         return ops.get_prop_scale(this._KE_Prop);
     }
 
-    set shader(modeli){
+    set shader(modeli) {
         ops.mod_prop_shader(this._KE_Prop, modeli.ID);
     }
 
-    get shader(){
+    get shader() {
         return ops.get_prop_shader(this._KE_Prop);
     }
 
@@ -98,27 +98,27 @@ class Prop {
         ops.mod_prop_shader_var_vec3(this._KE_Prop, name, data);
     }
 
-    set model(modeli){
+    set model(modeli) {
         ops.mod_prop_model(this._KE_Prop, modeli.ID);
     }
 
-    get model(){
+    get model() {
         return ops.get_prop_model(this._KE_Prop);
     }
 
-    set texture(modeli){
+    set texture(modeli) {
         ops.mod_prop_texture(this._KE_Prop, 0, modeli.ID);
     }
 
-    get texture(){
+    get texture() {
         return ops.get_prop_texture(this._KE_Prop, 0);
     }
 
-    set texture2(modeli){
+    set texture2(modeli) {
         ops.mod_prop_texture(this._KE_Prop, 1, modeli.ID);
     }
 
-    get texture2(){
+    get texture2() {
         return ops.get_prop_texture(this._KE_Prop, 1);
     }
 
@@ -128,19 +128,19 @@ class Prop {
 }
 
 class Camera {
-    set position(vec3i){
+    set position(vec3i) {
         ops.mod_cam_pos(this._KE_Prop, vec3i);
     }
 
-    get position(){
+    get position() {
         return ops.get_cam_pos(this._KE_Prop);
     }
 
-    set rotation(vec3i){
+    set rotation(vec3i) {
         ops.mod_cam_rot(this._KE_Prop, vec3i);
     }
 
-    get rotation(){
+    get rotation() {
         return ops.get_cam_rot(this._KE_Prop);
     }
 
@@ -149,28 +149,28 @@ class Camera {
     }
 }
 
-function SetMainCam(av){
+function SetMainCam(av) {
     ops.set_main_camera(av._KE_Prop);
 }
 
-function print(a){
-    Deno.core.print(a)
+function print(a) {
+    Deno.core.print(a);
 }
 
 var _KE_EVENT_LIST = {};
 
-function addEventListener(name, fn){
-    if(_KE_EVENT_LIST.hasOwnProperty(name)){
+function addEventListener(name, fn) {
+    if (_KE_EVENT_LIST.hasOwnProperty(name)) {
         _KE_EVENT_LIST[name].push(fn);
-    }else{
+    } else {
         _KE_EVENT_LIST[name] = [];
         _KE_EVENT_LIST[name].push(fn);
     }
 }
 
-function dispatchEvent(name, data){
-    if(!_KE_EVENT_LIST.hasOwnProperty(name)) return;
+function dispatchEvent(name, data) {
+    if (!_KE_EVENT_LIST.hasOwnProperty(name)) return;
     _KE_EVENT_LIST[name].forEach(element => {
-        element(data)
+        element(data);
     });
 }
