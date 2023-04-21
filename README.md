@@ -25,5 +25,6 @@ run this:
 - [Ty for pig "Ellie Pig" model](https://github.com/TyThePotato)
 
 ## Project Ideas with KE
+
 - plug in the file system in to a git like repository & make a game like S&Box or Brick-Hill
 - use wasm to allow for other programming languages
