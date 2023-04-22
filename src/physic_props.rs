@@ -1,30 +1,30 @@
 use std::collections::HashMap;
 
-use nalgebra::{vector, Vector3};
-use rapier3d::prelude::{ColliderSet, RigidBodySet, RigidBodyBuilder, RigidBodyType, RigidBodyHandle};
+use rapier3d::prelude::{RigidBodyBuilder, RigidBodyHandle, RigidBodySet, RigidBodyType};
 
 use crate::props::Prop;
 
-enum copy_what {
-    all,
-    only_rotation,
-    only_position,
+pub enum CopyWhat {
+    All,
+    OnlyRotation,
+    OnlyPosition,
 }
 
 pub struct PhysWorld {
     ridgid_world: RigidBodySet,
-    phys_handles: HashMap<i32, RigidBodyHandle>
+    phys_handles: HashMap<i32, RigidBodyHandle>,
 }
 
 impl PhysWorld {
-    pub fn init_phys_world(name: String) -> PhysWorld{
+    pub fn init_phys_world(_name: String) -> PhysWorld {
         PhysWorld {
             ridgid_world: RigidBodySet::new(),
-            phys_handles: HashMap::new()
+            phys_handles: HashMap::new(),
         }
     }
 
-    pub fn create_static_rigidbody() { //fixed
+    pub fn create_static_rigidbody() {
+        // fixed
         todo!()
     }
 
@@ -35,50 +35,59 @@ impl PhysWorld {
         .can_sleep(true)
         .ccd_enabled(false) //ponder this later
         .build();
+
         rigid_body.set_rotation(prop.rotation.into(), false);
 
-        let ID = self.phys_handles.len() as i32;
+        let id = self.phys_handles.len() as i32;
 
-        let _handle = self.ridgid_world.insert(rigid_body);
-        self.phys_handles.insert(ID, _handle);
-        prop.phys_ID = ID;
+        let rb_id = self.ridgid_world.insert(rigid_body);
+        self.phys_handles.insert(id, rb_id);
+        prop.phys_id = id;
     }
 
-    //for copying properties of prop to it's phys counter part
-    fn sync_phys_prop(&mut self, prop: Prop, ctype: copy_what){
-        if prop.phys_ID == -1 {return};
-        let id = self.phys_handles.get_mut(&prop.phys_ID).unwrap();
-        let p = self.ridgid_world.get_mut(*id).unwrap();
+    // for copying properties of prop to it's phys counter part
+    fn _sync_phys_prop(&mut self, prop: Prop, ctype: CopyWhat) {
+        if prop.phys_id == -1 {
+            return;
+        };
+
+        let rb_id = self.phys_handles.get_mut(&prop.phys_id).unwrap();
+        let rb = self.ridgid_world.get_mut(*rb_id).unwrap();
+
         match ctype {
-            copy_what::all => {
-                p.set_position(prop.position.into(), false);
-                p.set_rotation(prop.rotation.into(), false);
-            },
-            copy_what::only_rotation => {
-                p.set_rotation(prop.rotation.into(), false);
-            },
-            copy_what::only_position => {
-                p.set_position(prop.position.into(), false);
-            },
+            CopyWhat::All => {
+                rb.set_position(prop.position.into(), false);
+                rb.set_rotation(prop.rotation.into(), false);
+            }
+            CopyWhat::OnlyRotation => {
+                rb.set_rotation(prop.rotation.into(), false);
+            }
+            CopyWhat::OnlyPosition => {
+                rb.set_position(prop.position.into(), false);
+            }
         }
     }
 
-    //for copying position & rotation of phys prop to it's counter part
-    fn sync_prop(&mut self, prop: &mut Prop, ctype: copy_what){
-        if prop.phys_ID == -1 {return};
-        let id = self.phys_handles.get_mut(&prop.phys_ID).unwrap();
-        let p = self.ridgid_world.get_mut(*id).unwrap();
+    // for copying position & rotation of phys prop to it's counter part
+    fn _sync_prop(&mut self, prop: &mut Prop, ctype: CopyWhat) {
+        if prop.phys_id == -1 {
+            return;
+        };
+
+        let rb_id = self.phys_handles.get_mut(&prop.phys_id).unwrap();
+        let rb = self.ridgid_world.get_mut(*rb_id).unwrap();
+
         match ctype {
-            copy_what::all => {
-                prop.position = *p.translation();
-                prop.rotation = p.rotation().to_rotation_matrix();
-            },
-            copy_what::only_rotation => {
-                prop.rotation = p.rotation().to_rotation_matrix();
-            },
-            copy_what::only_position => {
-                prop.position = *p.translation();
-            },
+            CopyWhat::All => {
+                prop.position = *rb.translation();
+                prop.rotation = rb.rotation().to_rotation_matrix();
+            }
+            CopyWhat::OnlyRotation => {
+                prop.rotation = rb.rotation().to_rotation_matrix();
+            }
+            CopyWhat::OnlyPosition => {
+                prop.position = *rb.translation();
+            }
         }
     }
 }

@@ -1,17 +1,16 @@
-use std::{fs, time::SystemTime};
+use std::fs;
+use std::time::SystemTime;
 
 use glium::Program;
-use nalgebra::{Vector3, Vector2};
-
-use crate::js_land::shaderi;
+use nalgebra::{Vector2, Vector3};
 
 #[cfg(debug_assertions)]
 pub struct Shader {
     pub name: String,
     pub program: Program,
     pub url: String,
-    pub timeChangedF: SystemTime,
-    pub timeChangedV: SystemTime
+    pub time_changed_f: SystemTime,
+    pub time_changed_v: SystemTime,
 }
 
 #[cfg(not(debug_assertions))]
@@ -21,16 +20,16 @@ pub struct Shader {
 }
 
 #[derive(Clone, Copy)]
-pub enum shadvType {
-    bool(bool),
-    integer(i32),
-    float(f32),
-    vec2(Vector2<f32>),
-    vec3(Vector3<f32>)
+pub enum ShadvType {
+    Bool(bool),
+    Integer(i32),
+    Float(f32),
+    Vec2(Vector2<f32>),
+    Vec3(Vector3<f32>),
 }
 
-pub struct shader_var {
-    pub data: shadvType,
+pub struct ShaderVar {
+    pub data: ShadvType,
 }
 
 pub fn craft(location: &str, display: &glium::Display) -> Shader {
@@ -42,15 +41,15 @@ pub fn craft(location: &str, display: &glium::Display) -> Shader {
 
     #[cfg(debug_assertions)]
     let sh = {
-        let metadataF = fs::metadata(format!("{location}.frag")).expect("failed to check shader file");
-        let metadataV = fs::metadata(format!("{location}.vert")).expect("failed to check shader file");
+        let metadata_f = fs::metadata(format!("{location}.frag")).expect("failed to check shader file");
+        let metadata_v = fs::metadata(format!("{location}.vert")).expect("failed to check shader file");
 
         Shader {
             name: "nya".into(),
             program: prg,
             url: location.to_owned(),
-            timeChangedF: metadataF.modified().unwrap(),
-            timeChangedV: metadataV.modified().unwrap(),
+            time_changed_f: metadata_f.modified().unwrap(),
+            time_changed_v: metadata_v.modified().unwrap(),
         }
     };
 

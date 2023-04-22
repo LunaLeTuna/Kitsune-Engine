@@ -1,6 +1,6 @@
-use std::{f32::consts::PI};
+use std::f32::consts::PI;
 
-use nalgebra::{Matrix4, Perspective3, Rotation3, Vector2, Vector3};
+use nalgebra::{Matrix4, Perspective3, Rotation3, Vector3};
 
 use crate::js_land::Vec2;
 
@@ -40,9 +40,7 @@ impl Camera {
         }
     }
 
-    pub fn set_rotation(&mut self, target: Vector3<f32>) {
-        self.rotation = nalgebra::Rotation3::new(target);
-    }
+    pub fn set_rotation(&mut self, target: Vector3<f32>) { self.rotation = nalgebra::Rotation3::new(target); }
 
     pub fn look_at(&mut self, target: Vector3<f32>) {
         self.rotation = nalgebra::Rotation3::look_at_lh(&(self.position + target), &self.up);
@@ -55,10 +53,7 @@ impl Camera {
         *pogger
     }
 
-    pub fn view_drop(&self) -> [[f32; 4]; 4] {
-        // dbg!(pogger);
-        self.view.try_into().unwrap()
-    }
+    pub fn view_drop(&self) -> [[f32; 4]; 4] { self.view.try_into().unwrap() }
 
     pub fn refresh(&mut self) {
         let mut model = self.rotation.matrix().to_homogeneous();
