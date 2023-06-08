@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 use nalgebra::{Matrix4, Perspective3, Rotation3, Vector3};
 
-use crate::js_land::Vec2;
+use crate::ke_units::Vec2;
 
 pub struct Camera {
     pub name: String,

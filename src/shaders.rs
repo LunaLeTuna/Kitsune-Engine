@@ -32,32 +32,34 @@ pub struct ShaderVar {
     pub data: ShadvType,
 }
 
-pub fn craft(location: &str, display: &glium::Display) -> Shader {
-    let vert_sause = fs::read_to_string(format!("{location}.vert")).unwrap();
+impl Shader {
+    pub fn craft(location: &str, display: &glium::Display) -> Shader {
+        let vert_sause = fs::read_to_string(format!("{location}.vert")).unwrap();
 
-    let frag_sause = fs::read_to_string(format!("{location}.frag")).unwrap();
+        let frag_sause = fs::read_to_string(format!("{location}.frag")).unwrap();
 
-    let prg = Program::from_source(display, &vert_sause, &frag_sause, None).unwrap();
+        let prg = Program::from_source(display, &vert_sause, &frag_sause, None).unwrap();
 
-    #[cfg(debug_assertions)]
-    let sh = {
-        let metadata_f = fs::metadata(format!("{location}.frag")).expect("failed to check shader file");
-        let metadata_v = fs::metadata(format!("{location}.vert")).expect("failed to check shader file");
+        #[cfg(debug_assertions)]
+        let sh = {
+            let metadata_f = fs::metadata(format!("{location}.frag")).expect("failed to check shader file");
+            let metadata_v = fs::metadata(format!("{location}.vert")).expect("failed to check shader file");
 
-        Shader {
+            Shader {
+                name: "nya".into(),
+                program: prg,
+                url: location.to_owned(),
+                time_changed_f: metadata_f.modified().unwrap(),
+                time_changed_v: metadata_v.modified().unwrap(),
+            }
+        };
+
+        #[cfg(not(debug_assertions))]
+        let sh = Shader {
             name: "nya".into(),
             program: prg,
-            url: location.to_owned(),
-            time_changed_f: metadata_f.modified().unwrap(),
-            time_changed_v: metadata_v.modified().unwrap(),
-        }
-    };
+        };
 
-    #[cfg(not(debug_assertions))]
-    let sh = Shader {
-        name: "nya".into(),
-        program: prg,
-    };
-
-    sh
+        sh
+    }
 }

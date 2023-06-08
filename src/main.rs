@@ -1,128 +1,157 @@
-#[macro_use]
-extern crate glium;
+use cameras::Camera;
+use glium::{glutin::ContextBuilder, index::{NoIndices, PrimitiveType}, DepthTest};
+use kbf::load;
+use ke_units::Vec2;
+use models::Model;
+use nalgebra::Vector3;
+use props::Prop;
+use shaders::{ShadvType, Shader};
+use textures::Texture;
+use winit::{event_loop::{EventLoop, ControlFlow}, window::WindowBuilder, event::{StartCause, Event, WindowEvent}};
+use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
+use glium::texture::SrgbTexture2d;
 
+use std::borrow::BorrowMut;
+use std::collections::HashMap;
+use winit::platform::run_return::EventLoopExtRunReturn;
+
+pub mod fs_system;
 pub mod cameras;
 pub mod dynamic_uniform;
-pub mod js_land;
+pub mod ke_units;
 pub mod models;
 pub mod physic_props;
 pub mod props;
 pub mod shaders;
 pub mod textures;
+pub mod kbf;
 
-use std::borrow::BorrowMut;
-use std::collections::HashMap;
-use std::fs;
-use std::sync::mpsc;
-use std::time::Instant;
 
-#[macro_use]
-extern crate lazy_static;
-use cameras::Camera;
-use glium::draw_parameters::DepthTest;
-use glium::glutin::event_loop::{ControlFlow, EventLoop};
-use glium::glutin::window::WindowBuilder;
-use glium::glutin::ContextBuilder;
-use glium::index::{NoIndices, PrimitiveType};
-use glium::texture::SrgbTexture2d;
-use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
-use js_land::{
-    create_js_thread, KeThreadInformer, KeThreadWin, KeyEvnt, RequestNewObj, RequestType, Vec2, CAMERA_MAP,
-    KEY_EVENTS_MAP, MAIN_CAMERA, MAKE_REQUEST_MAP, MOUSE_POS, PROP_MAP, SCREEN_SIZE, SHADER_AMOUNT, SHADER_MAP,
-};
-use models::Model;
-use nalgebra::Vector3;
-use props::Prop;
-use shaders::{Shader, ShadvType};
-use textures::Texture;
-use winit::event::{Event, StartCause, WindowEvent};
-use winit::platform::run_return::EventLoopExtRunReturn;
+lazy_static::lazy_static! {
+}
 
-fn main() {
+
+fn main(){
+
+    // project settings
+    // which this will allow for the engine executable can
+    // keep diffrent examples in their own paths, but by default
+    // the engine starts at .
+    // or it's current path
+
+    let _KE_MAIN_PATH = ".";
+    let _KE_MAIN_DEPENDENTS = "./engine_dependent";
+
+
+
+
     // init gl and window
     let mut event_loop = EventLoop::new();
     let wb = WindowBuilder::new();
     let cb = ContextBuilder::new().with_depth_buffer(24);
     let display = Display::new(wb, cb, &event_loop).unwrap();
 
-    // creates things
-    let propz = PROP_MAP.clone();
-    let mut modelz = HashMap::new();
-    let mut texturez = HashMap::new();
-    let mut shaderz = HashMap::new();
+    let params = DrawParameters {
+        depth: Depth {
+            test: DepthTest::IfLess,
+            write: true,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
 
-    modelz.insert(0, models::load_obj("./pig.obj", &display));
+    let mut _uniform = dynamic_uniform::DynamicUniforms::new();
 
-    texturez.insert(
-        0,
-        Texture::craft("./engine_dependent/ellie_def/PiggoTexture.png", &display),
-    );
-    texturez.insert(
-        1,
-        Texture::craft("./engine_dependent/ellie_def/PiggoTexture.png", &display),
-    );
 
-    shaderz.insert(0, shaders::craft("./shaders/base", &display));
-    SHADER_MAP.write().expect("RwLock poisoned").insert(0, HashMap::new());
 
-    let start = Instant::now();
+    // this is where assets are stored :3
+    // gonna call these lists
+    let mut propz: HashMap<i32, Prop> = HashMap::new();
+    let mut modelz: HashMap<i32, Model> = HashMap::new();
+    let mut texturez: HashMap<i32, Texture> = HashMap::new();
+    let mut shaderz: HashMap<i32, Shader> = HashMap::new();
 
-    let (sender, receiver) = mpsc::channel::<KeThreadInformer>();
-    let (senderb, receiverb) = mpsc::channel::<KeThreadWin>();
 
-    if let Ok(mut camera_map) = CAMERA_MAP.try_write() {
-        let (width, height) = display.get_framebuffer_dimensions();
-        let mut main_cam = Camera::craft(Vec2 {
-            x: width as f32,
-            y: height as f32,
-        });
 
-        main_cam.set_rotation(Vector3::new(0.0, 0.0, 0.0));
-        main_cam.position = Vector3::new(0.0, 0.0, -6.0);
+    // this sets up engine default assets
+    {
+        let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/base";
+        shaderz.insert(0, Shader::craft(&de_shader, &display));
 
-        main_cam.refresh();
-        camera_map.insert(0, main_cam);
+        let pig_model = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.obj";
+        modelz.insert(0, models::load_obj(&pig_model, &display));
+
+        let pig_skin = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.png";
+        texturez.insert(0, Texture::craft(&pig_skin, &display));
+
+        // propz.insert(0, Prop::new("nya".into()));
+
+        // let a = propz.get_mut(&0).unwrap();
+        // a.shader = 0;
+        // a.model = 0;
+        // a.texture1 = 0;
+        // a.texture2 = 0;
     }
 
-    // init v8/deno
-    // ok so this insta starts the tick loop which you probably dont want until the
-    // rest initializes also you probaly want to tie the tick to the render
-    // updates so youll need a way to like send messages tot htat thread
-    create_js_thread(receiver, senderb, propz);
+    let map = load("./stanfordlucy.brk");
+    let mut partnp = 0;
+    for np in map {
+        propz.insert(partnp, np);
+        partnp+=1;
+    }
 
-    let mut js_ready = false;
+    // eventually make this an array of lights inside a hashmap list
+    let light = [1.4, 0.4, 0.7f32];
+
+    // main cam is just id of the camera map
+    let mut _main_camera = 0;
+    let mut camera_map = HashMap::new();
+
+    // this gets the window's size and creates the camera to reflect it
+    let (width, height) = display.get_framebuffer_dimensions();
+    let mut main_cam = Camera::craft(Vec2 {
+        x: width as f32,
+        y: height as f32,
+    });
+
+    //main_cam.set_rotation(Vector3::new(-0.5, 0.0, 0.3));
+    main_cam.position = Vector3::new(0.0, -10.0, -90.0);
+
+    main_cam.refresh();
+    camera_map.insert(0, main_cam);
+
+
+    // thread scheduler :3
+    // now i'm not sure how other engines do it
+    // nor how this is going to work without lag
+    // but gonna try this
+    //
+    //
+    // First thread:
+    // handles when other threads fire
+    // next handles changes to props that other threads request
+    // last handles rendering
+    //
+    //
+    // Second thread:
+    // This thread handles physics and entity interactions
+    // Then handles Scripting
+    //
+    //
+    // Third thread:
+    // Loads map files
+    // Gets assets
+    // probably works with networking
+
+    let mut loop_wawa: f32 = 0.0;
 
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
 
+        // womp this is where events from the window thingamabob does things
+        // pretty much we are gonna quoue mouse and keyboards
         match event {
             Event::WindowEvent { event, .. } => match event {
-                WindowEvent::CursorMoved {
-                    device_id: _, position, ..
-                } => {
-                    if let Ok(mut mouse_pos) = MOUSE_POS.try_write() {
-                        *mouse_pos = Vec2 {
-                            x: position.x as f32,
-                            y: position.y as f32,
-                        };
-                    }
-                }
-                WindowEvent::KeyboardInput {
-                    device_id,
-                    input,
-                    is_synthetic,
-                } => {
-                    if let Ok(mut key_events_map) = KEY_EVENTS_MAP.try_write() {
-                        key_events_map.insert(
-                            input.scancode,
-                            KeyEvnt {
-                                is_synthetic,
-                                input,
-                                device_id,
-                            },
-                        );
-                    }
-                }
                 WindowEvent::CloseRequested { .. } => {
                     *control_flow = ControlFlow::Exit;
                 }
@@ -136,175 +165,88 @@ fn main() {
             _ => (),
         }
 
-        if let Ok(thread_mail) = receiverb.try_recv() {
-            match thread_mail {
-                KeThreadWin::JsReady => {
-                    js_ready = true;
-                }
-                KeThreadWin::Swag(_) => (),
-                KeThreadWin::Based(_) => (),
-                KeThreadWin::Awa => (),
-            }
-        } else {
-            return;
-        }
+        // let main_cam = camera_map.get_mut(&0).unwrap();
+        // main_cam.position = Vector3::new(0.0, -10.0, -90.0+((loop_wawa*6.0).sin()*2.0));
+        // main_cam.refresh();
+        // loop_wawa+=0.000001;
 
-        let light = [1.4, 0.4, 0.7f32];
+        let c = propz.get_mut(&1).unwrap();
+        c.position = Vector3::new(loop_wawa.sin()*8.0, 10.0, 80.0);
+        loop_wawa+=0.1;
+        
 
-        let params = DrawParameters {
-            depth: Depth {
-                test: DepthTest::IfLess,
-                write: true,
-                ..Default::default()
-            },
-            ..Default::default()
-        };
+        //
+        // this loop is pretty much the main render pipeline
+        // from this line and down
+        //
 
-        // send message :)
+        // start drawing frame
+        let mut target = display.draw();
+        target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
 
-        sender.send(KeThreadInformer::Awa).unwrap();
 
-        #[cfg(debug_assertions)]
-        {
-            for (index, sh) in &shaderz {
-                let name = sh.url.clone();
-                let metadata_f = fs::metadata(format!("{name}.frag")).expect("failed to check shader file");
-                let metadata_v = fs::metadata(format!("{name}.vert")).expect("failed to check shader file");
+        // now in theory one could get all the closest props and push refrences of those props in to a list
+        // then replace propz here to that list to implement some sorta calling
+        // i'ma do that later
+        propz.iter().for_each(|(_index, prop)| {
 
-                if metadata_f.modified().unwrap() != sh.time_changed_f
-                    || metadata_v.modified().unwrap() != sh.time_changed_v
-                {
-                    let mut modelreq = MAKE_REQUEST_MAP.write().expect("RwLock poisoned");
-                    let mut wopper = SHADER_AMOUNT.write().expect("RwLock poisoned");
-                    *wopper += 1;
+            //this is where all the shader values get pushed so we can send them to gpu
+            let mut uniform = dynamic_uniform::DynamicUniforms::new();
 
-                    drop(wopper); // DO NOT REMOVE THIS WOPPER, for some reason it works with it here
+            //this does all the prop's 3d model translation stuff
+            let model = &mut prop.rotation.matrix().to_homogeneous();
+            model.append_nonuniform_scaling_mut(&prop.scale);
+            let model = model.append_translation(&prop.position);
+            let binding = *model.as_ref();
+            uniform.add("model", &binding);
 
-                    let _wopper = *SHADER_AMOUNT.read().unwrap();
+            //camera translations
+            let view = camera_map[&_main_camera].view_drop();
+            uniform.add("view", &view);
+            let perspective = camera_map[&_main_camera].project_drop();
+            uniform.add("perspective", &perspective);
 
-                    let new_req = RequestNewObj {
-                        r_type: RequestType::Shader,
-                        url: String::from(&sh.url),
-                        id: *index,
-                    };
+            uniform.add("u_light", &light);
+            uniform.add("diffuse_tex", &*get_texture(&texturez, prop)); // TODO: need to make this not &*, because thats bad probably
+            uniform.add("normal_tex", &*get_texture2(&texturez, prop));
 
-                    let woppera = modelreq.len() as i32;
-                    modelreq.insert(woppera, new_req);
-                    println!("{} has been updated", name);
-                }
-            }
-        }
+            // shader globle vars (TODO)
 
-        if let Ok(mut make_request_map) = MAKE_REQUEST_MAP.try_write() {
-            if !make_request_map.is_empty() {
-                make_request_map.iter().for_each(|(_index, newer)| match newer.r_type {
-                    RequestType::Shader => {
-                        let url = newer.url.as_str();
-                        shaderz.insert(newer.id, shaders::craft(url, &display));
+            // prop spesific shader vars pushed in to global
+            for (name, value) in &prop.shader_vars {
+                match value {
+                    ShadvType::Bool(value) => {
+                        uniform.add(name, value);
                     }
-                    RequestType::Model => {
-                        let url = newer.url.as_str();
-                        modelz.insert(newer.id, models::load_obj(url, &display));
+                    ShadvType::Integer(value) => {
+                        uniform.add(name, value);
                     }
-                    RequestType::Texture => {
-                        let url = newer.url.as_str();
-                        texturez.insert(newer.id, Texture::craft(url, &display));
+                    ShadvType::Float(value) => {
+                        uniform.add(name, value);
                     }
-                });
-
-                make_request_map.clear();
-            }
-        }
-
-        if let Ok(main_camera_id) = MAIN_CAMERA.try_read() {
-            if let Ok(mut camera_map) = CAMERA_MAP.try_write() {
-                // maybe not do this every frame... later...
-                let (width, height) = display.get_framebuffer_dimensions();
-
-                let main_cam = camera_map.get_mut(&main_camera_id).unwrap();
-                main_cam.reproject(Vec2 {
-                    x: width as f32,
-                    y: height as f32,
-                });
-
-                if let Ok(prop_map) = PROP_MAP.try_read() {
-                    let mut target = display.draw();
-                    target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
-
-                    let _t = (Instant::now() - start).as_secs_f32() * 2.0;
-
-                    let (width, height) = target.get_dimensions();
-
-                    if let Ok(mut screen_size) = SCREEN_SIZE.write() {
-                        *screen_size = Vec2 {
-                            x: width as f32,
-                            y: height as f32,
-                        };
+                    ShadvType::Vec2(value) => {
+                        uniform.add(name, value.as_ref());
                     }
-
-                    prop_map.iter().for_each(|(_index, prop)| {
-                        let model = &mut prop.rotation.matrix().to_homogeneous();
-
-                        model.append_nonuniform_scaling_mut(&prop.scale);
-
-                        let model = model.append_translation(&prop.position);
-
-                        let binding = *model.as_ref();
-
-                        let mut uniform = dynamic_uniform::DynamicUniforms::new();
-
-                        let view = main_cam.view_drop();
-
-                        uniform.add("view", &view);
-
-                        let perspective = main_cam.project_drop();
-
-                        uniform.add("perspective", &perspective);
-                        uniform.add("model", &binding);
-                        uniform.add("u_light", &light);
-                        uniform.add("diffuse_tex", get_texture(&texturez, prop));
-                        uniform.add("normal_tex", get_texture2(&texturez, prop));
-
-                        // shader globle vars (TODO)
-
-                        // prop spesific shader vars
-                        for (name, value) in &prop.shader_vars {
-                            match value {
-                                ShadvType::Bool(value) => {
-                                    uniform.add(name, value);
-                                }
-                                ShadvType::Integer(value) => {
-                                    uniform.add(name, value);
-                                }
-                                ShadvType::Float(value) => {
-                                    uniform.add(name, value);
-                                }
-                                ShadvType::Vec2(value) => {
-                                    uniform.add(name, value.as_ref());
-                                }
-                                ShadvType::Vec3(value) => {
-                                    uniform.add(name, value.as_ref());
-                                }
-                            }
-                        }
-
-                        target
-                            .draw(
-                                get_model(&modelz, prop),
-                                NoIndices(PrimitiveType::TrianglesList),
-                                get_shader(&shaderz, prop),
-                                &uniform,
-                                &params,
-                            )
-                            .unwrap();
-                    });
-
-                    target.finish().unwrap();
+                    ShadvType::Vec3(value) => {
+                        uniform.add(name, value.as_ref());
+                    }
                 }
             }
-        }
 
-        sender.send(KeThreadInformer::Awa).unwrap();
+            // here we draw the prop on the frame
+            target
+                .draw(
+                    get_model(&modelz, prop),
+                    NoIndices(PrimitiveType::TrianglesList),
+                    get_shader(&shaderz, prop),
+                    &uniform,
+                    &params,
+                )
+                .unwrap();
+        });
+
+        // finish frame and put on window probably
+        target.finish().unwrap();
     });
 }
 
