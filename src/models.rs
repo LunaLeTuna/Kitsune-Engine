@@ -1,6 +1,6 @@
-use std::fs;
+use glium::{vertex::VertexBuffer, implement_vertex};
 
-use glium::vertex::VertexBuffer;
+use crate::{fs_system::grab, ke_units::{parsef, parse}};
 
 #[derive(Copy, Clone)]
 pub struct Vertex {
@@ -20,11 +20,8 @@ pub struct Model<'a> {
     pub verts: VertexBuffer<Vertex>,
 }
 
-fn parsef(string: &str) -> f32 { string.parse().unwrap_or(-1.0) }
-fn parse(string: &str) -> usize { string.parse().unwrap_or(0) }
-
 pub fn load_obj<'a>(location: &str, display: &'a glium::Display) -> Model<'a> {
-    let file = fs::read_to_string(location).unwrap();
+    let file = grab(location);
 
     let mut pos = vec![];
     let mut nor = vec![];
