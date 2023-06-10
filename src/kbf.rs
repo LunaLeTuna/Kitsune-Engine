@@ -50,7 +50,6 @@ pub fn load(location: &str) -> Vec<Prop> {
                 //so this prop id should be 0
                 neo_prop.push(Prop::new("legacy_baseplate".into()));
             }
-<<<<<<< HEAD
         } 
         
         // this is kbf stuff :3
@@ -128,9 +127,6 @@ pub fn load(location: &str) -> Vec<Prop> {
 
         // here getting envirement parameters
         else if line_number <= 8 && compatibility == 1 {
-=======
-        }else if line_number <= 8 && compatibility == 1 {
->>>>>>> f0e64074e0dc9c5b15bbdf8835b3a6726b7d1745
             let lain = dat.as_slice();
             match line_number {
                 // ambient
@@ -144,11 +140,11 @@ pub fn load(location: &str) -> Vec<Prop> {
                 }
                 // skyColor
                 5 => {
-<<<<<<< HEAD
+
                     env.skyColor = Vec3::New(parsef(lain[0]),parsef(lain[1]),parsef(lain[2]));
-=======
+
                     env.ambient = Vec3::New(parsef(lain[0]),parsef(lain[1]),parsef(lain[2]));
->>>>>>> f0e64074e0dc9c5b15bbdf8835b3a6726b7d1745
+
                 }
                 // baseSize
                 6 => {
@@ -187,10 +183,8 @@ pub fn load(location: &str) -> Vec<Prop> {
                     current_prop += 1;
                 }
             }
-<<<<<<< HEAD
+        
             //getting brick parameters
-=======
->>>>>>> f0e64074e0dc9c5b15bbdf8835b3a6726b7d1745
             if !inside_obj {
                 match dat.as_slice() {
                     [x,y,z, xs,ys,zs, r,g,b,a] => {
