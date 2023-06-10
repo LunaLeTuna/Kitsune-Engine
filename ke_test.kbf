@@ -1,0 +1,63 @@
+Kitsune Engine V1
+
+>AmbientColor 0 0 0
+>SkyColor 0.9 0.4575 0.45
+>SunIntensity 300
+
+Legacy_Brick -1.5 7.5 -15 6 10 5
+	+NAME New Brick
+	+COLOR 0.2398584 0.235 0.5
+	+ROT 45.76518 1.596314 55.06093
+Legacy_Brick 3.5 7.5 2.5 4 8 8
+	+NAME New Brick - Copy
+	+COLOR 0.9647059 0.4901961 1
+Legacy_Brick -0.5 5.5 2.5 4 8 8
+	+NAME New Brick - Copy - Copy
+	+COLOR 0.5882353 0.945098 1
+Legacy_Brick 7.5 7.5 2.5 4 4 4
+	+NAME New Brick - Copy - Copy - Copy
+	+COLOR 1 0.9607843 0.9843137
+Legacy_Brick 11.5 7.5 2.5 4 8 4
+	+NAME New Brick - Copy - Copy
+	+COLOR 0.9647059 0.4901961 1
+Legacy_Brick 15.5 9.5 2.5 4 8 4
+	+NAME New Brick - Copy - Copy - Copy
+	+COLOR 0.5882353 0.945098 1
+Legacy_Brick 27.5 7.5 -7.5 4 4 4
+	+NAME New Brick - Copy - Copy - Copy
+	+COLOR 0.5882353 0.945098 1
+	+NOCOLLISION
+Legacy_Brick 27.5 7.5 -13.5 4 4 4
+	+NAME New Brick - Copy - Copy - Copy - Copy
+	+COLOR 0.5882353 0.945098 1
+	+ROT 0 15 0
+	+NOCOLLISION
+Legacy_Brick 27.5 7.5 3.5 4 4 4
+	+NAME New Brick - Copy - Copy - Copy - Copy
+	+COLOR 0.5882353 0.945098 1
+	+NOCOLLISION
+Legacy_Brick 15.5 6.25 -30.75 9 1 13
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 15.5 3 -42.75 9 1 13
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 330 0 0
+Legacy_Brick 15.5 3 -18.75 9 1 13
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 29.99997 0 0
+Light -5.5 7.75 -37 1 1 1
+	+NAME New Light
+	+COLOR 0.5 0.5 0.5
+wopper -2.5 7.75 -37 1 1 1
+	+NAME awa :3
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick -8.981628 6.91712 -21.19512 3 4 2
+	+NAME New Brick
+	+COLOR 0.1491083 0.5 0.105
+	+ROT 331.3574 305.2748 359.1839
+Legacy_Brick -7.063046 12.93942 -22.00877 4.5 4.75 3.5
+	+NAME New Brick
+	+COLOR 0.5 0.08776668 0.08500001
+	+ROT 317.2658 302.2815 73.45786

@@ -50,7 +50,83 @@ pub fn load(location: &str) -> Vec<Prop> {
                 //so this prop id should be 0
                 neo_prop.push(Prop::new("legacy_baseplate".into()));
             }
-        }else if line_number <= 8 && compatibility == 1 {
+        } 
+        
+        // this is kbf stuff :3
+
+        else if compatibility == 0 {
+            match dat.as_slice() {
+                [">AmbientColor", r, g, b] => {
+                    env.ambient = Vec3::New(parsef(r),parsef(g),parsef(b));
+                    inside_obj = false;
+                    continue;
+                }
+                [">SkyColor", r, g, b] => {
+                    env.skyColor = Vec3::New(parsef(r),parsef(g),parsef(b));
+                    inside_obj = false;
+                    continue;
+                }
+                [">SunIntensity", sunIntensity] => {
+                    env.sunIntensity = parsef(sunIntensity);
+                    inside_obj = false;
+                    continue;
+                }
+                _ => {}
+            }
+
+            //getting their parameters
+            if inside_obj {
+                let current_brick = neo_prop.get_mut(current_prop-1).unwrap();
+                if dat.first().unwrap().chars().next().unwrap() == '+'{
+                    match dat.as_slice() {
+                        ["+NAME", namet] => {
+                            current_brick.name = namet.to_string();
+                        }
+                        ["+COLOR", r, g, b] => {
+                            current_brick.shader_vars.insert("Color".to_string(), ShadvType::Vec3(Vector3::new(parsef(r),parsef(g),parsef(b))));
+                        }
+                        ["+TRANS", transparancy] => {
+                            //TODO
+                        }
+                        ["+ROT", x, y ,z] => {
+                            current_brick.set_rotation(Vector3::new(parsef(x), parsef(y), parsef(z)));
+                        }
+                        _ => {}
+                    }
+                } else {
+                    inside_obj = false;
+                    current_prop += 1;
+                }
+            }
+            //this section if just for init of entities
+            if !inside_obj {
+                match dat.as_slice() {
+                    ["Legacy_Brick", x,y,z, xs,ys,zs] => {
+
+                        let mut new_brick = Prop::new("what cat?".to_string());
+                        new_brick.position = Vector3::new(parsef(x), parsef(y), parsef(z));
+                        new_brick.scale = Vector3::new(parsef(xs), parsef(ys), parsef(zs));
+                        neo_prop.push(new_brick);
+                        inside_obj = true;
+                    }
+                    ["Light", x,y,z, xs,ys,zs] => {
+
+                        let mut new_brick = Prop::new("what cat?".to_string());
+                        new_brick.position = Vector3::new(parsef(x), parsef(y), parsef(z));
+                        new_brick.scale = Vector3::new(parsef(xs), parsef(ys), parsef(zs));
+                        neo_prop.push(new_brick);
+                        inside_obj = true;
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        // here is where brk support is
+        // not gonna do shapes
+
+        // here getting envirement parameters
+        else if line_number <= 8 && compatibility == 1 {
             let lain = dat.as_slice();
             match line_number {
                 // ambient
@@ -64,7 +140,7 @@ pub fn load(location: &str) -> Vec<Prop> {
                 }
                 // skyColor
                 5 => {
-                    env.ambient = Vec3::New(parsef(lain[0]),parsef(lain[1]),parsef(lain[2]));
+                    env.skyColor = Vec3::New(parsef(lain[0]),parsef(lain[1]),parsef(lain[2]));
                 }
                 // baseSize
                 6 => {
@@ -103,6 +179,7 @@ pub fn load(location: &str) -> Vec<Prop> {
                     current_prop += 1;
                 }
             }
+            //getting brick parameters
             if !inside_obj {
                 match dat.as_slice() {
                     [x,y,z, xs,ys,zs, r,g,b,a] => {

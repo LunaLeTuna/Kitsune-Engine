@@ -93,7 +93,7 @@ fn main(){
         // a.texture2 = 0;
     }
 
-    let map = load("./stanfordlucy.brk");
+    let map = load("./ke_test.kbf");
     let mut partnp = 0;
     for np in map {
         propz.insert(partnp, np);
@@ -124,7 +124,8 @@ fn main(){
     // thread scheduler :3
     // now i'm not sure how other engines do it
     // nor how this is going to work without lag
-    // but gonna try this
+    // but not gonna do this rn
+    // too lazy
     //
     //
     // First thread:
@@ -164,15 +165,6 @@ fn main(){
             },
             _ => (),
         }
-
-        // let main_cam = camera_map.get_mut(&0).unwrap();
-        // main_cam.position = Vector3::new(0.0, -10.0, -90.0+((loop_wawa*6.0).sin()*2.0));
-        // main_cam.refresh();
-        // loop_wawa+=0.000001;
-
-        let c = propz.get_mut(&1).unwrap();
-        c.position = Vector3::new(loop_wawa.sin()*8.0, 10.0, 80.0);
-        loop_wawa+=0.1;
         
 
         //
