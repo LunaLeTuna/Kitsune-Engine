@@ -4,6 +4,20 @@ use nalgebra::{Rotation3, Vector3};
 
 use crate::shaders::ShadvType;
 
+#[derive(Clone, PartialEq)]
+pub enum phytype {
+    Collider,
+    Dynamic,
+    NULL,
+}
+#[derive(Clone, PartialEq)]
+pub enum physhape {
+    Box,
+    Ball,
+    NULL,
+}
+
+
 #[derive(Clone)]
 pub struct Prop {
     pub name: String,
@@ -16,6 +30,8 @@ pub struct Prop {
     pub rotation: Rotation3<f32>,
     pub scale: Vector3<f32>,
     pub render: bool,
+    pub phys_type: phytype,
+    pub phys_shape: physhape,
     pub phys_id: i32,
 }
 
@@ -32,6 +48,8 @@ impl Prop {
             texture2: 1,
             rotation: Rotation3::new(Vector3::zeros()),
             render: true,
+            phys_type: phytype::NULL,
+            phys_shape: physhape::NULL,
             phys_id: -1,
         }
     }

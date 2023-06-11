@@ -4,7 +4,8 @@ use kbf::load;
 use ke_units::Vec2;
 use models::Model;
 use nalgebra::Vector3;
-use props::Prop;
+use physic_props::*;
+use props::{Prop, phytype, physhape};
 use shaders::{ShadvType, Shader};
 use textures::Texture;
 use winit::{event_loop::{EventLoop, ControlFlow}, window::WindowBuilder, event::{StartCause, Event, WindowEvent}};
@@ -20,11 +21,11 @@ pub mod cameras;
 pub mod dynamic_uniform;
 pub mod ke_units;
 pub mod models;
-pub mod physic_props;
 pub mod props;
 pub mod shaders;
 pub mod textures;
 pub mod kbf;
+pub mod physic_props;
 
 
 lazy_static::lazy_static! {
@@ -84,6 +85,9 @@ fn main(){
         let pig_skin = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.png";
         texturez.insert(0, Texture::craft(&pig_skin, &display));
 
+        let box_model = _KE_MAIN_DEPENDENTS.to_owned()+"/box.obj";
+        modelz.insert(1, models::load_obj(&box_model, &display));
+
         // propz.insert(0, Prop::new("nya".into()));
 
         // let a = propz.get_mut(&0).unwrap();
@@ -93,11 +97,31 @@ fn main(){
         // a.texture2 = 0;
     }
 
-    let map = load("./ke_test.kbf");
-    let mut partnp = 0;
-    for np in map {
-        propz.insert(partnp, np);
-        partnp+=1;
+    //init physics system
+    let mut phys_world = PhysWorld::init_phys_world();
+
+    {
+        let map = load("./maps/ke_test.kbf");
+        let mut partnp = 0;
+        for np in map {
+            let mut np = np;
+            phys_world.create_phy(&mut np);
+            propz.insert(partnp, np);
+            partnp+=1;
+        }
+    }
+
+    {
+        let mut womp = Prop::new("nya :3".to_owned());
+        womp.model = 0;
+        womp.texture1 = 0;
+        womp.texture2 = 0;
+        womp.phys_shape = physhape::Box;
+        womp.phys_type = phytype::Dynamic;
+        womp.position = Vector3::new(0.0, 16.0, 0.0);
+        phys_world.create_phy(&mut womp);
+        
+        propz.insert((propz.len() as i32), womp);
     }
 
     // eventually make this an array of lights inside a hashmap list
@@ -119,6 +143,7 @@ fn main(){
 
     main_cam.refresh();
     camera_map.insert(0, main_cam);
+
 
 
     // thread scheduler :3
@@ -165,6 +190,9 @@ fn main(){
             },
             _ => (),
         }
+
+        //step physics world
+        phys_world.step();
         
 
         //
@@ -180,7 +208,11 @@ fn main(){
         // now in theory one could get all the closest props and push refrences of those props in to a list
         // then replace propz here to that list to implement some sorta calling
         // i'ma do that later
-        propz.iter().for_each(|(_index, prop)| {
+        for _index in 0..(propz.len() as i32) {
+            let prop = propz.get_mut(&_index).unwrap();
+            
+            //sync physics prop to visual prop
+            phys_world._sync_prop(prop, CopyWhat::All);
 
             //this is where all the shader values get pushed so we can send them to gpu
             let mut uniform = dynamic_uniform::DynamicUniforms::new();
@@ -235,7 +267,7 @@ fn main(){
                     &params,
                 )
                 .unwrap();
-        });
+        };
 
         // finish frame and put on window probably
         target.finish().unwrap();

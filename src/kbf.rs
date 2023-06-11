@@ -4,12 +4,12 @@
 
 use nalgebra::{Vector3, Rotation3};
 
-use crate::{props::Prop, fs_system::grab, ke_units::{Vec3, parsef}, shaders::ShadvType};
+use crate::{props::{Prop, phytype, physhape}, fs_system::grab, ke_units::{Vec3, parsef}, shaders::ShadvType};
 
 pub struct Environment {
     ambient: Vec3,
     skyColor: Vec3,
-    sunIntensity: f32
+    sun_intensity: f32
 }
 
 pub fn load(location: &str) -> Vec<Prop> {
@@ -17,7 +17,7 @@ pub fn load(location: &str) -> Vec<Prop> {
     let mut env: Environment = Environment{
         ambient: Vec3::New(0.0, 0.0, 0.0),
         skyColor: Vec3::New(0.1372549, 0.509804, 0.2),
-        sunIntensity: 300.0
+        sun_intensity: 300.0
     };
     let file = grab(location);
 
@@ -66,8 +66,18 @@ pub fn load(location: &str) -> Vec<Prop> {
                     inside_obj = false;
                     continue;
                 }
-                [">SunIntensity", sunIntensity] => {
-                    env.sunIntensity = parsef(sunIntensity);
+                [">SunIntensity", intensity] => {
+                    env.sun_intensity = parsef(intensity);
+                    inside_obj = false;
+                    continue;
+                }
+                [">Baseplate", size, r, b, g, trans] => {
+                    let mut baseplate = Prop::new("baseplate".to_string());
+                    //baseplate.position = Vector3::new(parsef(size)/2.0,0.0,parsef(size)/2.0);
+                    baseplate.scale = Vector3::new(parsef(size)/2.0,0.1,parsef(size)/2.0);
+                    baseplate.shader_vars.insert("Color".to_string(), ShadvType::Vec3(Vector3::new(parsef(r),parsef(g),parsef(b))));
+                    baseplate.model = 1;
+                    neo_prop.push(baseplate);
                     inside_obj = false;
                     continue;
                 }
@@ -76,7 +86,7 @@ pub fn load(location: &str) -> Vec<Prop> {
 
             //getting their parameters
             if inside_obj {
-                let current_brick = neo_prop.get_mut(current_prop-1).unwrap();
+                let current_brick = neo_prop.get_mut(current_prop).unwrap();
                 if dat.first().unwrap().chars().next().unwrap() == '+'{
                     match dat.as_slice() {
                         ["+NAME", namet] => {
@@ -89,7 +99,11 @@ pub fn load(location: &str) -> Vec<Prop> {
                             //TODO
                         }
                         ["+ROT", x, y ,z] => {
-                            current_brick.set_rotation(Vector3::new(parsef(x), parsef(y), parsef(z)));
+                            current_brick.set_rotation(Vector3::new(parsef(x)/360.0, parsef(y)/360.0, parsef(z)/360.0));
+                        }
+                        ["+NOCOLLISION"] => {
+                            current_brick.phys_type = phytype::NULL;
+                            current_brick.phys_shape = physhape::NULL;
                         }
                         _ => {}
                     }
@@ -105,7 +119,10 @@ pub fn load(location: &str) -> Vec<Prop> {
 
                         let mut new_brick = Prop::new("what cat?".to_string());
                         new_brick.position = Vector3::new(parsef(x), parsef(y), parsef(z));
-                        new_brick.scale = Vector3::new(parsef(xs), parsef(ys), parsef(zs));
+                        new_brick.scale = Vector3::new(parsef(xs)/2.0, parsef(ys)/2.0, parsef(zs)/2.0);
+                        new_brick.model = 1;
+                        new_brick.phys_type = phytype::Collider;
+                        new_brick.phys_shape = physhape::Box;
                         neo_prop.push(new_brick);
                         inside_obj = true;
                     }
@@ -113,7 +130,7 @@ pub fn load(location: &str) -> Vec<Prop> {
 
                         let mut new_brick = Prop::new("what cat?".to_string());
                         new_brick.position = Vector3::new(parsef(x), parsef(y), parsef(z));
-                        new_brick.scale = Vector3::new(parsef(xs), parsef(ys), parsef(zs));
+                        new_brick.scale = Vector3::new(0.1, 0.1, 0.1);
                         neo_prop.push(new_brick);
                         inside_obj = true;
                     }
@@ -155,7 +172,7 @@ pub fn load(location: &str) -> Vec<Prop> {
                 }
                 // sunIntensity
                 7 => {
-                    env.sunIntensity = parsef(lain[0]);
+                    env.sun_intensity = parsef(lain[0]);
                 }
                 // weather... but where are gonna pretend this dosn't exist :3
                 // 8 => {
