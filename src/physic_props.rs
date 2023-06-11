@@ -31,7 +31,7 @@ impl PhysWorld {
 
 
         PhysWorld {
-            gravity: Vector3::new(0.0,-9.81,0.0),
+            gravity: Vector3::new(0.0,-1.0,0.0),
             ridgid_world: RigidBodySet::new(),
             colliders: ColliderSet::new(),
             phys_handles: HashMap::new(),

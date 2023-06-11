@@ -77,6 +77,8 @@ pub fn load(location: &str) -> Vec<Prop> {
                     baseplate.scale = Vector3::new(parsef(size)/2.0,0.1,parsef(size)/2.0);
                     baseplate.shader_vars.insert("Color".to_string(), ShadvType::Vec3(Vector3::new(parsef(r),parsef(g),parsef(b))));
                     baseplate.model = 1;
+                    baseplate.phys_type = phytype::Collider;
+                    baseplate.phys_shape = physhape::Box;
                     neo_prop.push(baseplate);
                     inside_obj = false;
                     continue;
