@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use nalgebra::Vector3;
 use rapier3d::prelude::*;
 
-use crate::props::{Prop, phytype};
+use crate::{props::{Prop, phytype}, ke_units::Vec3};
 
 pub enum CopyWhat {
     All,
@@ -24,6 +24,7 @@ pub struct PhysWorld {
     ridgid_world: RigidBodySet,
     colliders: ColliderSet,
     phys_handles: HashMap<i32, RigidBodyHandle>,
+    last_ID: i32
 }
 
 impl PhysWorld {
@@ -43,6 +44,7 @@ impl PhysWorld {
             impulse_joint_set: ImpulseJointSet::new(),
             multibody_joint_set: MultibodyJointSet::new(),
             ccd_solver: CCDSolver::new(),
+            last_ID: 0
         }
     }
 
@@ -90,21 +92,33 @@ impl PhysWorld {
         let mut rigid_body = RigidBodyBuilder::new(RigidBodyType::Dynamic)
         .translation(prop.position)
         //.rotation(prop.rotation.into()) //gotta figure out a effetion waty to do this
-        .can_sleep(true)
+        .can_sleep(true) //cube can a bit eepy
         .ccd_enabled(false) //ponder this later
         .build();
 
         rigid_body.set_rotation(prop.rotation.into(), false);
 
-        let id = self.phys_handles.len() as i32;
+
+        self.last_ID += 1;
 
         let rb_id = self.ridgid_world.insert(rigid_body);
 
-        self.phys_handles.insert(id, rb_id);
+        self.phys_handles.insert(self.last_ID, rb_id);
 
         self.colliders.insert_with_parent(collider, rb_id, &mut self.ridgid_world);
 
-        prop.phys_id = id;
+        prop.phys_id = self.last_ID;
+    }
+
+    pub fn remove_phy(&mut self, prop: &mut Prop) {
+        if prop.phys_type == phytype::Collider {
+            todo!()
+        } else if prop.phys_type == phytype::Dynamic {
+            let rb_id = self.phys_handles.get(&prop.phys_id).unwrap();
+            self.ridgid_world.remove(*rb_id, &mut self.island_manager, &mut self.colliders, &mut self.impulse_joint_set, &mut self.multibody_joint_set, true);
+            self.phys_handles.remove(&prop.phys_id);
+            prop.phys_id = -1;
+        }
     }
 
     pub fn create_phy(&mut self, prop: &mut Prop) {
@@ -171,5 +185,25 @@ impl PhysWorld {
                 prop.position = *rb.translation();
             }
         }
+    }
+
+    pub fn lock_rotations(&mut self, prop: &Prop) {
+        if prop.phys_id == -1 {
+            return;
+        };
+
+        let rb_id = self.phys_handles.get(&prop.phys_id).unwrap();
+        let rb = self.ridgid_world.get_mut(*rb_id).unwrap();
+        rb.lock_rotations(true,true);
+    }
+
+    pub fn apply_force(&mut self, prop: &Prop, push: Vector3<f32>) {
+        if prop.phys_id == -1 {
+            return;
+        };
+
+        let rb_id = self.phys_handles.get(&prop.phys_id).unwrap();
+        let rb = self.ridgid_world.get_mut(*rb_id).unwrap();
+        rb.set_linvel(push.into(), true);
     }
 }

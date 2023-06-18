@@ -51,7 +51,7 @@ Legacy_Brick 15.5 3 -7 9 1 13
 Light -5.5 7.75 -25.25 1 1 1
 	+NAME New Light
 	+COLOR 0.5 0.5 0.5
-wopper -2.5 7.75 -25.25 1 1 1
+Spawn_Point -2.5 7.75 -25.25 1 1 1
 	+NAME awa :3
 	+COLOR 0.5 0.5 0.5
 Legacy_Brick -8.981628 6.91712 -9.44512 3 4 2

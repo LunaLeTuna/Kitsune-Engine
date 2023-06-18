@@ -22,6 +22,7 @@ run this:
 - [Glium](https://github.com/glium/glium)
 - [Nalgebra](https://nalgebra.org/)
 - [Deno](https://github.com/denoland/)
+- [rapier3d](https://rapier.rs/)
 - [Ty for pig "Ellie Pig" model](https://github.com/TyThePotato)
 
 ## Project Ideas with KE

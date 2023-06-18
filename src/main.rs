@@ -1,14 +1,15 @@
 use cameras::Camera;
+use char_control::{Character, character_type};
 use glium::{glutin::ContextBuilder, index::{NoIndices, PrimitiveType}, DepthTest};
 use kbf::load;
 use ke_units::Vec2;
 use models::Model;
-use nalgebra::Vector3;
+use nalgebra::{Vector3, Vector2};
 use physic_props::*;
 use props::{Prop, phytype, physhape};
 use shaders::{ShadvType, Shader};
 use textures::Texture;
-use winit::{event_loop::{EventLoop, ControlFlow}, window::WindowBuilder, event::{StartCause, Event, WindowEvent}};
+use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, CursorGrabMode}, event::{StartCause, Event, WindowEvent}, dpi::LogicalPosition};
 use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use glium::texture::SrgbTexture2d;
 
@@ -26,6 +27,7 @@ pub mod shaders;
 pub mod textures;
 pub mod kbf;
 pub mod physic_props;
+mod char_control;
 
 
 lazy_static::lazy_static! {
@@ -52,6 +54,11 @@ fn main(){
     let cb = ContextBuilder::new().with_depth_buffer(24);
     let display = Display::new(wb, cb, &event_loop).unwrap();
 
+    let binding = &display.gl_window();
+    let v = binding.window();
+    v.set_cursor_grab(CursorGrabMode::Confined);
+    v.set_cursor_visible(false);
+
     let params = DrawParameters {
         depth: Depth {
             test: DepthTest::IfLess,
@@ -71,6 +78,7 @@ fn main(){
     let mut modelz: HashMap<i32, Model> = HashMap::new();
     let mut texturez: HashMap<i32, Texture> = HashMap::new();
     let mut shaderz: HashMap<i32, Shader> = HashMap::new();
+    let mut shader_vars: HashMap<String, ShadvType> = HashMap::new();
 
 
 
@@ -144,7 +152,8 @@ fn main(){
     main_cam.refresh();
     camera_map.insert(0, main_cam);
 
-
+    let mut real_char = Character::new(character_type::Third, &display, &mut propz, &mut phys_world, &mut camera_map);
+    _main_camera = real_char.camera;
 
     // thread scheduler :3
     // now i'm not sure how other engines do it
@@ -171,6 +180,10 @@ fn main(){
 
     let mut loop_wawa: f32 = 0.0;
 
+    let (width, height) = display.get_framebuffer_dimensions();
+
+    let mut screen_size = Vector2::new(width as f32, height as f32);
+
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
 
@@ -178,6 +191,23 @@ fn main(){
         // pretty much we are gonna quoue mouse and keyboards
         match event {
             Event::WindowEvent { event, .. } => match event {
+                WindowEvent::Resized(_) => {
+                    let main_cam = camera_map.get_mut(&_main_camera).unwrap();
+                    //update main_cam's projection with screen
+                    let (width, height) = display.get_framebuffer_dimensions();
+                    screen_size = Vector2::new(width as f32, height as f32);
+                    main_cam.reproject(screen_size);
+                }
+                WindowEvent::CursorMoved { device_id, position, modifiers } => {
+                    let (width, height) = display.get_framebuffer_dimensions();
+                    let a = Vector2::new(position.x as f32, position.y as f32);
+                    real_char.interp_mouse(&mut phys_world, &mut propz, &mut camera_map, a, screen_size);
+                    v.set_cursor_position(LogicalPosition::new(width/2, height/2));
+                }
+                WindowEvent::KeyboardInput { device_id, input, is_synthetic } => {
+                    let a = input.virtual_keycode.unwrap_or_else(|| winit::event::VirtualKeyCode::NoConvert);
+                    real_char.interp_key(&mut phys_world, &mut propz, a);
+                }
                 WindowEvent::CloseRequested { .. } => {
                     *control_flow = ControlFlow::Exit;
                 }
@@ -193,6 +223,14 @@ fn main(){
 
         //step physics world
         phys_world.step();
+
+        //if cam prop parent moved, we move cam
+        let main_cam = camera_map.get_mut(&_main_camera).unwrap();
+        if main_cam.parent_prop != -1 {
+            main_cam.position = propz.get(&main_cam.parent_prop).unwrap().position+main_cam.parent_offset;
+            //main_cam.look_at(Vector3::new(0.0, 0.0, 0.0)); funny testing
+            main_cam.refresh();
+        }
         
 
         //
@@ -205,14 +243,35 @@ fn main(){
         target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
 
 
+
+        // if (loop_wawa%20.0) == 0.0 {
+        //     let mut womp = Prop::new("nya :3".to_owned());
+        //     womp.model = 0;
+        //     womp.texture1 = 0;
+        //     womp.texture2 = 0;
+        //     womp.phys_shape = physhape::Box;
+        //     womp.phys_type = phytype::Dynamic;
+        //     womp.position = Vector3::new(0.0, 16.0, 0.0);
+        //     womp.shader_vars.insert("Color".to_string(), ShadvType::Vec3(Vector3::new(0.0,0.0,0.0)));
+        //     phys_world.create_phy(&mut womp);
+            
+        //     propz.insert((propz.len() as i32), womp);
+        // }
+        // loop_wawa+=1.0;
+
+        // let mut to_remove: Vec<i32> = Vec::new();
+
+
         // now in theory one could get all the closest props and push refrences of those props in to a list
         // then replace propz here to that list to implement some sorta calling
         // i'ma do that later
-        for _index in 0..(propz.len() as i32) {
-            let prop = propz.get_mut(&_index).unwrap();
+        for po in &mut propz {
+            let prop = po.1;
             
             //sync physics prop to visual prop
             phys_world._sync_prop(prop, CopyWhat::All);
+
+            if !prop.render {continue;}
 
             //this is where all the shader values get pushed so we can send them to gpu
             let mut uniform = dynamic_uniform::DynamicUniforms::new();
@@ -225,16 +284,35 @@ fn main(){
             uniform.add("model", &binding);
 
             //camera translations
-            let view = camera_map[&_main_camera].view_drop();
+            let view = main_cam.view_drop();
             uniform.add("view", &view);
-            let perspective = camera_map[&_main_camera].project_drop();
+            let perspective = main_cam.project_drop();
             uniform.add("perspective", &perspective);
 
             uniform.add("u_light", &light);
             uniform.add("diffuse_tex", &*get_texture(&texturez, prop)); // TODO: need to make this not &*, because thats bad probably
             uniform.add("normal_tex", &*get_texture2(&texturez, prop));
 
-            // shader globle vars (TODO)
+            // shader globle vars
+            for (name, value) in &shader_vars {
+                match value {
+                    ShadvType::Bool(value) => {
+                        uniform.add(name, value);
+                    }
+                    ShadvType::Integer(value) => {
+                        uniform.add(name, value);
+                    }
+                    ShadvType::Float(value) => {
+                        uniform.add(name, value);
+                    }
+                    ShadvType::Vec2(value) => {
+                        uniform.add(name, value.as_ref());
+                    }
+                    ShadvType::Vec3(value) => {
+                        uniform.add(name, value.as_ref());
+                    }
+                }
+            }
 
             // prop spesific shader vars pushed in to global
             for (name, value) in &prop.shader_vars {
@@ -267,10 +345,21 @@ fn main(){
                     &params,
                 )
                 .unwrap();
+
+            // if prop.position.y < -2.0 {
+            //     to_remove.push(*po.0);
+            // }
         };
 
         // finish frame and put on window probably
         target.finish().unwrap();
+
+        // for amongus in to_remove {
+        //     dbg!(amongus);
+        //     let prop = propz.get_mut(&amongus).unwrap();
+        //     phys_world.remove_phy(prop);
+        //     propz.remove(&amongus);
+        // }
     });
 }
 

@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use nalgebra::{Matrix4, Perspective3, Rotation3, Vector3};
+use nalgebra::{Matrix4, Perspective3, Rotation3, Vector3, Vector2};
 
 use crate::ke_units::Vec2;
 
@@ -11,6 +11,9 @@ pub struct Camera {
     pub position: Vector3<f32>,
     pub rotation: Rotation3<f32>,
     pub up: Vector3<f32>,
+
+    pub parent_prop: i32, // prop id
+    pub parent_offset: Vector3<f32>,
 
     pub near: f32,
     pub far: f32,
@@ -37,13 +40,15 @@ impl Camera {
             rotation: Rotation3::new(Vector3::zeros()),
             aspect,
             view: Matrix4::new_scaling(1.0),
+            parent_prop: -1,
+            parent_offset: Vector3::zeros(),
         }
     }
 
     pub fn set_rotation(&mut self, target: Vector3<f32>) { self.rotation = nalgebra::Rotation3::new(target); }
 
     pub fn look_at(&mut self, target: Vector3<f32>) {
-        self.rotation = nalgebra::Rotation3::look_at_lh(&(self.position + target), &self.up);
+        self.rotation = nalgebra::Rotation3::look_at_lh(&(target*-1.0), &self.up);
     }
 
     pub fn project_drop(&self) -> [[f32; 4]; 4] {
@@ -57,12 +62,12 @@ impl Camera {
 
     pub fn refresh(&mut self) {
         let mut model = self.rotation.matrix().to_homogeneous();
-        model = model.prepend_translation(&self.position);
+        model = model.prepend_translation(&(&self.position*-1.0));
 
         self.view = model;
     }
 
-    pub fn reproject(&mut self, screen: Vec2) {
+    pub fn reproject(&mut self, screen: Vector2<f32>) {
         self.projection = Perspective3::new(screen.x / screen.y, radians(self.fov), self.near, self.far);
     }
 }

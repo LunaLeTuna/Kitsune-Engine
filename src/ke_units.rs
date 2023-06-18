@@ -1,6 +1,8 @@
 // use serde::Deserialize;
 // use deno_core::serde::Serialize;
 
+use std::f32::consts::PI;
+
 // #[derive(Deserialize, Default, Debug, Clone, Copy, Serialize)]
 // #[serde(rename_all = "camelCase")]
 pub struct Vec2 {
@@ -37,3 +39,6 @@ impl Vec3 {
 
 pub fn parsef(string: &str) -> f32 { string.parse().unwrap_or(-1.0) }
 pub fn parse(string: &str) -> usize { string.parse().unwrap_or(0) }
+
+pub fn radians(dgr: f32) -> f32{return dgr*(PI/180.0);}
+pub fn degrees(rag: f32) -> f32{return rag*180.0/PI;}
