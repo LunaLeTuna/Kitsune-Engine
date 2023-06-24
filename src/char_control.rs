@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use nalgebra::{Vector3, Vector2};
-use winit::{event::VirtualKeyCode, dpi::Position};
+use winit::{event::{VirtualKeyCode, KeyboardInput}, dpi::Position};
 
 use crate::{props::{Prop, phytype, physhape}, cameras::Camera, ke_units::{Vec2, radians}, physic_props::PhysWorld};
 
@@ -17,6 +17,11 @@ pub enum character_type {
 pub struct Character {
     pub body: i32, //props are the ke entity base, supplying physics and maybe a model
     pub camera: i32,
+
+    //positive, forowrds; nagitave, backwords
+    pub forword: f32,
+    //negative, left, positive, right
+    pub sideways: f32,
 
     pub first_mouse_move: bool,
     pub last_mouse_pos: Vector2<f32>,
@@ -34,10 +39,10 @@ pub struct Character {
     pub character_type: character_type
 }
 
-fn pivot_point(place: Vector2<f32>, center: Vector2<f32>, rot:f32) -> Vector3<f32>{
+fn pivot_point(place: Vector2<f32>, center: Vector2<f32>, rot:f32) -> Vector2<f32>{
     let resultx = rot.cos()*(place.x-center.x)-rot.sin()*(place.y-center.y)+center.x;
     let resulty = rot.sin()*(place.x-center.x)+rot.cos()*(place.y-center.y)+center.y;
-    Vector3::new(resultx, 0.0, resulty)
+    Vector2::new(resultx, resulty)
 } 
 
 impl Character {
@@ -78,7 +83,7 @@ impl Character {
         Character{
             body: new_id_prop,
             camera: new_id_cam,
-            speed: 1.0,
+            speed: 5.0,
             run_speed: 5.0,
             additive_speed: 0.0,
             is_running: false,
@@ -89,31 +94,53 @@ impl Character {
             yaw: -90.0,
             pitch: 0.0,
             camfont: Vector3::new(0.0,1.0,0.0),
+            forword: 0.0,
+            sideways: 0.0
         }
     }
 
-    pub fn apply_force(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, force: Vector3<f32>){
-        phys_world.apply_force(propz.get(&self.body).unwrap(), force);
+    pub fn apply_force(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, force: Vector2<f32>){
+        phys_world.apply_force_xz(propz.get(&self.body).unwrap(), force);
     }
 
-    pub fn interp_key(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, a: VirtualKeyCode){
+    pub fn step(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, delta_time: f32){
+        self.apply_force(phys_world, propz, pivot_point(Vector2::new(self.forword, self.sideways), Vector2::zeros(), radians(self.yaw))*self.speed*delta_time)
+    }
+
+    pub fn interp_key(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, input: KeyboardInput, delta_time: f32){
+        let a = input.virtual_keycode.unwrap_or_else(|| winit::event::VirtualKeyCode::NoConvert);
+        let state = input.state;
         match self.character_type {
             character_type::Third => {
+                let speed = self.speed;
                 match a {
                     winit::event::VirtualKeyCode::W => {
-                        self.apply_force(phys_world, propz, pivot_point(Vector2::x(), Vector2::zeros(), radians(self.yaw)))
+                        match state {
+                            winit::event::ElementState::Pressed => {self.forword = 1.0},
+                            winit::event::ElementState::Released => {self.forword = 0.0},
+                        }
                     }
                     winit::event::VirtualKeyCode::S => {
-                        self.apply_force(phys_world, propz, pivot_point(-Vector2::x(), Vector2::zeros(), radians(self.yaw)))
+                        match state {
+                            winit::event::ElementState::Pressed => {self.forword = -1.0},
+                            winit::event::ElementState::Released => {self.forword = 0.0},
+                        }
                     }
                     winit::event::VirtualKeyCode::A => {
-                        self.apply_force(phys_world, propz, pivot_point(-Vector2::y(), Vector2::zeros(), radians(self.yaw)))
+                        match state {
+                            winit::event::ElementState::Pressed => {self.sideways = -1.0},
+                            winit::event::ElementState::Released => {self.sideways = 0.0},
+                        }
                     }
                     winit::event::VirtualKeyCode::D => {
-                        self.apply_force(phys_world, propz, pivot_point(Vector2::y(), Vector2::zeros(), radians(self.yaw)))
+                        match state {
+                            winit::event::ElementState::Pressed => {self.sideways = 1.0},
+                            winit::event::ElementState::Released => {self.sideways = 0.0},
+                        }
+                        
                     }
                     winit::event::VirtualKeyCode::Space => {
-                        self.apply_force(phys_world, propz, Vector3::new(0.0, 2.0, 0.0))
+                        //self.apply_force(phys_world, propz, Vector3::new(0.0, 2.0, 0.0))
                     }
                     _ => ()
                 }
@@ -125,17 +152,25 @@ impl Character {
         }
     }
 
-    pub fn interp_mouse(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, camera_map: &mut HashMap<i32, Camera>, a: Vector2<f32>, screen_size: Vector2<f32>){
+    pub fn interp_mouse(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, camera_map: &mut HashMap<i32, Camera>, mouse_delta: Vector2<f32>, screen_size: Vector2<f32>, delta_time: f32){
         match self.character_type {
             character_type::Third => {
                 //print("mouse x: " + event.xpos);
                 //print("mouse y: " + event.ypos);
 
-                let a = a-(screen_size/2.0);
+                //let a = a-(screen_size/2.0);
 
-                let sensitivity = 0.1; // change this value to your liking
-                self.yaw += (a.x*sensitivity)%360.0;
-                self.pitch -= a.y*sensitivity;
+                // if self.first_mouse_move {
+                //     self.last_mouse_pos = a;
+                //     self.first_mouse_move = false;
+                // }
+
+                // let b = a - self.last_mouse_pos;
+                // self.last_mouse_pos = a;
+
+                let sensitivity = 0.6*delta_time; // change this value to your liking
+                self.yaw += (mouse_delta.x*sensitivity)%360.0;
+                self.pitch -= mouse_delta.y*sensitivity;
 
                 // make sure that when pitch is out of bounds, screen doesn't get flipped
                 if self.pitch > 89.0

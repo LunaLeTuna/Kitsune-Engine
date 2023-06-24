@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use nalgebra::Vector3;
+use nalgebra::{Vector3, Vector2};
 use rapier3d::prelude::*;
 
 use crate::{props::{Prop, phytype}, ke_units::Vec3};
@@ -205,5 +205,15 @@ impl PhysWorld {
         let rb_id = self.phys_handles.get(&prop.phys_id).unwrap();
         let rb = self.ridgid_world.get_mut(*rb_id).unwrap();
         rb.set_linvel(push.into(), true);
+    }
+
+    pub fn apply_force_xz(&mut self, prop: &Prop, push: Vector2<f32>) {
+        if prop.phys_id == -1 {
+            return;
+        };
+
+        let rb_id = self.phys_handles.get(&prop.phys_id).unwrap();
+        let rb = self.ridgid_world.get_mut(*rb_id).unwrap();
+        rb.set_linvel(Vector3::new(push.x, rb.linvel().y, push.y).into(), true);
     }
 }

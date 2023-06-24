@@ -9,11 +9,11 @@ use physic_props::*;
 use props::{Prop, phytype, physhape};
 use shaders::{ShadvType, Shader};
 use textures::Texture;
-use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, CursorGrabMode}, event::{StartCause, Event, WindowEvent}, dpi::LogicalPosition};
+use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, CursorGrabMode}, event::{StartCause, Event, WindowEvent, DeviceEvent}, dpi::LogicalPosition};
 use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use glium::texture::SrgbTexture2d;
 
-use std::borrow::BorrowMut;
+use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}};
 use std::collections::HashMap;
 use winit::platform::run_return::EventLoopExtRunReturn;
 
@@ -56,7 +56,7 @@ fn main(){
 
     let binding = &display.gl_window();
     let v = binding.window();
-    v.set_cursor_grab(CursorGrabMode::Confined);
+    v.set_cursor_grab(CursorGrabMode::Locked);
     v.set_cursor_visible(false);
 
     let params = DrawParameters {
@@ -184,8 +184,27 @@ fn main(){
 
     let mut screen_size = Vector2::new(width as f32, height as f32);
 
+    let mut current_timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as f64;
+
+    let mut last_timestamp = SystemTime::now()
+    .duration_since(UNIX_EPOCH)
+    .unwrap()
+    .as_millis() as f64;
+
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
+
+        current_timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as f64;
+
+        let mut delta_time = ((current_timestamp - last_timestamp)*0.1) as f32;
+        //dbg!(delta_time);
+        last_timestamp = current_timestamp;
 
         // womp this is where events from the window thingamabob does things
         // pretty much we are gonna quoue mouse and keyboards
@@ -198,15 +217,8 @@ fn main(){
                     screen_size = Vector2::new(width as f32, height as f32);
                     main_cam.reproject(screen_size);
                 }
-                WindowEvent::CursorMoved { device_id, position, modifiers } => {
-                    let (width, height) = display.get_framebuffer_dimensions();
-                    let a = Vector2::new(position.x as f32, position.y as f32);
-                    real_char.interp_mouse(&mut phys_world, &mut propz, &mut camera_map, a, screen_size);
-                    v.set_cursor_position(LogicalPosition::new(width/2, height/2));
-                }
                 WindowEvent::KeyboardInput { device_id, input, is_synthetic } => {
-                    let a = input.virtual_keycode.unwrap_or_else(|| winit::event::VirtualKeyCode::NoConvert);
-                    real_char.interp_key(&mut phys_world, &mut propz, a);
+                    real_char.interp_key(&mut phys_world, &mut propz, input, delta_time);
                 }
                 WindowEvent::CloseRequested { .. } => {
                     *control_flow = ControlFlow::Exit;
@@ -218,8 +230,21 @@ fn main(){
                 StartCause::Init => (),
                 _ => {}
             },
+            Event::DeviceEvent { device_id, event } => {
+                match event {
+                    DeviceEvent::MouseMotion { delta } => {
+                        let (width, height) = display.get_framebuffer_dimensions();
+                        let a = Vector2::new(delta.0 as f32, delta.1 as f32);
+                        real_char.interp_mouse(&mut phys_world, &mut propz, &mut camera_map, a, screen_size, delta_time);
+                        // v.set_cursor_position(LogicalPosition::new((width/2), (height/2)));
+                    }
+                    _ => {}
+                }
+            }
             _ => (),
         }
+
+        real_char.step(&mut phys_world, &mut propz, delta_time);
 
         //step physics world
         phys_world.step();
