@@ -142,7 +142,7 @@ impl PhysWorld {
     }
 
     // for copying properties of prop to it's phys counter part
-    fn _sync_phys_prop(&mut self, prop: Prop, ctype: CopyWhat) {
+    pub fn _sync_phys_prop(&mut self, prop: &Prop, ctype: CopyWhat) {
         if prop.phys_id == -1 {
             return;
         };

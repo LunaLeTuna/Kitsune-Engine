@@ -7,17 +7,24 @@ use nalgebra::{Vector3, Rotation3};
 use crate::{props::{Prop, phytype, physhape}, fs_system::grab, ke_units::{Vec3, parsef}, shaders::ShadvType};
 
 pub struct Environment {
-    ambient: Vec3,
-    skyColor: Vec3,
-    sun_intensity: f32
+    pub ambient: Vec3,
+    pub skyColor: Vec3,
+    pub sun_intensity: f32,
+    pub spawnpoints: Vec<Vector3<f32>>
 }
 
-pub fn load(location: &str) -> Vec<Prop> {
+pub struct World {
+    pub environment: Environment,
+    pub props: Vec<Prop>
+}
+
+pub fn load(location: &str) -> World{
     let mut neo_prop: Vec<Prop> = vec![];
     let mut env: Environment = Environment{
         ambient: Vec3::New(0.0, 0.0, 0.0),
         skyColor: Vec3::New(0.1372549, 0.509804, 0.2),
-        sun_intensity: 300.0
+        sun_intensity: 300.0,
+        spawnpoints: Vec::new(),
     };
     let file = grab(location);
 
@@ -135,6 +142,9 @@ pub fn load(location: &str) -> Vec<Prop> {
                         new_brick.scale = Vector3::new(0.1, 0.1, 0.1);
                         neo_prop.push(new_brick);
                         inside_obj = true;
+                    }
+                    ["Spawn_Point", x,y,z, xs,ys,zs] => {
+                        env.spawnpoints.push(Vector3::new(parsef(x), parsef(y), parsef(z)));
                     }
                     _ => {}
                 }
@@ -287,7 +297,10 @@ pub fn load(location: &str) -> Vec<Prop> {
         line_number += 1;
     }
 
-    neo_prop
+    World {
+        environment: env,
+        props: neo_prop
+    }
 }
 
 

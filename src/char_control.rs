@@ -3,7 +3,7 @@ use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use nalgebra::{Vector3, Vector2};
 use winit::{event::{VirtualKeyCode, KeyboardInput}, dpi::Position};
 
-use crate::{props::{Prop, phytype, physhape}, cameras::Camera, ke_units::{Vec2, radians}, physic_props::PhysWorld};
+use crate::{props::{Prop, phytype, physhape}, cameras::Camera, ke_units::{Vec2, radians}, physic_props::{PhysWorld, CopyWhat}};
 
 #[derive(Clone, PartialEq)]
 pub enum character_type {
@@ -97,6 +97,12 @@ impl Character {
             forword: 0.0,
             sideways: 0.0
         }
+    }
+
+    pub fn tp(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, place: Vector3<f32>){
+        let leprop = propz.get_mut(&self.body).unwrap();
+        leprop.position = place;
+        phys_world._sync_phys_prop(leprop, CopyWhat::All);
     }
 
     pub fn apply_force(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, force: Vector2<f32>){

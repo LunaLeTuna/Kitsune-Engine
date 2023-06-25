@@ -1,10 +1,10 @@
 use cameras::Camera;
 use char_control::{Character, character_type};
 use glium::{glutin::ContextBuilder, index::{NoIndices, PrimitiveType}, DepthTest};
-use kbf::load;
+use kbf::{load, Environment};
 use ke_units::Vec2;
 use models::Model;
-use nalgebra::{Vector3, Vector2};
+use nalgebra::{Vector3, Vector2, Matrix4};
 use physic_props::*;
 use props::{Prop, phytype, physhape};
 use shaders::{ShadvType, Shader};
@@ -13,7 +13,7 @@ use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, Cursor
 use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use glium::texture::SrgbTexture2d;
 
-use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}};
+use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul};
 use std::collections::HashMap;
 use winit::platform::run_return::EventLoopExtRunReturn;
 
@@ -108,16 +108,18 @@ fn main(){
     //init physics system
     let mut phys_world = PhysWorld::init_phys_world();
 
-    {
+    let world_emv = {
         let map = load("./maps/ke_test.kbf");
         let mut partnp = 0;
-        for np in map {
+        for np in map.props {
             let mut np = np;
             phys_world.create_phy(&mut np);
             propz.insert(partnp, np);
             partnp+=1;
         }
-    }
+
+        map.environment
+    };
 
     {
         let mut womp = Prop::new("nya :3".to_owned());
@@ -154,6 +156,10 @@ fn main(){
 
     let mut real_char = Character::new(character_type::Third, &display, &mut propz, &mut phys_world, &mut camera_map);
     _main_camera = real_char.camera;
+
+    if world_emv.spawnpoints.len() != 0 {
+        real_char.tp(&mut phys_world, &mut propz, world_emv.spawnpoints[0]);
+    }
 
     // thread scheduler :3
     // now i'm not sure how other engines do it
@@ -236,7 +242,7 @@ fn main(){
                         let (width, height) = display.get_framebuffer_dimensions();
                         let a = Vector2::new(delta.0 as f32, delta.1 as f32);
                         real_char.interp_mouse(&mut phys_world, &mut propz, &mut camera_map, a, screen_size, delta_time);
-                        // v.set_cursor_position(LogicalPosition::new((width/2), (height/2)));
+                        v.set_cursor_position(LogicalPosition::new((width/2), (height/2)));
                     }
                     _ => {}
                 }
@@ -302,8 +308,8 @@ fn main(){
             let mut uniform = dynamic_uniform::DynamicUniforms::new();
 
             //this does all the prop's 3d model translation stuff
-            let model = &mut prop.rotation.matrix().to_homogeneous();
-            model.append_nonuniform_scaling_mut(&prop.scale);
+            let model = Matrix4::<f32>::new_nonuniform_scaling(&prop.scale);
+            let model = prop.rotation.matrix().to_homogeneous().mul(model);
             let model = model.append_translation(&prop.position);
             let binding = *model.as_ref();
             uniform.add("model", &binding);
