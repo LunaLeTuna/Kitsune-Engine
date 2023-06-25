@@ -4,7 +4,7 @@
 
 use nalgebra::{Vector3, Rotation3};
 
-use crate::{props::{Prop, phytype, physhape}, fs_system::grab, ke_units::{Vec3, parsef}, shaders::ShadvType};
+use crate::{props::{Prop, phytype, physhape}, fs_system::grab, ke_units::{Vec3, parsef, radians}, shaders::ShadvType};
 
 pub struct Environment {
     pub ambient: Vec3,
@@ -108,7 +108,7 @@ pub fn load(location: &str) -> World{
                             //TODO
                         }
                         ["+ROT", x, y ,z] => {
-                            current_brick.set_rotation(Vector3::new(parsef(x)/360.0, parsef(y)/360.0, parsef(z)/360.0));
+                            current_brick.set_rotation(Vector3::new(radians(parsef(x)), radians(parsef(y)), radians(parsef(z))));
                         }
                         ["+NOCOLLISION"] => {
                             current_brick.phys_type = phytype::NULL;
