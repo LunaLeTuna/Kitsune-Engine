@@ -4,7 +4,7 @@
 
 use nalgebra::{Vector3, Rotation3};
 
-use crate::{props::{Prop, phytype, physhape}, fs_system::grab, ke_units::{Vec3, parsef, radians}, shaders::ShadvType};
+use crate::{props::{Prop, phytype, physhape}, fs_system::grab, ke_units::{Vec3, parsef, radians}, shaders::ShadvType, lights::PointLight};
 
 pub struct Environment {
     pub ambient: Vec3,
@@ -15,11 +15,13 @@ pub struct Environment {
 
 pub struct World {
     pub environment: Environment,
-    pub props: Vec<Prop>
+    pub props: Vec<Prop>,
+    pub lights: Vec<PointLight>
 }
 
 pub fn load(location: &str) -> World{
     let mut neo_prop: Vec<Prop> = vec![];
+    let mut neo_light: Vec<PointLight> = vec![];
     let mut env: Environment = Environment{
         ambient: Vec3::New(0.0, 0.0, 0.0),
         skyColor: Vec3::New(0.1372549, 0.509804, 0.2),
@@ -137,11 +139,10 @@ pub fn load(location: &str) -> World{
                     }
                     ["Light", x,y,z, xs,ys,zs] => {
 
-                        let mut new_brick = Prop::new("what cat?".to_string());
-                        new_brick.position = Vector3::new(parsef(x), parsef(y), parsef(z));
-                        new_brick.scale = Vector3::new(0.1, 0.1, 0.1);
-                        neo_prop.push(new_brick);
-                        inside_obj = true;
+                        let mut new_light = PointLight::new();
+                        new_light.position = Vector3::new(parsef(x), parsef(y), parsef(z));
+                        neo_light.push(new_light);
+                        // inside_obj = true;
                     }
                     ["Spawn_Point", x,y,z, xs,ys,zs] => {
                         env.spawnpoints.push(Vector3::new(parsef(x), parsef(y), parsef(z)));
@@ -299,7 +300,8 @@ pub fn load(location: &str) -> World{
 
     World {
         environment: env,
-        props: neo_prop
+        props: neo_prop,
+        lights: neo_light,
     }
 }
 

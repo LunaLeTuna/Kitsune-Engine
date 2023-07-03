@@ -3,29 +3,29 @@
 // but this is so pog I had to yoink it :3
 // thank you DoeringChristian
 
-use std::collections::HashMap;
+use std::{collections::HashMap, string};
 
 use glium::uniforms::{AsUniformValue, UniformValue, Uniforms};
 
 /// Stores Uniforms dynamicly in a HashMap.
 #[derive(Clone)]
-pub struct DynamicUniforms<'a, 's> {
-    map: HashMap<&'s str, UniformValue<'a>>,
+pub struct DynamicUniforms<'a> {
+    map: HashMap<String, UniformValue<'a>>,
 }
 
 #[allow(clippy::new_without_default)]
-impl<'a, 's> DynamicUniforms<'a, 's> {
+impl<'a> DynamicUniforms<'a> {
     /// Creates new DynamicUniforms
     pub fn new() -> Self { Self { map: HashMap::new() } }
 
     /// Add a value to the DynamicUniforms
     #[inline]
-    pub fn add(&mut self, key: &'s str, value: &'a dyn AsUniformValue) {
+    pub fn add(&mut self, key: String, value: &'a dyn AsUniformValue) {
         self.map.insert(key, value.as_uniform_value());
     }
 }
 
-impl Uniforms for DynamicUniforms<'_, '_> {
+impl Uniforms for DynamicUniforms<'_> {
     fn visit_values<'a, F: FnMut(&str, UniformValue<'a>)>(&'a self, mut output: F) {
         for (key, value) in self.map.iter() {
             output(key, *value);

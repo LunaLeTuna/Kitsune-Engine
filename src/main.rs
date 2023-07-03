@@ -3,6 +3,7 @@ use char_control::{Character, character_type};
 use glium::{glutin::ContextBuilder, index::{NoIndices, PrimitiveType}, DepthTest};
 use kbf::{load, Environment};
 use ke_units::Vec2;
+use lights::PointLight;
 use models::Model;
 use nalgebra::{Vector3, Vector2, Matrix4};
 use physic_props::*;
@@ -21,6 +22,7 @@ pub mod fs_system;
 pub mod cameras;
 pub mod dynamic_uniform;
 pub mod ke_units;
+pub mod lights;
 pub mod models;
 pub mod props;
 pub mod shaders;
@@ -108,7 +110,7 @@ fn main(){
     //init physics system
     let mut phys_world = PhysWorld::init_phys_world();
 
-    let world_emv = {
+    let (world_emv, lightz) = {
         let map = load("./maps/ke_test.kbf");
         let mut partnp = 0;
         for np in map.props {
@@ -118,7 +120,7 @@ fn main(){
             partnp+=1;
         }
 
-        map.environment
+        (map.environment, map.lights)
     };
 
     {
@@ -196,9 +198,9 @@ fn main(){
         .as_millis() as f64;
 
     let mut last_timestamp = SystemTime::now()
-    .duration_since(UNIX_EPOCH)
-    .unwrap()
-    .as_millis() as f64;
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as f64;
 
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
@@ -242,7 +244,7 @@ fn main(){
                         let (width, height) = display.get_framebuffer_dimensions();
                         let a = Vector2::new(delta.0 as f32, delta.1 as f32);
                         real_char.interp_mouse(&mut phys_world, &mut propz, &mut camera_map, a, screen_size, delta_time);
-                        v.set_cursor_position(LogicalPosition::new((width/2), (height/2)));
+                        v.set_cursor_position(LogicalPosition::new(width/2, height/2));
                     }
                     _ => {}
                 }
@@ -312,20 +314,20 @@ fn main(){
             let model = prop.rotation.matrix().to_homogeneous().mul(model);
             let model = model.append_translation(&prop.position);
             let binding = *model.as_ref();
-            uniform.add("model", &binding);
+            uniform.add("model".to_string(), &binding);
 
             //camera translations
             let view = main_cam.view_drop();
-            uniform.add("view", &view);
+            uniform.add("view".to_string(), &view);
             let perspective = main_cam.project_drop();
-            uniform.add("perspective", &perspective);
+            uniform.add("perspective".to_string(), &perspective);
 
-            uniform.add("u_light", &light);
-            uniform.add("diffuse_tex", &*get_texture(&texturez, prop)); // TODO: need to make this not &*, because thats bad probably
-            uniform.add("normal_tex", &*get_texture2(&texturez, prop));
+            uniform.add("diffuse_tex".to_string(), &*get_texture(&texturez, prop)); // TODO: need to make this not &*, because thats bad probably
+            uniform.add("normal_tex".to_string(), &*get_texture2(&texturez, prop));
 
             // shader globle vars
             for (name, value) in &shader_vars {
+                let name = name.to_string();
                 match value {
                     ShadvType::Bool(value) => {
                         uniform.add(name, value);
@@ -347,6 +349,7 @@ fn main(){
 
             // prop spesific shader vars pushed in to global
             for (name, value) in &prop.shader_vars {
+                let name = name.to_string();
                 match value {
                     ShadvType::Bool(value) => {
                         uniform.add(name, value);
@@ -365,6 +368,35 @@ fn main(){
                     }
                 }
             }
+
+            uniform.add("NR_POINT_LIGHTS".to_owned(), &1);
+
+            // let mut light = PointLight::new();
+            // let index = "0".to_owned();
+            // light.position = Vector3::new(1.4, 0.4, 0.7f32);
+
+            uniform.add("dirLight.diffuse".to_owned(), &[-0.2, -1.0, -0.3]);
+            uniform.add("dirLight.ambient".to_owned(), &[1.0, 1.0, 1.0]);
+            uniform.add("dirLight.diffuse".to_owned(), &[0.4, 0.4, 0.4]);
+            uniform.add("dirLight.specular".to_owned(), &[0.5, 0.5, 0.5]);
+
+            let mut indexx = 0;
+            for light in &lightz{
+                let index = indexx.to_string();
+                uniform.add("pointLights[".to_owned()+&index+"].position", &*light.position.as_ref());
+                uniform.add("pointLights[".to_owned()+&index+"].ambient", &*light.ambient.as_ref());
+                uniform.add("pointLights[".to_owned()+&index+"].diffuse", &*light.diffuse.as_ref());
+                uniform.add("pointLights[".to_owned()+&index+"].specular", &*light.specular.as_ref());
+                uniform.add("pointLights[".to_owned()+&index+"].constant", &light.constant);
+                uniform.add("pointLights[".to_owned()+&index+"].linear", &light.linear);
+                uniform.add("pointLights[".to_owned()+&index+"].quadratic", &light.quadratic);
+                indexx+=1;
+            }
+                uniform.add("material.diffuse".to_owned(), &*get_texture(&texturez, prop));
+                uniform.add("material.specular".to_owned(), &*get_texture2(&texturez, prop));
+                uniform.add("material.shininess".to_owned(), &0.5);
+                
+           
 
             // here we draw the prop on the frame
             target
