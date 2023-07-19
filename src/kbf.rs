@@ -7,8 +7,8 @@ use nalgebra::{Vector3, Rotation3};
 use crate::{props::{Prop, phytype, physhape}, fs_system::grab, ke_units::{Vec3, parsef, radians}, shaders::ShadvType, lights::PointLight};
 
 pub struct Environment {
-    pub ambient: Vec3,
-    pub skyColor: Vec3,
+    pub ambient: Vector3<f32>,
+    pub skyColor: Vector3<f32>,
     pub sun_intensity: f32,
     pub spawnpoints: Vec<Vector3<f32>>
 }
@@ -23,8 +23,8 @@ pub fn load(location: &str) -> World{
     let mut neo_prop: Vec<Prop> = vec![];
     let mut neo_light: Vec<PointLight> = vec![];
     let mut env: Environment = Environment{
-        ambient: Vec3::New(0.0, 0.0, 0.0),
-        skyColor: Vec3::New(0.1372549, 0.509804, 0.2),
+        ambient: Vector3::new(0.0, 0.0, 0.0),
+        skyColor: Vector3::new(0.1372549, 0.509804, 0.2),
         sun_intensity: 300.0,
         spawnpoints: Vec::new(),
     };
@@ -43,7 +43,9 @@ pub fn load(location: &str) -> World{
 
     let mut line_number = 1;
     let mut current_prop = 1;
+    let mut currentn_light = 0;
     let mut inside_obj = false;
+    let mut inside_light = false;
     for line in file.lines() {
         let dat: Vec<&str> = line.split_whitespace().collect();
 
@@ -66,12 +68,12 @@ pub fn load(location: &str) -> World{
         else if compatibility == 0 {
             match dat.as_slice() {
                 [">AmbientColor", r, g, b] => {
-                    env.ambient = Vec3::New(parsef(r),parsef(g),parsef(b));
+                    env.ambient = Vector3::new(parsef(r),parsef(g),parsef(b));
                     inside_obj = false;
                     continue;
                 }
                 [">SkyColor", r, g, b] => {
-                    env.skyColor = Vec3::New(parsef(r),parsef(g),parsef(b));
+                    env.skyColor = Vector3::new(parsef(r),parsef(g),parsef(b));
                     inside_obj = false;
                     continue;
                 }
@@ -80,7 +82,7 @@ pub fn load(location: &str) -> World{
                     inside_obj = false;
                     continue;
                 }
-                [">Baseplate", size, r, b, g, trans] => {
+                [">Baseplate", size, r, g, b, trans] => {
                     let mut baseplate = Prop::new("baseplate".to_string());
                     //baseplate.position = Vector3::new(parsef(size)/2.0,0.0,parsef(size)/2.0);
                     baseplate.scale = Vector3::new(parsef(size)/2.0,0.1,parsef(size)/2.0);
@@ -120,11 +122,30 @@ pub fn load(location: &str) -> World{
                     }
                 } else {
                     inside_obj = false;
+                    inside_light = false;
                     current_prop += 1;
                 }
             }
+            if inside_light {
+                let current_light = neo_light.get_mut(currentn_light).unwrap();
+                if dat.first().unwrap().chars().next().unwrap() == '+'{
+                    match dat.as_slice() {
+                        ["+NAME", namet] => {
+                            current_light.name = namet.to_string();
+                        }
+                        ["+COLOR", r, g, b] => {
+                            current_light.ambient = Vector3::new(parsef(r),parsef(g),parsef(b));
+                        }
+                        _ => {}
+                    }
+                } else {
+                    inside_obj = false;
+                    inside_light = false;
+                    currentn_light += 1;
+                }
+            }
             //this section if just for init of entities
-            if !inside_obj {
+            if !inside_obj && !inside_light {
                 match dat.as_slice() {
                     ["Legacy_Brick", x,y,z, xs,ys,zs] => {
 
@@ -142,7 +163,7 @@ pub fn load(location: &str) -> World{
                         let mut new_light = PointLight::new();
                         new_light.position = Vector3::new(parsef(x), parsef(y), parsef(z));
                         neo_light.push(new_light);
-                        // inside_obj = true;
+                        inside_light = true;
                     }
                     ["Spawn_Point", x,y,z, xs,ys,zs] => {
                         env.spawnpoints.push(Vector3::new(parsef(x), parsef(y), parsef(z)));
@@ -161,7 +182,7 @@ pub fn load(location: &str) -> World{
             match line_number {
                 // ambient
                 3 => {
-                    env.ambient = Vec3::New(parsef(lain[2]),parsef(lain[1]),parsef(lain[0]));
+                    env.ambient = Vector3::new(parsef(lain[2]),parsef(lain[1]),parsef(lain[0]));
                 }
                 // baseColor
                 4 => {
@@ -171,9 +192,9 @@ pub fn load(location: &str) -> World{
                 // skyColor
                 5 => {
 
-                    env.skyColor = Vec3::New(parsef(lain[0]),parsef(lain[1]),parsef(lain[2]));
+                    env.skyColor = Vector3::new(parsef(lain[0]),parsef(lain[1]),parsef(lain[2]));
 
-                    env.ambient = Vec3::New(parsef(lain[0]),parsef(lain[1]),parsef(lain[2]));
+                    env.ambient = Vector3::new(parsef(lain[0]),parsef(lain[1]),parsef(lain[2]));
 
                 }
                 // baseSize

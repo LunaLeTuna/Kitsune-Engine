@@ -2,10 +2,10 @@ use cameras::Camera;
 use char_control::{Character, character_type};
 use glium::{glutin::ContextBuilder, index::{NoIndices, PrimitiveType}, DepthTest};
 use kbf::{load, Environment};
-use ke_units::Vec2;
+use ke_units::{Vec2, radians};
 use lights::PointLight;
 use models::Model;
-use nalgebra::{Vector3, Vector2, Matrix4};
+use nalgebra::{Vector3, Vector2, Matrix4, Rotation, Rotation3, Unit};
 use physic_props::*;
 use props::{Prop, phytype, physhape};
 use shaders::{ShadvType, Shader};
@@ -14,7 +14,7 @@ use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, Cursor
 use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use glium::texture::SrgbTexture2d;
 
-use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul};
+use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul, f32::consts::PI};
 use std::collections::HashMap;
 use winit::platform::run_return::EventLoopExtRunReturn;
 
@@ -132,6 +132,17 @@ fn main(){
         womp.phys_type = phytype::Dynamic;
         womp.position = Vector3::new(0.0, 16.0, 0.0);
         phys_world.create_phy(&mut womp);
+        
+        propz.insert((propz.len() as i32), womp);
+    }
+
+    {
+        let mut womp = Prop::new("nya :3".to_owned());
+        womp.model = 1;
+        womp.texture1 = 0;
+        womp.texture2 = 0;
+        womp.position = Vector3::new(-2.0, 2.0, -30.0);
+        womp.set_rotation(Vector3::new(radians(317.2658),radians(302.2815),radians(73.45786)));
         
         propz.insert((propz.len() as i32), womp);
     }
@@ -273,7 +284,7 @@ fn main(){
 
         // start drawing frame
         let mut target = display.draw();
-        target.clear_color_and_depth((0.2, 0.3, 0.3, 1.0), 1.0);
+        target.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
 
 
 
@@ -311,7 +322,13 @@ fn main(){
 
             //this does all the prop's 3d model translation stuff
             let model = Matrix4::<f32>::new_nonuniform_scaling(&prop.scale);
-            let model = prop.rotation.matrix().to_homogeneous().mul(model);
+
+
+            // let model = prop.rotation.matrix().to_homogeneous().mul(model);
+
+            let model = prop.rotation_cached.mul(model);
+
+
             let model = model.append_translation(&prop.position);
             let binding = *model.as_ref();
             uniform.add("model".to_string(), &binding);
@@ -369,19 +386,18 @@ fn main(){
                 }
             }
 
-            uniform.add("NR_POINT_LIGHTS".to_owned(), &1);
-
             // let mut light = PointLight::new();
             // let index = "0".to_owned();
             // light.position = Vector3::new(1.4, 0.4, 0.7f32);
 
-            uniform.add("dirLight.diffuse".to_owned(), &[-0.2, -1.0, -0.3]);
-            uniform.add("dirLight.ambient".to_owned(), &[1.0, 1.0, 1.0]);
-            uniform.add("dirLight.diffuse".to_owned(), &[0.4, 0.4, 0.4]);
-            uniform.add("dirLight.specular".to_owned(), &[0.5, 0.5, 0.5]);
+            uniform.add("LeDirLight.direction".to_owned(), &[-0.2, -1.0, -0.3]);
+            
+            uniform.add("LeDirLight.ambient".to_owned(), &[1.0, 1.0, 1.0]);
+            uniform.add("LeDirLight.diffuse".to_owned(), &*world_emv.skyColor.as_ref());
+            uniform.add("LeDirLight.specular".to_owned(), &[0.5, 0.5, 0.5]);
 
             let mut indexx = 0;
-            for light in &lightz{
+            for light in &lightz {
                 let index = indexx.to_string();
                 uniform.add("pointLights[".to_owned()+&index+"].position", &*light.position.as_ref());
                 uniform.add("pointLights[".to_owned()+&index+"].ambient", &*light.ambient.as_ref());
@@ -392,9 +408,12 @@ fn main(){
                 uniform.add("pointLights[".to_owned()+&index+"].quadratic", &light.quadratic);
                 indexx+=1;
             }
-                uniform.add("material.diffuse".to_owned(), &*get_texture(&texturez, prop));
-                uniform.add("material.specular".to_owned(), &*get_texture2(&texturez, prop));
-                uniform.add("material.shininess".to_owned(), &0.5);
+
+            uniform.add("NR_POINT_LIGHTS".to_owned(), &indexx);
+
+            uniform.add("material.diffuse".to_owned(), &*get_texture(&texturez, prop));
+            uniform.add("material.specular".to_owned(), &*get_texture2(&texturez, prop));
+            uniform.add("material.shininess".to_owned(), &0.5);
                 
            
 

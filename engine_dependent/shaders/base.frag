@@ -1,5 +1,6 @@
 #version 410
 
+in vec3 local;
 in vec3 v_normal;
 in vec3 v_position;
 in vec2 v_tex_coords;
@@ -11,6 +12,8 @@ struct Material {
     sampler2D specular;
     float shininess;
 };
+
+layout(std140) uniform;
 
 struct DirLight {
     vec3 direction;
@@ -34,7 +37,7 @@ struct PointLight {
     vec3 specular;
 };
 
-uniform DirLight dirLight;
+uniform DirLight LeDirLight;
 
 uniform int NR_POINT_LIGHTS;
 uniform PointLight pointLights[64];
@@ -74,10 +77,10 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     // combine results
-    vec3 ambient = light.ambient * vec3(texture(material.diffuse, v_tex_coords));
-    vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, v_tex_coords));
-    vec3 specular = light.specular * spec * vec3(texture(material.specular, v_tex_coords));
-    return (lightDir);
+    vec3 ambient = light.ambient;// * vec3(texture(material.diffuse, v_tex_coords).rgb);
+    vec3 diffuse = light.diffuse * diff;// * vec3(texture(material.diffuse, v_tex_coords).rgb);
+    vec3 specular = light.specular * spec;// * vec3(texture(material.specular, v_tex_coords).rgb);
+    return (reflectDir);
 }
 
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
@@ -92,9 +95,9 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
     // combine results
-    vec3 ambient = light.ambient;
-    vec3 diffuse = light.diffuse * diff;
-    vec3 specular = light.specular * spec;
+    vec3 ambient = light.ambient;// * vec3(texture(material.diffuse, v_tex_coords).rgb);
+    vec3 diffuse = light.diffuse * diff;// * vec3(texture(material.diffuse, v_tex_coords).rgb);
+    vec3 specular = light.specular * spec;// * vec3(texture(material.diffuse, v_tex_coords).rgb);
     ambient *= attenuation;
     diffuse *= attenuation;
     specular *= attenuation;
@@ -102,13 +105,18 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 }
 
 void main() {
-   vec3 norm = normalize(v_normal);
-   vec3 viewDir = normalize(view - v_position);
+    vec3 norm = normalize(v_normal);
+    vec3 viewDir = normalize(view - v_position);
 
-   vec3 result;// = CalcDirLight(dirLight, norm, viewDir);
+    vec3 result = LeDirLight.diffuse*0.1;
 
-   for(int i = 0; i < NR_POINT_LIGHTS; i++)
+    for(int i = 0; i < NR_POINT_LIGHTS; i++)
       result += CalcPointLight(pointLights[i], norm, v_position, viewDir);
 
-   color = vec4(result*Color, 1.0);
+    if(local.y >= 0.8)
+    color = vec4(result, 1.0);
+    else if(local.x >= 0.8)
+    color = vec4(result*vec3(1.0,0.0,0.0), 1.0);
+    else
+    color = vec4(result*Color, 1.0);
 }
