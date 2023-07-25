@@ -27,8 +27,7 @@ pub struct Prop {
     pub texture1: i32,
     pub texture2: i32,
     pub position: Vector3<f32>,
-    pub rotation: Rotation3<f32>,
-    pub rotation_cached: nalgebra::Matrix<f32, nalgebra::Const<4>, nalgebra::Const<4>, nalgebra::ArrayStorage<f32, 4, 4>>,
+    pub rotation: Vector3<f32>,
     pub scale: Vector3<f32>,
     pub render: bool,
     pub phys_type: phytype,
@@ -47,8 +46,7 @@ impl Prop {
             scale: Vector3::new(1.0, 1.0, 1.0),
             texture1: 0,
             texture2: 1,
-            rotation: Rotation3::new(Vector3::zeros()),
-            rotation_cached: Matrix4::<f32>::new_nonuniform_scaling(&Vector3::new(1.0, 1.0, 1.0)).into(),
+            rotation: Vector3::zeros(),
             render: true,
             phys_type: phytype::NULL,
             phys_shape: physhape::NULL,
@@ -57,10 +55,6 @@ impl Prop {
     }
 
     pub fn set_rotation(&mut self, target: Vector3<f32>) {
-        self.rotation = nalgebra::Rotation3::from_euler_angles(target.x,target.y,target.z);
-        let model = Rotation3::from_axis_angle(&Unit::new_normalize(Vector3::new(1.0, 0.0, 0.0)), self.rotation.euler_angles().0).matrix().to_homogeneous();
-        let model = Rotation3::from_axis_angle(&Unit::new_normalize(Vector3::new(0.0, 1.0, 0.0)), self.rotation.euler_angles().1).matrix().to_homogeneous().mul(model);
-        let model = Rotation3::from_axis_angle(&Unit::new_normalize(Vector3::new(0.0, 0.0, 1.0)), self.rotation.euler_angles().2).matrix().to_homogeneous().mul(model);
-        self.rotation_cached = model;
+        self.rotation = Vector3::new(target.x,target.y,target.z);
     }
 }

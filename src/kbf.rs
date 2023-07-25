@@ -22,6 +22,7 @@ pub struct World {
 pub fn load(location: &str) -> World{
     let mut neo_prop: Vec<Prop> = vec![];
     let mut neo_light: Vec<PointLight> = vec![];
+    let mut neo_scripts: Vec<String> = vec![];
     let mut env: Environment = Environment{
         ambient: Vector3::new(0.0, 0.0, 0.0),
         skyColor: Vector3::new(0.1372549, 0.509804, 0.2),
@@ -91,6 +92,11 @@ pub fn load(location: &str) -> World{
                     baseplate.phys_type = phytype::Collider;
                     baseplate.phys_shape = physhape::Box;
                     neo_prop.push(baseplate);
+                    inside_obj = false;
+                    continue;
+                }
+                [">Script", id, script_local] => {
+                    neo_scripts.push(script_local.to_string());
                     inside_obj = false;
                     continue;
                 }

@@ -5,6 +5,8 @@ Kitsune Engine V1
 >SunIntensity 300
 >Baseplate 100 0.2 0.509804 0.137255 1
 
+>Script world testing.js
+
 Legacy_Brick -1.5 7.5 -3.25 5 10 6
 	+NAME New Brick
 	+COLOR 0.2398584 0.235 0.5

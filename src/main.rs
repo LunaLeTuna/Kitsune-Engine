@@ -111,7 +111,7 @@ fn main(){
     let mut phys_world = PhysWorld::init_phys_world();
 
     let (world_emv, lightz) = {
-        let map = load("./maps/ke_test.kbf");
+        let map = load("./maps/roy.kbf");
         let mut partnp = 0;
         for np in map.props {
             let mut np = np;
@@ -142,7 +142,7 @@ fn main(){
         womp.texture1 = 0;
         womp.texture2 = 0;
         womp.position = Vector3::new(-2.0, 2.0, -30.0);
-        womp.set_rotation(Vector3::new(radians(317.2658),radians(302.2815),radians(73.45786)));
+        womp.set_rotation(Vector3::new(radians(45.0),radians(0.0),radians(0.0)));
         
         propz.insert((propz.len() as i32), womp);
     }
@@ -321,14 +321,14 @@ fn main(){
             let mut uniform = dynamic_uniform::DynamicUniforms::new();
 
             //this does all the prop's 3d model translation stuff
-            let model = Matrix4::<f32>::new_nonuniform_scaling(&prop.scale);
+            let model = Matrix4::<f32>::from_euler_angles(prop.rotation.x, prop.rotation.y,prop.rotation.z);
 
 
             // let model = prop.rotation.matrix().to_homogeneous().mul(model);
 
-            let model = prop.rotation_cached.mul(model);
+            // let model = prop.rotation_cached.mul(model);
 
-
+            let model = model.prepend_nonuniform_scaling(&prop.scale);
             let model = model.append_translation(&prop.position);
             let binding = *model.as_ref();
             uniform.add("model".to_string(), &binding);

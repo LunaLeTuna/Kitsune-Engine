@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use nalgebra::{Vector3, Vector2};
+use nalgebra::{Vector3, Vector2, Rotation3};
 use rapier3d::prelude::*;
 
 use crate::{props::{Prop, phytype}, ke_units::Vec3};
@@ -70,7 +70,7 @@ impl PhysWorld {
         let mut collider = ColliderBuilder::cuboid(prop.scale.x, prop.scale.y, prop.scale.z)
         .translation(prop.position)
         .build();
-        collider.set_rotation(prop.rotation.into());
+        collider.set_rotation(Rotation3::new(prop.rotation).into());
         self.colliders.insert(collider);
 
 
@@ -91,12 +91,12 @@ impl PhysWorld {
 
         let mut rigid_body = RigidBodyBuilder::new(RigidBodyType::Dynamic)
         .translation(prop.position)
-        //.rotation(prop.rotation.into()) //gotta figure out a effetion waty to do this
+        .rotation(prop.rotation) //gotta figure out a effetion waty to do this
         .can_sleep(true) //cube can a bit eepy
         .ccd_enabled(false) //ponder this later
         .build();
 
-        rigid_body.set_rotation(prop.rotation.into(), false);
+        //rigid_body.set_rotation(prop.rotation.into(), false);
 
 
         self.last_ID += 1;
@@ -153,10 +153,10 @@ impl PhysWorld {
         match ctype {
             CopyWhat::All => {
                 rb.set_position(prop.position.into(), false);
-                rb.set_rotation(prop.rotation.into(), false);
+                rb.set_rotation(Rotation3::new(prop.rotation).into(), false);
             }
             CopyWhat::OnlyRotation => {
-                rb.set_rotation(prop.rotation.into(), false);
+                rb.set_rotation(Rotation3::new(prop.rotation).into(), false);
             }
             CopyWhat::OnlyPosition => {
                 rb.set_position(prop.position.into(), false);
@@ -176,10 +176,12 @@ impl PhysWorld {
         match ctype {
             CopyWhat::All => {
                 prop.position = *rb.translation();
-                prop.rotation = rb.rotation().to_rotation_matrix();
+                let vecpog = rb.rotation().euler_angles();
+                prop.set_rotation(Vector3::new(vecpog.0, vecpog.1, vecpog.2));
             }
             CopyWhat::OnlyRotation => {
-                prop.rotation = rb.rotation().to_rotation_matrix();
+                let vecpog = rb.rotation().euler_angles();
+                prop.set_rotation(Vector3::new(vecpog.0, vecpog.1, vecpog.2));
             }
             CopyWhat::OnlyPosition => {
                 prop.position = *rb.translation();
