@@ -3,7 +3,7 @@ use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use nalgebra::{Vector3, Vector2};
 use winit::{event::{VirtualKeyCode, KeyboardInput}, dpi::Position};
 
-use crate::{props::{Prop, phytype, physhape}, cameras::Camera, ke_units::{Vec2, radians}, physic_props::{PhysWorld, CopyWhat}};
+use crate::{props::{Prop, phytype, physhape}, cameras::Camera, ke_units::{Vec2, radians}, physic_props::{PhysWorld, CopyWhat}, models::Model};
 
 #[derive(Clone, PartialEq)]
 pub enum character_type {
@@ -46,17 +46,16 @@ fn pivot_point(place: Vector2<f32>, center: Vector2<f32>, rot:f32) -> Vector2<f3
 } 
 
 impl Character {
-    pub fn new(character_type:character_type, display: &Display, propz: &mut HashMap<i32, Prop>, phys_world: &mut PhysWorld, camera_map: &mut HashMap<i32, Camera> ) -> Character {
+    pub fn new(character_type:character_type, display: &Display, propz: &mut HashMap<i32, Prop>, modelz: &HashMap<i32, Model>, phys_world: &mut PhysWorld, camera_map: &mut HashMap<i32, Camera> ) -> Character {
         
         let mut womp = Prop::new("nya :3".to_owned());
         womp.model = 0;
-        womp.texture1 = 0;
-        womp.texture2 = 0;
+        womp.textures = vec![0,0];
         womp.phys_shape = physhape::Box;
         womp.phys_type = phytype::Dynamic;
         womp.position = Vector3::new(5.0, 16.0, 0.0);
         womp.render = false;
-        phys_world.create_phy(&mut womp);
+        phys_world.create_phy(&mut womp, modelz);
         phys_world.lock_rotations(&womp);
         
         let new_id_prop = propz.len() as i32;

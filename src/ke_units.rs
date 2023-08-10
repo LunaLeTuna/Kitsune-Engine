@@ -38,6 +38,7 @@ impl Vec3 {
 }
 
 pub fn parsef(string: &str) -> f32 { string.parse().unwrap_or(-1.0) }
+pub fn parsei(string: &str) -> i32 { string.parse().unwrap_or(0) }
 pub fn parse(string: &str) -> usize { string.parse().unwrap_or(0) }
 
 pub fn radians(dgr: f32) -> f32{return dgr*PI/180.0;}

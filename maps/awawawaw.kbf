@@ -1,0 +1,114 @@
+Kitsune Engine V1
+
+>AmbientColor 0 0 0
+>SkyColor 0.4862745 0.6980392 0.8980392
+>SunIntensity 300
+>Baseplate 100 0.2 0.509804 0.137255 1
+
+>Texture_Reference 0 CatGirl.png
+>Texture_Reference 1 a.png
+>Texture_Reference 2 nya.png
+>Texture_Reference 3 Screenshot_20230430_170007.png
+>Texture_Reference 4 Screenshot_2022-04-13_111911.png
+>Texture_Reference 5 FysYJhDWIAYBsyr.jpg
+>Texture_Reference 6 CatGirl.png
+
+Legacy_Brick 7.299998 3.5 12.1 10 2 2
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 21.3 3.5 12.1 10 2 2
+	+NAME New Brick - Copy
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+Legacy_Brick 7.299998 3.5 21.1 10 2 2
+	+NAME New Brick - Copy
+	+COLOR 0.5 0.5 0.5
+	+ROT 270 0 0
+Legacy_Brick 7.299998 7.5 36.1 10 2 2
+	+NAME New Brick - Copy
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 0 89.99997
+Legacy_Brick 17.3 7.5 36.1 10 2 2
+	+NAME New Brick - Copy - Copy
+	+COLOR 0.5 0.5 0.5
+	+ROT 315 -2.414836E-06 59.99999
+Light -29 10 -19 1 1 1
+	+NAME New Light
+	+COLOR 0.5 0.5 0.5
+Light -28 8 3 1 1 1
+	+NAME New Light
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick -28.5 4.5 -29.5 2 2 2
+	+NAME New Brick
+	+COLOR 0.09 0.09 0.09
+Legacy_Brick -24 4.5 -29.5 7 2 2
+	+NAME New Brick
+	+COLOR 0.1897931 0.1764 0.98
+Legacy_Brick -28.5 4.5 -25 2 2 7
+	+NAME New Brick - Copy
+	+COLOR 0.9978333 1 0.35
+Legacy_Brick -28.5 9 -29.5 2 7 2
+	+NAME New Brick - Copy
+	+COLOR 1 0.15 0.2038331
+Legacy_Brick 32.3 3.5 12.1 10 2 2
+	+NAME New Brick - Copy - Copy
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 45 0
+Legacy_Brick 44.29999 3.5 12.1 10 2 2
+	+NAME New Brick - Copy - Copy
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 135 0
+Legacy_Brick 24.3 4.799039 21.85 10 5.000001 2
+	+NAME New Brick - Copy - Copy
+	+COLOR 0.5 0.5 0.5
+	+ROT 330 180 180
+Legacy_Brick 37.29999 4.5 21.1 10 2 2
+	+NAME New Brick - Copy - Copy
+	+COLOR 0.5 0.5 0.5
+	+ROT 315 90 270
+Legacy_Brick -10.1 4.5 -29.5 2 2 2
+	+NAME New Brick - Copy
+	+COLOR 0.09 0.09 0.09
+Legacy_Brick -10.1 9 -29.5 2 7 2
+	+NAME New Brick - Copy - Copy
+	+COLOR 1 0.15 0.2038331
+Legacy_Brick -5.600002 4.500003 -29.5 2 7 2
+	+NAME New Brick - Copy - Copy - Copy
+	+COLOR 0.3560499 0.19 1
+	+ROT 0 0 270
+Legacy_Brick -10.1 4.500001 -24.99999 2 7 2
+	+NAME New Brick - Copy - Copy - Copy
+	+COLOR 1 0.99585 0.17
+	+ROT 90 0 0
+Legacy_Brick -27.7 0.3500009 -6.899994 2.6 1.1 15.2
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick -21.10001 0.3500009 -6.899994 2.6 1.1 15.2
+	+NAME New Brick - Copy
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 179.9999 0
+Legacy_Brick -10.09999 0.3500009 -6.899994 2.6 1.1 15.2
+	+NAME New Brick - Copy - Copy
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 89.99994 0
+Legacy_Brick -9.999993 0.3500009 -13.1 2.6 1.1 15.2
+	+NAME New Brick - Copy - Copy - Copy
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 269.9999 0
+Legacy_Brick -19.5 5.700006 3.699999 3.999999 9.999994 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick -9.5 6 5.5 6 3 6
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 270 -1.707549E-06 0
+Brush -0.5 6 -0.5 6 3 6
+	+NAME New Brick - Copy
+	+COLOR 0.5 0.5 0.5
+	+ROT 320 2.00614E-05 30.00001
+	+Texture 0 0
+	+Texture 1 1
+	+Texture 2 2
+	+Texture 3 3
+	+Texture 4 4
+	+Texture 5 5

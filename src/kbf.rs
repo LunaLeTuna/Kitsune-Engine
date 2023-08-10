@@ -2,9 +2,11 @@
 //so i'ma barrow brick-hill's brk format for maps
 //the kitsune brick file :3
 
+use std::{collections::HashMap, string};
+
 use nalgebra::{Vector3, Rotation3};
 
-use crate::{props::{Prop, phytype, physhape}, fs_system::grab, ke_units::{Vec3, parsef, radians}, shaders::ShadvType, lights::PointLight};
+use crate::{props::{Prop, phytype, physhape}, fs_system::grab, ke_units::{Vec3, parsef, radians, parse, parsei}, shaders::ShadvType, lights::PointLight, textures::Texture};
 
 pub struct Environment {
     pub ambient: Vector3<f32>,
@@ -16,13 +18,15 @@ pub struct Environment {
 pub struct World {
     pub environment: Environment,
     pub props: Vec<Prop>,
-    pub lights: Vec<PointLight>
+    pub lights: Vec<PointLight>,
+    pub textures: HashMap<i32, String>
 }
 
 pub fn load(location: &str) -> World{
     let mut neo_prop: Vec<Prop> = vec![];
     let mut neo_light: Vec<PointLight> = vec![];
     let mut neo_scripts: Vec<String> = vec![];
+    let mut neo_textures: HashMap<i32, String> = HashMap::new();
     let mut env: Environment = Environment{
         ambient: Vector3::new(0.0, 0.0, 0.0),
         skyColor: Vector3::new(0.1372549, 0.509804, 0.2),
@@ -95,6 +99,12 @@ pub fn load(location: &str) -> World{
                     inside_obj = false;
                     continue;
                 }
+                // at somepoint, for security sake, gotta check these so they can't trigger something from out side a folder with ..
+                [">Texture_Reference", id, texture_local] => {
+                    neo_textures.insert(parsei(id), texture_local.to_string());
+                    inside_obj = false;
+                    continue;
+                }
                 [">Script", id, script_local] => {
                     neo_scripts.push(script_local.to_string());
                     inside_obj = false;
@@ -123,6 +133,9 @@ pub fn load(location: &str) -> World{
                         ["+NOCOLLISION"] => {
                             current_brick.phys_type = phytype::NULL;
                             current_brick.phys_shape = physhape::NULL;
+                        }
+                        ["+Texture", slot, texture_id] => {
+                            current_brick.textures[parse(slot)-1] = parsei(&texture_id);
                         }
                         _ => {}
                     }
@@ -159,6 +172,19 @@ pub fn load(location: &str) -> World{
                         new_brick.position = Vector3::new(parsef(x), parsef(y), parsef(z));
                         new_brick.scale = Vector3::new(parsef(xs)/2.0, parsef(ys)/2.0, parsef(zs)/2.0);
                         new_brick.model = 1;
+                        new_brick.phys_type = phytype::Collider;
+                        new_brick.phys_shape = physhape::Box;
+                        neo_prop.push(new_brick);
+                        inside_obj = true;
+                    }
+                    ["Brush", x,y,z, xs,ys,zs] => {
+
+                        let mut new_brick = Prop::new("what cat?".to_string());
+                        new_brick.position = Vector3::new(parsef(x), parsef(y), -parsef(z));
+                        new_brick.scale = Vector3::new(parsef(xs)/2.0, parsef(ys)/2.0, parsef(zs)/2.0);
+                        new_brick.model = 1;
+                        new_brick.shader = 1;
+                        new_brick.textures = vec![0,0,0,0,0,0,0];
                         new_brick.phys_type = phytype::Collider;
                         new_brick.phys_shape = physhape::Box;
                         neo_prop.push(new_brick);
@@ -329,6 +355,7 @@ pub fn load(location: &str) -> World{
         environment: env,
         props: neo_prop,
         lights: neo_light,
+        textures: neo_textures,
     }
 }
 

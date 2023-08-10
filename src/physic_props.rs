@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use nalgebra::{Vector3, Vector2, Rotation3};
 use rapier3d::prelude::*;
 
-use crate::{props::{Prop, phytype}, ke_units::Vec3};
+use crate::{props::{Prop, phytype}, ke_units::Vec3, models::Model};
 
 pub enum CopyWhat {
     All,
@@ -121,14 +121,23 @@ impl PhysWorld {
         }
     }
 
-    pub fn create_phy(&mut self, prop: &mut Prop) {
+    pub fn create_phy(&mut self, prop: &mut Prop, modelz: &HashMap<i32, Model>) {
         if prop.phys_type == phytype::Collider {
             match prop.phys_shape {
                 crate::props::physhape::Box => {
                     self.create_collider_block(prop);
                 },
                 crate::props::physhape::Ball => todo!(),
-                crate::props::physhape::NULL => todo!(),
+                crate::props::physhape::Model => {
+                    // let vertacies: Vec<Vector3<f32>>  = vec![];
+                    // for po in  {
+                        
+                    // }
+                    
+                    // let _ = ColliderBuilder::trimesh(vertacies, );
+                    todo!()
+                },
+                crate::props::physhape::NULL => {}, // don't do anything :3
             }
         } else if prop.phys_type == phytype::Dynamic {
             match prop.phys_shape {
@@ -136,7 +145,8 @@ impl PhysWorld {
                     self.create_dynamic_box(prop);
                 },
                 crate::props::physhape::Ball => todo!(),
-                crate::props::physhape::NULL => todo!(),
+                crate::props::physhape::Model => todo!(),
+                crate::props::physhape::NULL => {}, // don't do anything :3
             }
         }
     }

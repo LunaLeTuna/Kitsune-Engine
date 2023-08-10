@@ -5,7 +5,7 @@ use kbf::{load, Environment};
 use ke_units::{Vec2, radians};
 use lights::PointLight;
 use models::Model;
-use nalgebra::{Vector3, Vector2, Matrix4, Rotation, Rotation3, Unit};
+use nalgebra::{Vector3, Vector2, Matrix3, Matrix4, Rotation, Rotation3, Unit};
 use physic_props::*;
 use props::{Prop, phytype, physhape};
 use shaders::{ShadvType, Shader};
@@ -89,13 +89,16 @@ fn main(){
         let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/base";
         shaderz.insert(0, Shader::craft(&de_shader, &display));
 
+        let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/brush";
+        shaderz.insert(1, Shader::craft(&de_shader, &display));
+
         let pig_model = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.obj";
         modelz.insert(0, models::load_obj(&pig_model, &display));
 
         let pig_skin = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.png";
         texturez.insert(0, Texture::craft(&pig_skin, &display));
 
-        let box_model = _KE_MAIN_DEPENDENTS.to_owned()+"/box.obj";
+        let box_model = _KE_MAIN_DEPENDENTS.to_owned()+"/model/brush.obj";
         modelz.insert(1, models::load_obj(&box_model, &display));
 
         // propz.insert(0, Prop::new("nya".into()));
@@ -112,10 +115,27 @@ fn main(){
 
     let (world_emv, lightz) = {
         let map = load("./maps/roy.kbf");
+
+        let txCount = (texturez.len() as i32)-1;
+
+        for tx in map.textures {
+            texturez.insert(txCount+tx.0, Texture::craft(&("./textures/".to_owned()+&tx.1), &display));
+        }
+
         let mut partnp = 0;
+
         for np in map.props {
             let mut np = np;
-            phys_world.create_phy(&mut np);
+            phys_world.create_phy(&mut np, &modelz);
+
+            let mut current_new_texture = 0 as usize;
+            let textsize = np.textures.len()-1;
+            
+            while current_new_texture < textsize {
+                np.textures[current_new_texture] = np.textures[current_new_texture]+txCount;
+                current_new_texture+=1;
+            }
+
             propz.insert(partnp, np);
             partnp+=1;
         }
@@ -126,12 +146,11 @@ fn main(){
     {
         let mut womp = Prop::new("nya :3".to_owned());
         womp.model = 0;
-        womp.texture1 = 0;
-        womp.texture2 = 0;
+        womp.textures = vec![0,0];
         womp.phys_shape = physhape::Box;
         womp.phys_type = phytype::Dynamic;
         womp.position = Vector3::new(0.0, 16.0, 0.0);
-        phys_world.create_phy(&mut womp);
+        phys_world.create_phy(&mut womp, &modelz);
         
         propz.insert((propz.len() as i32), womp);
     }
@@ -139,8 +158,7 @@ fn main(){
     {
         let mut womp = Prop::new("nya :3".to_owned());
         womp.model = 1;
-        womp.texture1 = 0;
-        womp.texture2 = 0;
+        womp.textures = vec![0,0];
         womp.position = Vector3::new(-2.0, 2.0, -30.0);
         womp.set_rotation(Vector3::new(radians(45.0),radians(0.0),radians(0.0)));
         
@@ -167,7 +185,7 @@ fn main(){
     main_cam.refresh();
     camera_map.insert(0, main_cam);
 
-    let mut real_char = Character::new(character_type::Third, &display, &mut propz, &mut phys_world, &mut camera_map);
+    let mut real_char = Character::new(character_type::Third, &display, &mut propz, &modelz, &mut phys_world, &mut camera_map);
     _main_camera = real_char.camera;
 
     if world_emv.spawnpoints.len() != 0 {
@@ -321,7 +339,20 @@ fn main(){
             let mut uniform = dynamic_uniform::DynamicUniforms::new();
 
             //this does all the prop's 3d model translation stuff
-            let model = Matrix4::<f32>::from_euler_angles(prop.rotation.x, prop.rotation.y,prop.rotation.z);
+
+            let n = [
+                Unit::new_unchecked(Vector3::new(-1.0, 0.0, 0.0)),
+                Unit::new_unchecked(Vector3::new(0.0, -1.0, 0.0)),
+                Unit::new_unchecked(Vector3::new(0.0, 0.0, 1.0)),
+            ];
+
+            let r1 = Rotation3::from_axis_angle(&n[2], prop.rotation.z);
+            let r2 = Rotation3::from_axis_angle(&n[1], prop.rotation.y);
+            let r3 = Rotation3::from_axis_angle(&n[0], prop.rotation.x);
+
+            let d = r2 * r3 * r1;
+
+            let model: nalgebra::Matrix<f32, nalgebra::Const<4>, nalgebra::Const<4>, nalgebra::ArrayStorage<f32, 4, 4>> = d.to_homogeneous();
 
 
             // let model = prop.rotation.matrix().to_homogeneous().mul(model);
@@ -338,9 +369,6 @@ fn main(){
             uniform.add("view".to_string(), &view);
             let perspective = main_cam.project_drop();
             uniform.add("perspective".to_string(), &perspective);
-
-            uniform.add("diffuse_tex".to_string(), &*get_texture(&texturez, prop)); // TODO: need to make this not &*, because thats bad probably
-            uniform.add("normal_tex".to_string(), &*get_texture2(&texturez, prop));
 
             // shader globle vars
             for (name, value) in &shader_vars {
@@ -411,9 +439,18 @@ fn main(){
 
             uniform.add("NR_POINT_LIGHTS".to_owned(), &indexx);
 
-            uniform.add("material.diffuse".to_owned(), &*get_texture(&texturez, prop));
-            uniform.add("material.specular".to_owned(), &*get_texture2(&texturez, prop));
+            uniform.add("diffuse_tex".to_string(), get_texture(&texturez, prop, 0));
+            uniform.add("normal_tex".to_string(), get_texture(&texturez, prop, 1));
+
+            uniform.add("material.diffuse".to_owned(), get_texture(&texturez, prop, 0));
+            uniform.add("material.specular".to_owned(), get_texture(&texturez, prop, 1));
             uniform.add("material.shininess".to_owned(), &0.5);
+
+            let mut currrent_text = 0;
+            for text in &prop.textures {
+                uniform.add("texture".to_string()+&(currrent_text+1).to_string(), get_texture(&texturez, prop, currrent_text));
+                currrent_text+=1;
+            }
                 
            
 
@@ -459,15 +496,8 @@ fn get_model<'a>(modelz: &'a HashMap<i32, Model>, prop: &Prop) -> &'a VertexBuff
     }
 }
 
-fn get_texture<'a>(texturez: &'a HashMap<i32, Texture>, prop: &Prop) -> &'a SrgbTexture2d {
-    match texturez.get(&prop.texture1) {
-        Some(texture) => &texture.texture,
-        None => &texturez.get(&0).unwrap().texture,
-    }
-}
-
-fn get_texture2<'a>(texturez: &'a HashMap<i32, Texture>, prop: &Prop) -> &'a SrgbTexture2d {
-    match texturez.get(&prop.texture2) {
+fn get_texture<'a>(texturez: &'a HashMap<i32, Texture>, prop: &Prop, texture: usize) -> &'a SrgbTexture2d {
+    match texturez.get(&prop.textures[texture]) {
         Some(texture) => &texture.texture,
         None => &texturez.get(&0).unwrap().texture,
     }
