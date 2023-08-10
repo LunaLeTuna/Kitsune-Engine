@@ -5,12 +5,11 @@ Kitsune Engine V1
 >SunIntensity 300
 >Baseplate 100 0.2 0.509804 0.137255 1
 
->Texture_Reference 0 CatGirl.png
 >Texture_Reference 1 a.png
->Texture_Reference 2 nya.png
->Texture_Reference 3 Screenshot_20230430_170007.png
->Texture_Reference 4 Screenshot_2022-04-13_111911.png
->Texture_Reference 5 FysYJhDWIAYBsyr.jpg
+>Texture_Reference 2 aaaaaaa.png
+>Texture_Reference 3 wa.png
+>Texture_Reference 4 lunamiku.png
+>Texture_Reference 5 protogen.png
 >Texture_Reference 6 CatGirl.png
 
 Brush 7.299998 3.5 12.1 10 2 2
