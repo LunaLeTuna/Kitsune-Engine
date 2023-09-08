@@ -880,6 +880,7 @@ dependencies = [
  "glutin 0.30.10",
  "image",
  "lazy_static",
+ "libm",
  "nalgebra",
  "rapier3d",
  "serde",

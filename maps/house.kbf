@@ -1,0 +1,360 @@
+Kitsune Engine V1
+
+>AmbientColor 0 0 0
+>SkyColor 0.4862745 0.6980392 0.8980392
+>SunIntensity 300
+>Baseplate 500 0.2 0.509804 0.137255 1
+
+>Texture_Reference 1 rocks/rock_boulder_dry_diff_1k.png
+>Texture_Reference 2 rocks/rock_boulder_dry_disp_1k.png
+>Texture_Reference 3 aaaaaaa.png
+>Texture_Reference 4 protogen.png
+>Texture_Reference 5 mikubit.png
+
+>Model_Reference 1 rock_1.obj
+
+Legacy_Brick 23.5 8 -42.5 66 17 80
+	+NAME island_mass
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick -9.5 6.5 -19.5 22 14 34
+	+NAME rocksies
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 330 0
+Legacy_Brick 19.375 3.5 -15.75 481.75 1 500.5
+	+NAME water
+	+COLOR 0.215 0.249675 0.5
+	+NOCOLLISION
+Legacy_Brick -12.25253 6.5 -62.42527 18 14 26
+	+NAME Rocks
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 20.00001 0
+Spawn_Point 10 18 -70 1 1 1
+	+NAME New Spawn
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 70.00004 0
+Legacy_Brick -2 7 -85 17 17 17
+	+NAME so many rocks
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 340 0
+Legacy_Brick -10.5 5 -80.5 22 13 20
+	+NAME more rocks
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 340 0
+Model_static -31 6 -60 9 15 11
+	+NAME arock
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+NOCOLLISION
+Model_static -31 6 -27 9 15 11
+	+NAME arock
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 70.00004 0
+	+NOCOLLISION
+Model_static -42 8 -39 9 19 11
+	+NAME arock
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 40.00002 0
+	+NOCOLLISION
+Legacy_Brick 21.5 22 -50 2 11 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 21 22 -49 1 11 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 32.5 22 -50 2 11 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 33 22 -49 1 11 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 23.75895 27.28727 -40.5 0.25 5 18
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+	+ROT 0 0 310
+	+NOCOLLISION
+Legacy_Brick 30.24105 27.28727 -40.5 0.25 5 18
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+	+ROT 0 0 50.00001
+	+NOCOLLISION
+Legacy_Brick 27 29.375 -35.5 1 0.25 8
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+Legacy_Brick 26.14198 29.10867 -40.5 0.25 1 18
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+ROT 0 0 310
+	+NOCOLLISION
+Legacy_Brick 27.95378 29.02832 -40.5 0.25 1.25 18
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+ROT 0 0 50.00002
+	+NOCOLLISION
+Legacy_Brick 32 25.5 -40.5 1 2 18
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 24.6118 27.72314 -50 7.25 1 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+ROT 0 0 40.00002
+	+NOCOLLISION
+Legacy_Brick 29.57454 27.80349 -50 7.5 1 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+ROT 0 0 320
+	+NOCOLLISION
+Legacy_Brick 32 22 -40.5 0.5 5 18
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+Legacy_Brick 32 19.375 -40.5 1 0.25 18
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+NOCOLLISION
+Legacy_Brick 32 18 -40.5 0.5 2.5 18
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+Legacy_Brick 32 16.625 -40.5 1 0.25 18
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+NOCOLLISION
+Legacy_Brick 32 21.875 -40 1.5 10.75 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 32 22 -31 1.5 11 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 22 22 -40.5 0.5 5 18
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+Legacy_Brick 22 19.375 -40.5 1 0.25 18
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+NOCOLLISION
+Legacy_Brick 22 18 -40.5 0.5 2.5 18
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+Legacy_Brick 22 16.625 -40.5 1 0.25 18
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+NOCOLLISION
+Legacy_Brick 22 21.875 -40 1.5 10.75 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 22 25.5 -40.5 1 2 18
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 21.75 22 -31 1.5 11 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 24.51604 27.64279 -40 7 1 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+ROT 0 0 40.00002
+	+NOCOLLISION
+Legacy_Brick 29.26604 27.64279 -40 7 1 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+ROT 0 0 320
+	+NOCOLLISION
+Legacy_Brick 24.51604 27.64279 -31 7 1 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+ROT 0 0 40.00002
+	+NOCOLLISION
+Legacy_Brick 29.42029 27.72314 -31 7.25 1 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+ROT 0 0 320
+	+NOCOLLISION
+Legacy_Brick 27 29.375 -45 1 0.25 9
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+	+NOCOLLISION
+Legacy_Brick 23.5 16.625 -50 2 0.25 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+NOCOLLISION
+Legacy_Brick 23.5 19.375 -50 2 0.25 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 30.5 19.375 -50 2 0.25 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 30.5 16.625 -50 2 0.25 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+NOCOLLISION
+Legacy_Brick 24.875 20.125 -50 0.75 7.25 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+NOCOLLISION
+Legacy_Brick 29.125 20.125 -50 0.75 7.25 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+NOCOLLISION
+Legacy_Brick 27 24.125 -50 5 0.75 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+	+NOCOLLISION
+Legacy_Brick 23.5 21.125 -49.875 2 8.75 0.25
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+Legacy_Brick 30.5 21.125 -49.875 2 8.75 0.25
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+Legacy_Brick 27 25 -49.875 5 1 0.25
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+Legacy_Brick 27.125 26.125 -49.875 8.75 1.25 0.25
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+Legacy_Brick 27.125 27.375 -49.875 5.75 1.25 0.25
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+Legacy_Brick 27.125 28.625 -49.875 3.25 1.25 0.25
+	+NAME green house_glass
+	+COLOR 0.5429 0.8014895 0.89
+	+TRANS 0.3921569
+Legacy_Brick 23.5 24.375 -50 2 0.25 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 30.5 24.375 -50 2 0.25 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 27.125 26.625 -50 6.75 0.25 1
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Legacy_Brick 27.125 26.875 -49.875 0.75 4.75 0.75
+	+NAME green house_c
+	+COLOR 0.1294118 0.4313726 0.1333333
+Brush 11.5 21.5 1 1 1 1
+	+NAME miku
+	+COLOR 0.5 0.5 0.5
+	+Texture 1 5
+	+Texture 2 5
+	+Texture 3 5
+	+Texture 4 5
+	+Texture 5 5
+	+Texture 6 5
+Legacy_Brick 32.125 20.875 -30 5.25 8.75 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 21.625 20.875 -30 5.75 8.75 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 26.75 28.375 -30 16 6.25 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 27 16.625 -39.75 9 0.25 19.5
+	+NAME New Brick
+	+COLOR 0.5 0.19125 0.175
+Light 27 25.25 -40 1 1 2.5
+	+NAME New Light
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 26.75 16.625 -20.375 16 0.25 19.25
+	+NAME New Brick
+	+COLOR 0.3232 0.5 0.26
+Legacy_Brick 27.375 7.5 -88.75 31.75 18 12.5
+	+NAME one more rock and I will loose it
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 -4.268869E-06 0
+Legacy_Brick 40.875 7.5 17.25 68.25 18 39.5
+	+NAME no more rocks please
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 -4.268869E-06 0
+Legacy_Brick 79.75 7.5 -28.875 46.5 18 52.75
+	+NAME nothing is worth this many rocks
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 -4.268869E-06 0
+Legacy_Brick 64.79277 4.875 -61.98804 71.75 12.75 27.25
+	+NAME I beg of you, please, no more rocks
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 330 0
+Legacy_Brick 60.04277 2.5 -75.48804 46.75 8 27.25
+	+NAME shore
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 -2.305189E-05 0
+Legacy_Brick 88.04277 2.25 -62.73804 46.75 7.5 27.25
+	+NAME shore
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 309.9999 0
+Model_static 112.5 3.875 -55 9 10.75 11
+	+NAME arock
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 40.00002 0
+	+NOCOLLISION
+Model_static 107.902 4.375 -81.95238 9 11.75 8.75
+	+NAME arock
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 90.00005 0
+	+NOCOLLISION
+Model_static 39.02702 6.125 -120.4524 15 19.25 8.5
+	+NAME arock
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 90.00005 0
+	+NOCOLLISION
+Model_static 44.15202 8.25 -124.9524 15 23.5 12.75
+	+NAME arock
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+ROT 1.727951 99.85113 350.1489
+	+NOCOLLISION
+Model_static 53.01466 3.375 -108.58 8.25 13.75 7.75
+	+NAME arock
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 80.00004 0
+	+NOCOLLISION
+Model_static -42 8 -98.75 9 19 11
+	+NAME arock
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+ROT 3.404871 19.71975 350.5919
+	+NOCOLLISION
+Model_static 116.1066 6.5 -67.79939 7.25 16 8.75
+	+NAME arock
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 350 0
+	+NOCOLLISION
+Model_static 164.5147 3.375 -141.33 8.25 13.75 7.75
+	+NAME arock
+	+Texture 1 1
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 80.00004 0
+	+NOCOLLISION
+Model_static 102.027 6.125 -153.7024 15 19.25 8.5
+	+NAME arock
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 60.00003 0
+	+NOCOLLISION
+Model_static 118.152 8.25 -165.9524 15 23.5 12.75
+	+NAME arock
+	+Texture 1 1
+	+COLOR 0.5 0.5 0.5
+	+ROT 1.727951 99.85114 350.1489
+	+NOCOLLISION
+Model_static 22.375 11.125 -116.625 15.75 15.75 15.75
+	+NAME Dock
+	+COLOR 0.5 0.5 0.5
+	+NOCOLLISION

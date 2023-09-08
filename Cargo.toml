@@ -13,3 +13,4 @@ tokio = { version = "1.25.0", features = ["macros", "rt", "rt-multi-thread"] }
 lazy_static = "1.4.0"
 serde = "1.0.155"
 rapier3d = "0.17.2"
+libm = "0.2.7"

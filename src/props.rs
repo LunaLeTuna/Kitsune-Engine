@@ -18,10 +18,21 @@ pub enum physhape {
     NULL,
 }
 
+#[derive(Clone, PartialEq)]
+pub enum proptype {
+    Legacy_Brick,
+    Brush,
+    Model_static,
+    Light,
+    NULL,
+}
+
 
 #[derive(Clone)]
 pub struct Prop {
     pub name: String, //for getting if script needs it
+
+    pub proptype: proptype,
 
     pub shader: i32, //what shader we need to render object
     pub shader_vars: HashMap<String, ShadvType>, //prop spesific shader properties
@@ -45,6 +56,7 @@ impl Prop {
     pub fn new(name: String) -> Prop {
         Prop {
             name,
+            proptype: proptype::Brush,
             shader: 0,
             shader_vars: HashMap::new(),
             model: 0,

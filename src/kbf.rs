@@ -6,7 +6,7 @@ use std::{collections::HashMap, string};
 
 use nalgebra::{Vector3, Rotation3};
 
-use crate::{props::{Prop, phytype, physhape}, fs_system::grab, ke_units::{Vec3, parsef, radians, parse, parsei}, shaders::ShadvType, lights::PointLight, textures::Texture};
+use crate::{props::{Prop, phytype, physhape, proptype}, fs_system::grab, ke_units::{Vec3, parsef, radians, parse, parsei}, shaders::ShadvType, lights::PointLight, textures::Texture};
 
 pub struct Environment {
     pub ambient: Vector3<f32>,
@@ -19,7 +19,8 @@ pub struct World {
     pub environment: Environment,
     pub props: Vec<Prop>,
     pub lights: Vec<PointLight>,
-    pub textures: HashMap<i32, String>
+    pub textures: HashMap<i32, String>,
+    pub models: HashMap<i32, String>
 }
 
 pub fn load(location: &str) -> World{
@@ -27,6 +28,7 @@ pub fn load(location: &str) -> World{
     let mut neo_light: Vec<PointLight> = vec![];
     let mut neo_scripts: Vec<String> = vec![];
     let mut neo_textures: HashMap<i32, String> = HashMap::new();
+    let mut neo_models: HashMap<i32, String> = HashMap::new();
     let mut env: Environment = Environment{
         ambient: Vector3::new(0.0, 0.0, 0.0),
         skyColor: Vector3::new(0.1372549, 0.509804, 0.2),
@@ -105,6 +107,11 @@ pub fn load(location: &str) -> World{
                     inside_obj = false;
                     continue;
                 }
+                [">Model_Reference", id, model_local] => {
+                    neo_models.insert(parsei(id), model_local.to_string());
+                    inside_obj = false;
+                    continue;
+                }
                 [">Script", id, script_local] => {
                     neo_scripts.push(script_local.to_string());
                     inside_obj = false;
@@ -169,7 +176,7 @@ pub fn load(location: &str) -> World{
                     ["Legacy_Brick", x,y,z, xs,ys,zs] => {
 
                         let mut new_brick = Prop::new("what cat?".to_string());
-                        new_brick.position = Vector3::new(parsef(x), parsef(y), parsef(z));
+                        new_brick.position = Vector3::new(parsef(x), parsef(y), -parsef(z));
                         new_brick.scale = Vector3::new(parsef(xs)/2.0, parsef(ys)/2.0, parsef(zs)/2.0);
                         new_brick.model = 1;
                         new_brick.phys_type = phytype::Collider;
@@ -190,15 +197,31 @@ pub fn load(location: &str) -> World{
                         neo_prop.push(new_brick);
                         inside_obj = true;
                     }
+                    ["Model_static", x,y,z, xs,ys,zs] => {
+                        let mut new_brick = Prop::new("what cat?".to_string());
+                        new_brick.position = Vector3::new(parsef(x), parsef(y), -parsef(z));
+                        new_brick.scale = Vector3::new(parsef(xs)/2.0, parsef(ys)/2.0, parsef(zs)/2.0);
+                        new_brick.proptype = proptype::Model_static;
+                        new_brick.model = 1;
+                        new_brick.shader = 2;
+                        new_brick.textures = vec![0,0,0,0,0,0,0];
+                        new_brick.phys_type = phytype::Collider;
+                        new_brick.phys_shape = physhape::Box;
+                        neo_prop.push(new_brick);
+                        inside_obj = true;
+                    }
                     ["Light", x,y,z, xs,ys,zs] => {
 
                         let mut new_light = PointLight::new();
-                        new_light.position = Vector3::new(parsef(x), parsef(y), parsef(z));
+                        new_light.position = Vector3::new(parsef(x), parsef(y), -parsef(z));
                         neo_light.push(new_light);
                         inside_light = true;
                     }
                     ["Spawn_Point", x,y,z, xs,ys,zs] => {
-                        env.spawnpoints.push(Vector3::new(parsef(x), parsef(y), parsef(z)));
+                        env.spawnpoints.push(Vector3::new(parsef(x), parsef(y), -parsef(z)));
+                    }
+                    ["Prefab", x,y,z, xs,ys,zs] => {
+                        todo!()
                     }
                     _ => {}
                 }
@@ -235,6 +258,8 @@ pub fn load(location: &str) -> World{
                     let baseplate = neo_prop.get_mut(0).unwrap();
                     baseplate.position = Vector3::new(size/2.0,0.0,size/2.0);
                     baseplate.scale = Vector3::new(size,0.1,size);
+                    baseplate.phys_type = phytype::Collider;
+                    baseplate.phys_shape = physhape::Box;
                 }
                 // sunIntensity
                 7 => {
@@ -277,6 +302,9 @@ pub fn load(location: &str) -> World{
 
                         let mut new_brick = Prop::new("what cat?".to_string());
                         new_brick.position = Vector3::new(parsef(y)+bscale.x/2.0, parsef(z)+bscale.y/2.0, parsef(x)+bscale.z/2.0);
+                        new_brick.model = 1;
+                        new_brick.phys_type = phytype::Collider;
+                        new_brick.phys_shape = physhape::Box;
                         new_brick.scale = bscale;
                         new_brick.shader_vars.insert("Color".to_string(), ShadvType::Vec3(Vector3::new(parsef(r),parsef(g),parsef(b))));
                         neo_prop.push(new_brick);
@@ -356,6 +384,7 @@ pub fn load(location: &str) -> World{
         props: neo_prop,
         lights: neo_light,
         textures: neo_textures,
+        models: neo_models
     }
 }
 

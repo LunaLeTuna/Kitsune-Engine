@@ -18,7 +18,7 @@ void main() {
     v_position = vec3(model * vec4(position, 1.0));
     v_normal = mat3(transpose(inverse(model))) * normal;
     v_tex_coords = tex_coords;
-    local = position;
+    local = normalize(normal);
 
     gl_Position = perspective * view * vec4(v_position, 1.0);
 }

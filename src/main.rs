@@ -7,7 +7,7 @@ use lights::PointLight;
 use models::Model;
 use nalgebra::{Vector3, Vector2, Matrix3, Matrix4, Rotation, Rotation3, Unit};
 use physic_props::*;
-use props::{Prop, phytype, physhape};
+use props::{Prop, phytype, physhape, proptype};
 use shaders::{ShadvType, Shader};
 use textures::Texture;
 use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, CursorGrabMode}, event::{StartCause, Event, WindowEvent, DeviceEvent}, dpi::LogicalPosition};
@@ -92,6 +92,9 @@ fn main(){
         let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/brush";
         shaderz.insert(1, Shader::craft(&de_shader, &display));
 
+        let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/model";
+        shaderz.insert(2, Shader::craft(&de_shader, &display));
+
         let pig_model = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.obj";
         modelz.insert(0, models::load_obj(&pig_model, &display));
 
@@ -114,13 +117,20 @@ fn main(){
     let mut phys_world = PhysWorld::init_phys_world();
 
     let (world_emv, lightz) = {
-        let map = load("./maps/roy.kbf");
+        let map = load("./maps/house.kbf");
 
         let txCount = (texturez.len() as i32)-1;
 
         for tx in map.textures {
             texturez.insert(txCount+tx.0, Texture::craft(&("./textures/".to_owned()+&tx.1), &display));
         }
+
+        let mdCount = (modelz.len() as i32)-1;
+
+        for md in map.models {
+            modelz.insert(mdCount+md.0, models::load_obj(&("./models/".to_owned()+&md.1), &display));
+        }
+
 
         let mut partnp = 0;
 
@@ -134,6 +144,10 @@ fn main(){
             while current_new_texture < textsize {
                 np.textures[current_new_texture] = np.textures[current_new_texture]+txCount;
                 current_new_texture+=1;
+            }
+
+            if(np.proptype == proptype::Model_static){
+                np.model = np.model+mdCount;
             }
 
             propz.insert(partnp, np);
