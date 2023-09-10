@@ -21,7 +21,7 @@ void main() {
     v_tex_coords = tex_coords;
     local = normalize(normal);
 
-    v_position.y += sin(position.z+(time/700))*2;
+    v_position = vec3(v_position.x, (sin(v_position.x)*sin(time*0.005))*(sin(v_position.z)*sin(time*0.003))*2, v_position.z);
 
     gl_Position = perspective * view * vec4(v_position, 1.0);
 }

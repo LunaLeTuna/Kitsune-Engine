@@ -51,7 +51,7 @@ impl Character {
         let mut womp = Prop::new("nya :3".to_owned());
         womp.model = 0;
         womp.textures = vec![0,0];
-        womp.phys_shape = physhape::Box;
+        womp.phys_shape = physhape::Capsule;
         womp.phys_type = phytype::Dynamic;
         womp.position = Vector3::new(5.0, 16.0, 0.0);
         womp.render = false;

@@ -94,6 +94,34 @@ impl PhysWorld {
         // prop.phys_id = id;
     }
 
+    pub fn create_collider_capsule(&mut self, prop: &mut Prop) {
+        let mut collider = ColliderBuilder::capsule_y(prop.scale.y, prop.scale.x)
+        .translation(prop.position)
+        .build();
+
+
+        let n = [
+            Unit::new_unchecked(Vector3::new(-1.0, 0.0, 0.0)),
+            Unit::new_unchecked(Vector3::new(0.0, -1.0, 0.0)),
+            Unit::new_unchecked(Vector3::new(0.0, 0.0, 1.0)),
+        ];
+        let r1 = Rotation3::from_axis_angle(&n[2], prop.rotation.z);
+        let r2 = Rotation3::from_axis_angle(&n[1], prop.rotation.y);
+        let r3 = Rotation3::from_axis_angle(&n[0], prop.rotation.x);
+        let d = r2 * r3 * r1;
+
+
+        collider.set_rotation(d.into());
+        self.colliders.insert(collider);
+
+
+        // I don't think static collisions would need their prop to know its phys_id
+        // too lazy to fix up rn
+        // let id = self.phys_handles.len() as i32;
+        // let rb_id = self.ridgid_world.insert(rigid_body);
+        // prop.phys_id = id;
+    }
+
     pub fn create_static_rigidbody() {
         // fixed
         todo!()
@@ -101,6 +129,30 @@ impl PhysWorld {
 
     pub fn create_dynamic_box(&mut self, prop: &mut Prop) {
         let collider = ColliderBuilder::cuboid(prop.scale.x, prop.scale.y, prop.scale.z);
+
+        let mut rigid_body = RigidBodyBuilder::new(RigidBodyType::Dynamic)
+        .translation(prop.position)
+        .rotation(prop.rotation) //gotta figure out a effetion waty to do this
+        .can_sleep(true) //cube can a bit eepy
+        .ccd_enabled(false) //ponder this later
+        .build();
+
+        //rigid_body.set_rotation(prop.rotation.into(), false);
+
+
+        self.last_ID += 1;
+
+        let rb_id = self.ridgid_world.insert(rigid_body);
+
+        self.phys_handles.insert(self.last_ID, rb_id);
+
+        self.colliders.insert_with_parent(collider, rb_id, &mut self.ridgid_world);
+
+        prop.phys_id = self.last_ID;
+    }
+
+    pub fn create_dynamic_capsule(&mut self, prop: &mut Prop) {
+        let collider = ColliderBuilder::capsule_y(prop.scale.y, prop.scale.x);
 
         let mut rigid_body = RigidBodyBuilder::new(RigidBodyType::Dynamic)
         .translation(prop.position)
@@ -140,6 +192,9 @@ impl PhysWorld {
                 crate::props::physhape::Box => {
                     self.create_collider_block(prop);
                 },
+                crate::props::physhape::Capsule => {
+                    self.create_collider_capsule(prop);
+                },
                 crate::props::physhape::Ball => todo!(),
                 crate::props::physhape::Model => {
                     // let vertacies: Vec<Vector3<f32>>  = vec![];
@@ -158,6 +213,9 @@ impl PhysWorld {
                     self.create_dynamic_box(prop);
                 },
                 crate::props::physhape::Ball => todo!(),
+                crate::props::physhape::Capsule => {
+                    self.create_dynamic_capsule(prop);
+                },
                 crate::props::physhape::Model => todo!(),
                 crate::props::physhape::NULL => {}, // don't do anything :3
             }

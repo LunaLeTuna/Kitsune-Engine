@@ -14,6 +14,7 @@ pub enum phytype {
 pub enum physhape {
     Box,
     Ball,
+    Capsule,
     Model,
     NULL,
 }

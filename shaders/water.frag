@@ -111,13 +111,17 @@ void main() {
 
     vec3 result = LeDirLight.diffuse*0.1;
 
-    for(int i = 0; i < NR_POINT_LIGHTS; i++)
-      result += CalcPointLight(pointLights[i], norm, v_position, viewDir);
+    for(int i = 0; i < NR_POINT_LIGHTS; i++){
+        result += CalcPointLight(pointLights[i], norm, v_position, viewDir);
+    }
 
     // if(local.y >= 0.8)
     // color = vec4(result, 1.0);
     // else if(local.x >= 0.8)
     // color = vec4(result*vec3(1.0,0.0,0.0), 1.0);
     // else
-    color = vec4(Color*result, trans);
+
+    float fog = ((gl_FragCoord.z/gl_FragCoord.w)*0.05);
+
+    color = vec4(Color*result*fog, 1);
 }
