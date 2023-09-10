@@ -43,22 +43,14 @@ uniform int NR_POINT_LIGHTS;
 uniform PointLight pointLights[64];
 
 uniform Material material;
+uniform float trans;
 
 
 uniform vec3 u_light;
 uniform sampler2D diffuse_tex;
 uniform sampler2D normal_tex;
-uniform sampler2D texture0;
-uniform sampler2D texture1;
-uniform sampler2D texture2;
-uniform sampler2D texture3;
-uniform sampler2D texture4;
-uniform sampler2D texture5;
-uniform sampler2D texture6;
-uniform sampler2D texture7;
 uniform vec3 Color;
 uniform vec3 view;
-uniform float trans;
 
 const vec3 specular_color = vec3(1.0, 1.0, 1.0);
 
@@ -126,20 +118,6 @@ void main() {
     // color = vec4(result, 1.0);
     // else if(local.x >= 0.8)
     // color = vec4(result*vec3(1.0,0.0,0.0), 1.0);
-    // else v_normal
-    if(local.x > .1){
-        color = vec4(texture(texture5, v_tex_coords).rgba);
-    }else if(local.y > .1){
-        color = vec4(texture(texture1, v_tex_coords).rgba);
-    }else if(local.z > .1){
-        color = vec4(texture(texture4, v_tex_coords).rgba);
-    }else if(local.x < -.1){
-        color = vec4(texture(texture3, v_tex_coords).rgba);
-    }else if(local.y < -.1){
-        color = vec4(texture(texture2, v_tex_coords).rgba);
-    }else if(local.z < -.1){
-        color = vec4(texture(texture6, v_tex_coords).rgba);
-    }else
-    color = vec4(local, trans);
-    
+    // else
+    color = vec4(Color*result, trans);
 }

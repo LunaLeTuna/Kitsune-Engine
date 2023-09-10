@@ -43,6 +43,7 @@ uniform int NR_POINT_LIGHTS;
 uniform PointLight pointLights[64];
 
 uniform Material material;
+uniform float trans;
 
 
 uniform vec3 u_light;
@@ -118,5 +119,5 @@ void main() {
     // else if(local.x >= 0.8)
     // color = vec4(result*vec3(1.0,0.0,0.0), 1.0);
     // else
-    color = vec4(result*Color, 1.0);
+    color = vec4(result*Color, trans);
 }

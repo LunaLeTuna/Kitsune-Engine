@@ -40,6 +40,7 @@ pub struct Prop {
     pub model: i32, //model id
 
     pub textures: Vec<i32>,
+    pub transparency: f32,
 
     pub position: Vector3<f32>,
     pub rotation: Vector3<f32>,
@@ -50,24 +51,29 @@ pub struct Prop {
     pub phys_type: phytype, //if rigid, or collision
     pub phys_shape: physhape, //what shape collision is
     pub phys_id: i32, //id to physics world object
+
+    pub shader_non_defalt: bool
 }
 
 impl Prop {
     pub fn new(name: String) -> Prop {
         Prop {
             name,
-            proptype: proptype::Brush,
+            proptype: proptype::NULL,
             shader: 0,
             shader_vars: HashMap::new(),
             model: 0,
             position: Vector3::new(0.0, 0.0, 0.0),
             scale: Vector3::new(1.0, 1.0, 1.0),
             textures: vec![0,1],
+            transparency: 1.0,
             rotation: Vector3::zeros(),
             render: true,
             phys_type: phytype::NULL,
             phys_shape: physhape::NULL,
             phys_id: -1,
+
+            shader_non_defalt: false
         }
     }
 

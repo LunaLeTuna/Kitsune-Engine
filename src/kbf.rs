@@ -20,7 +20,8 @@ pub struct World {
     pub props: Vec<Prop>,
     pub lights: Vec<PointLight>,
     pub textures: HashMap<i32, String>,
-    pub models: HashMap<i32, String>
+    pub models: HashMap<i32, String>,
+    pub shaders: HashMap<i32, String>
 }
 
 pub fn load(location: &str) -> World{
@@ -29,6 +30,7 @@ pub fn load(location: &str) -> World{
     let mut neo_scripts: Vec<String> = vec![];
     let mut neo_textures: HashMap<i32, String> = HashMap::new();
     let mut neo_models: HashMap<i32, String> = HashMap::new();
+    let mut neo_shaders: HashMap<i32, String> = HashMap::new();
     let mut env: Environment = Environment{
         ambient: Vector3::new(0.0, 0.0, 0.0),
         skyColor: Vector3::new(0.1372549, 0.509804, 0.2),
@@ -112,6 +114,11 @@ pub fn load(location: &str) -> World{
                     inside_obj = false;
                     continue;
                 }
+                [">Shader_Reference", id, model_local] => {
+                    neo_shaders.insert(parsei(id), model_local.to_string());
+                    inside_obj = false;
+                    continue;
+                }
                 [">Script", id, script_local] => {
                     neo_scripts.push(script_local.to_string());
                     inside_obj = false;
@@ -132,7 +139,7 @@ pub fn load(location: &str) -> World{
                             current_brick.shader_vars.insert("Color".to_string(), ShadvType::Vec3(Vector3::new(parsef(r),parsef(g),parsef(b))));
                         }
                         ["+TRANS", transparancy] => {
-                            //TODO
+                            current_brick.transparency = parsef(transparancy);
                         }
                         ["+ROT", x, y ,z] => {
                             current_brick.set_rotation(Vector3::new(radians(parsef(x)), radians(parsef(y)), radians(parsef(z))));
@@ -143,6 +150,13 @@ pub fn load(location: &str) -> World{
                         }
                         ["+Texture", slot, texture_id] => {
                             current_brick.textures[parse(slot)-1] = parsei(&texture_id);
+                        }
+                        ["+Model", modelid] => {
+                            current_brick.model = parsei(&modelid);
+                        }
+                        ["+Shader", modelid] => {
+                            current_brick.shader = parsei(&modelid);
+                            current_brick.shader_non_defalt = true;
                         }
                         _ => {}
                     }
@@ -170,7 +184,7 @@ pub fn load(location: &str) -> World{
                     currentn_light += 1;
                 }
             }
-            //this section if just for init of entities
+            //this section is just for init of entities
             if !inside_obj && !inside_light {
                 match dat.as_slice() {
                     ["Legacy_Brick", x,y,z, xs,ys,zs] => {
@@ -200,7 +214,7 @@ pub fn load(location: &str) -> World{
                     ["Model_static", x,y,z, xs,ys,zs] => {
                         let mut new_brick = Prop::new("what cat?".to_string());
                         new_brick.position = Vector3::new(parsef(x), parsef(y), -parsef(z));
-                        new_brick.scale = Vector3::new(parsef(xs)/2.0, parsef(ys)/2.0, parsef(zs)/2.0);
+                        new_brick.scale = Vector3::new(parsef(xs), parsef(ys), parsef(zs));
                         new_brick.proptype = proptype::Model_static;
                         new_brick.model = 1;
                         new_brick.shader = 2;
@@ -384,7 +398,8 @@ pub fn load(location: &str) -> World{
         props: neo_prop,
         lights: neo_light,
         textures: neo_textures,
-        models: neo_models
+        models: neo_models,
+        shaders: neo_shaders
     }
 }
 

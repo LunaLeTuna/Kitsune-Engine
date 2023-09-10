@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use nalgebra::{Vector3, Vector2, Rotation3};
+use nalgebra::{Vector3, Vector2, Rotation3, Unit};
 use rapier3d::prelude::*;
 
 use crate::{props::{Prop, phytype}, ke_units::Vec3, models::Model};
@@ -70,7 +70,20 @@ impl PhysWorld {
         let mut collider = ColliderBuilder::cuboid(prop.scale.x, prop.scale.y, prop.scale.z)
         .translation(prop.position)
         .build();
-        collider.set_rotation(Rotation3::new(prop.rotation).into());
+
+
+        let n = [
+            Unit::new_unchecked(Vector3::new(-1.0, 0.0, 0.0)),
+            Unit::new_unchecked(Vector3::new(0.0, -1.0, 0.0)),
+            Unit::new_unchecked(Vector3::new(0.0, 0.0, 1.0)),
+        ];
+        let r1 = Rotation3::from_axis_angle(&n[2], prop.rotation.z);
+        let r2 = Rotation3::from_axis_angle(&n[1], prop.rotation.y);
+        let r3 = Rotation3::from_axis_angle(&n[0], prop.rotation.x);
+        let d = r2 * r3 * r1;
+
+
+        collider.set_rotation(d.into());
         self.colliders.insert(collider);
 
 
@@ -163,7 +176,17 @@ impl PhysWorld {
         match ctype {
             CopyWhat::All => {
                 rb.set_position(prop.position.into(), false);
-                rb.set_rotation(Rotation3::new(prop.rotation).into(), false);
+
+                let n = [
+                    Unit::new_unchecked(Vector3::new(-1.0, 0.0, 0.0)),
+                    Unit::new_unchecked(Vector3::new(0.0, -1.0, 0.0)),
+                    Unit::new_unchecked(Vector3::new(0.0, 0.0, 1.0)),
+                ];
+                let r1 = Rotation3::from_axis_angle(&n[2], prop.rotation.z);
+                let r2 = Rotation3::from_axis_angle(&n[1], prop.rotation.y);
+                let r3 = Rotation3::from_axis_angle(&n[0], prop.rotation.x);
+                let d = r2 * r3 * r1;
+                rb.set_rotation(d.into(), false);
             }
             CopyWhat::OnlyRotation => {
                 rb.set_rotation(Rotation3::new(prop.rotation).into(), false);

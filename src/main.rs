@@ -14,7 +14,7 @@ use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, Cursor
 use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use glium::texture::SrgbTexture2d;
 
-use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul, f32::consts::PI};
+use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul, f32::consts::PI, collections::VecDeque};
 use std::collections::HashMap;
 use winit::platform::run_return::EventLoopExtRunReturn;
 
@@ -67,6 +67,18 @@ fn main(){
             write: true,
             ..Default::default()
         },
+        blend: glium::Blend {
+            color: glium::BlendingFunction::Addition {
+                source: glium::LinearBlendingFactor::SourceAlpha,
+                destination: glium::LinearBlendingFactor::OneMinusSourceAlpha,
+            },
+            alpha: glium::BlendingFunction::Addition {
+                source: glium::LinearBlendingFactor::One,
+                destination: glium::LinearBlendingFactor::OneMinusSourceAlpha,
+            },
+            constant_value: (0.0, 0.0, 0.0, 0.0),
+        },
+        backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         ..Default::default()
     };
 
@@ -82,6 +94,7 @@ fn main(){
     let mut shaderz: HashMap<i32, Shader> = HashMap::new();
     let mut shader_vars: HashMap<String, ShadvType> = HashMap::new();
 
+    let mut trans_props: Vec<i32> = Vec::new();
 
 
     // this sets up engine default assets
@@ -131,6 +144,13 @@ fn main(){
             modelz.insert(mdCount+md.0, models::load_obj(&("./models/".to_owned()+&md.1), &display));
         }
 
+        let shCount = (shaderz.len() as i32)-1;
+
+        for sh in map.shaders {
+            let de_shader = "./shaders/".to_owned()+&sh.1;
+            shaderz.insert(shCount+sh.0, Shader::craft(&de_shader, &display));
+        }
+
 
         let mut partnp = 0;
 
@@ -148,6 +168,14 @@ fn main(){
 
             if(np.proptype == proptype::Model_static){
                 np.model = np.model+mdCount;
+            }
+
+            if(np.shader_non_defalt){
+                np.shader = np.shader+shCount;
+            }
+
+            if(np.transparency != 1.0){
+                trans_props.push(partnp);
             }
 
             propz.insert(partnp, np);
@@ -318,24 +346,9 @@ fn main(){
         let mut target = display.draw();
         target.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
 
-
-
-        // if (loop_wawa%20.0) == 0.0 {
-        //     let mut womp = Prop::new("nya :3".to_owned());
-        //     womp.model = 0;
-        //     womp.texture1 = 0;
-        //     womp.texture2 = 0;
-        //     womp.phys_shape = physhape::Box;
-        //     womp.phys_type = phytype::Dynamic;
-        //     womp.position = Vector3::new(0.0, 16.0, 0.0);
-        //     womp.shader_vars.insert("Color".to_string(), ShadvType::Vec3(Vector3::new(0.0,0.0,0.0)));
-        //     phys_world.create_phy(&mut womp);
-            
-        //     propz.insert((propz.len() as i32), womp);
-        // }
-        // loop_wawa+=1.0;
-
         // let mut to_remove: Vec<i32> = Vec::new();
+
+        loop_wawa += 1.0;
 
 
         // now in theory one could get all the closest props and push refrences of those props in to a list
@@ -348,140 +361,22 @@ fn main(){
             phys_world._sync_prop(prop, CopyWhat::All);
 
             if !prop.render {continue;}
+            if prop.transparency != 1.0 {continue;}
 
-            //this is where all the shader values get pushed so we can send them to gpu
-            let mut uniform = dynamic_uniform::DynamicUniforms::new();
-
-            //this does all the prop's 3d model translation stuff
-
-            let n = [
-                Unit::new_unchecked(Vector3::new(-1.0, 0.0, 0.0)),
-                Unit::new_unchecked(Vector3::new(0.0, -1.0, 0.0)),
-                Unit::new_unchecked(Vector3::new(0.0, 0.0, 1.0)),
-            ];
-
-            let r1 = Rotation3::from_axis_angle(&n[2], prop.rotation.z);
-            let r2 = Rotation3::from_axis_angle(&n[1], prop.rotation.y);
-            let r3 = Rotation3::from_axis_angle(&n[0], prop.rotation.x);
-
-            let d = r2 * r3 * r1;
-
-            let model: nalgebra::Matrix<f32, nalgebra::Const<4>, nalgebra::Const<4>, nalgebra::ArrayStorage<f32, 4, 4>> = d.to_homogeneous();
-
-
-            // let model = prop.rotation.matrix().to_homogeneous().mul(model);
-
-            // let model = prop.rotation_cached.mul(model);
-
-            let model = model.prepend_nonuniform_scaling(&prop.scale);
-            let model = model.append_translation(&prop.position);
-            let binding = *model.as_ref();
-            uniform.add("model".to_string(), &binding);
-
-            //camera translations
-            let view = main_cam.view_drop();
-            uniform.add("view".to_string(), &view);
-            let perspective = main_cam.project_drop();
-            uniform.add("perspective".to_string(), &perspective);
-
-            // shader globle vars
-            for (name, value) in &shader_vars {
-                let name = name.to_string();
-                match value {
-                    ShadvType::Bool(value) => {
-                        uniform.add(name, value);
-                    }
-                    ShadvType::Integer(value) => {
-                        uniform.add(name, value);
-                    }
-                    ShadvType::Float(value) => {
-                        uniform.add(name, value);
-                    }
-                    ShadvType::Vec2(value) => {
-                        uniform.add(name, value.as_ref());
-                    }
-                    ShadvType::Vec3(value) => {
-                        uniform.add(name, value.as_ref());
-                    }
-                }
-            }
-
-            // prop spesific shader vars pushed in to global
-            for (name, value) in &prop.shader_vars {
-                let name = name.to_string();
-                match value {
-                    ShadvType::Bool(value) => {
-                        uniform.add(name, value);
-                    }
-                    ShadvType::Integer(value) => {
-                        uniform.add(name, value);
-                    }
-                    ShadvType::Float(value) => {
-                        uniform.add(name, value);
-                    }
-                    ShadvType::Vec2(value) => {
-                        uniform.add(name, value.as_ref());
-                    }
-                    ShadvType::Vec3(value) => {
-                        uniform.add(name, value.as_ref());
-                    }
-                }
-            }
-
-            // let mut light = PointLight::new();
-            // let index = "0".to_owned();
-            // light.position = Vector3::new(1.4, 0.4, 0.7f32);
-
-            uniform.add("LeDirLight.direction".to_owned(), &[-0.2, -1.0, -0.3]);
-            
-            uniform.add("LeDirLight.ambient".to_owned(), &[1.0, 1.0, 1.0]);
-            uniform.add("LeDirLight.diffuse".to_owned(), &*world_emv.skyColor.as_ref());
-            uniform.add("LeDirLight.specular".to_owned(), &[0.5, 0.5, 0.5]);
-
-            let mut indexx = 0;
-            for light in &lightz {
-                let index = indexx.to_string();
-                uniform.add("pointLights[".to_owned()+&index+"].position", &*light.position.as_ref());
-                uniform.add("pointLights[".to_owned()+&index+"].ambient", &*light.ambient.as_ref());
-                uniform.add("pointLights[".to_owned()+&index+"].diffuse", &*light.diffuse.as_ref());
-                uniform.add("pointLights[".to_owned()+&index+"].specular", &*light.specular.as_ref());
-                uniform.add("pointLights[".to_owned()+&index+"].constant", &light.constant);
-                uniform.add("pointLights[".to_owned()+&index+"].linear", &light.linear);
-                uniform.add("pointLights[".to_owned()+&index+"].quadratic", &light.quadratic);
-                indexx+=1;
-            }
-
-            uniform.add("NR_POINT_LIGHTS".to_owned(), &indexx);
-
-            uniform.add("diffuse_tex".to_string(), get_texture(&texturez, prop, 0));
-            uniform.add("normal_tex".to_string(), get_texture(&texturez, prop, 1));
-
-            uniform.add("material.diffuse".to_owned(), get_texture(&texturez, prop, 0));
-            uniform.add("material.specular".to_owned(), get_texture(&texturez, prop, 1));
-            uniform.add("material.shininess".to_owned(), &0.5);
-
-            let mut currrent_text = 0;
-            for text in &prop.textures {
-                uniform.add("texture".to_string()+&(currrent_text+1).to_string(), get_texture(&texturez, prop, currrent_text));
-                currrent_text+=1;
-            }
-                
-           
-
-            // here we draw the prop on the frame
-            target
-                .draw(
-                    get_model(&modelz, prop),
-                    NoIndices(PrimitiveType::TrianglesList),
-                    get_shader(&shaderz, prop),
-                    &uniform,
-                    &params,
-                )
-                .unwrap();
+            render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &texturez, &mut target, &modelz, &shaderz, &params);
 
             // if prop.position.y < -2.0 {
             //     to_remove.push(*po.0);
             // }
+        };
+
+        //now later maybe trans props could be fed screen buffer :3
+        for po in &trans_props {
+            let prop = propz.get_mut(&po).unwrap();
+
+            if !prop.render {continue;}
+
+            render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &texturez, &mut target, &modelz, &shaderz, &params);
         };
 
         // finish frame and put on window probably
@@ -494,6 +389,140 @@ fn main(){
         //     propz.remove(&amongus);
         // }
     });
+}
+
+fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_vars: &HashMap<String, ShadvType>, world_emv: &Environment, lightz: &Vec<PointLight>, texturez: &HashMap<i32, Texture>, target: &mut glium::Frame, modelz: &HashMap<i32, Model<'_>>, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>) {
+    //this is where all the shader values get pushed so we can send them to gpu
+    let mut uniform = dynamic_uniform::DynamicUniforms::new();
+
+    //this does all the prop's 3d model translation stuff
+
+    let n = [
+        Unit::new_unchecked(Vector3::new(-1.0, 0.0, 0.0)),
+        Unit::new_unchecked(Vector3::new(0.0, -1.0, 0.0)),
+        Unit::new_unchecked(Vector3::new(0.0, 0.0, 1.0)),
+    ];
+
+    let r1 = Rotation3::from_axis_angle(&n[2], prop.rotation.z);
+    let r2 = Rotation3::from_axis_angle(&n[1], prop.rotation.y);
+    let r3 = Rotation3::from_axis_angle(&n[0], prop.rotation.x);
+
+    let d = r2 * r3 * r1;
+
+    let model: nalgebra::Matrix<f32, nalgebra::Const<4>, nalgebra::Const<4>, nalgebra::ArrayStorage<f32, 4, 4>> = d.to_homogeneous();
+
+
+    // let model = prop.rotation.matrix().to_homogeneous().mul(model);
+
+    // let model = prop.rotation_cached.mul(model);
+
+    let model = model.prepend_nonuniform_scaling(&prop.scale);
+    let model = model.append_translation(&prop.position);
+    let binding = *model.as_ref();
+    uniform.add("model".to_string(), &binding);
+
+    //camera translations
+    let view = main_cam.view_drop();
+    uniform.add("view".to_string(), &view);
+    let perspective = main_cam.project_drop();
+    uniform.add("perspective".to_string(), &perspective);
+
+    // shader globle vars
+    for (name, value) in shader_vars {
+        let name = name.to_string();
+        match value {
+            ShadvType::Bool(value) => {
+                uniform.add(name, value);
+            }
+            ShadvType::Integer(value) => {
+                uniform.add(name, value);
+            }
+            ShadvType::Float(value) => {
+                uniform.add(name, value);
+            }
+            ShadvType::Vec2(value) => {
+                uniform.add(name, value.as_ref());
+            }
+            ShadvType::Vec3(value) => {
+                uniform.add(name, value.as_ref());
+            }
+        }
+    }
+
+    // prop spesific shader vars pushed in to global
+    for (name, value) in &prop.shader_vars {
+        let name = name.to_string();
+        match value {
+            ShadvType::Bool(value) => {
+                uniform.add(name, value);
+            }
+            ShadvType::Integer(value) => {
+                uniform.add(name, value);
+            }
+            ShadvType::Float(value) => {
+                uniform.add(name, value);
+            }
+            ShadvType::Vec2(value) => {
+                uniform.add(name, value.as_ref());
+            }
+            ShadvType::Vec3(value) => {
+                uniform.add(name, value.as_ref());
+            }
+        }
+    }
+
+    // let mut light = PointLight::new();
+    // let index = "0".to_owned();
+    // light.position = Vector3::new(1.4, 0.4, 0.7f32);
+
+    uniform.add("LeDirLight.direction".to_owned(), &[-0.2, -1.0, -0.3]);
+            
+    uniform.add("LeDirLight.ambient".to_owned(), &[1.0, 1.0, 1.0]);
+    uniform.add("LeDirLight.diffuse".to_owned(), &*world_emv.skyColor.as_ref());
+    uniform.add("LeDirLight.specular".to_owned(), &[0.5, 0.5, 0.5]);
+
+    let mut indexx = 0;
+    for light in lightz {
+        let index = indexx.to_string();
+        uniform.add("pointLights[".to_owned()+&index+"].position", &*light.position.as_ref());
+        uniform.add("pointLights[".to_owned()+&index+"].ambient", &*light.ambient.as_ref());
+        uniform.add("pointLights[".to_owned()+&index+"].diffuse", &*light.diffuse.as_ref());
+        uniform.add("pointLights[".to_owned()+&index+"].specular", &*light.specular.as_ref());
+        uniform.add("pointLights[".to_owned()+&index+"].constant", &light.constant);
+        uniform.add("pointLights[".to_owned()+&index+"].linear", &light.linear);
+        uniform.add("pointLights[".to_owned()+&index+"].quadratic", &light.quadratic);
+        indexx+=1;
+    }
+
+    uniform.add("NR_POINT_LIGHTS".to_owned(), &indexx);
+
+    uniform.add("trans".to_string(), &prop.transparency);
+
+    uniform.add("diffuse_tex".to_string(), get_texture(texturez, prop, 0));
+    uniform.add("normal_tex".to_string(), get_texture(texturez, prop, 1));
+
+    uniform.add("material.diffuse".to_owned(), get_texture(texturez, prop, 0));
+    uniform.add("material.specular".to_owned(), get_texture(texturez, prop, 1));
+    uniform.add("material.shininess".to_owned(), &0.5);
+
+    uniform.add("time".to_owned(), &loop_wawa);
+
+    let mut currrent_text = 0;
+    for text in &prop.textures {
+        uniform.add("texture".to_string()+&(currrent_text+1).to_string(), get_texture(texturez, prop, currrent_text));
+        currrent_text+=1;
+    }
+
+    // here we draw the prop on the frame
+    target
+        .draw(
+            get_model(modelz, prop),
+            NoIndices(PrimitiveType::TrianglesList),
+            get_shader(shaderz, prop),
+            &uniform,
+            params,
+        )
+        .unwrap();
 }
 
 fn get_shader<'a>(shadersz: &'a HashMap<i32, Shader>, prop: &Prop) -> &'a Program {
