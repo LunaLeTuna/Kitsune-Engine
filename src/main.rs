@@ -361,6 +361,13 @@ fn main(){
             phys_world._sync_prop(prop, CopyWhat::All);
 
             if !prop.render {continue;}
+            if prop.face_cam {
+                if(main_cam.position.z<prop.position.z){
+                    prop.look_at(main_cam.position-prop.position);
+                }else{
+                    prop.look_at(prop.position-main_cam.position);
+                }
+            }
             if prop.transparency != 1.0 {continue;}
 
             render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &texturez, &mut target, &modelz, &shaderz, &params);

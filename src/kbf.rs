@@ -158,6 +158,9 @@ pub fn load(location: &str) -> World{
                             current_brick.shader = parsei(&modelid);
                             current_brick.shader_non_defalt = true;
                         }
+                        ["+face_cam"] => {
+                            current_brick.face_cam = true;
+                        }
                         _ => {}
                     }
                 } else {

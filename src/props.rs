@@ -53,7 +53,8 @@ pub struct Prop {
     pub phys_shape: physhape, //what shape collision is
     pub phys_id: i32, //id to physics world object
 
-    pub shader_non_defalt: bool
+    pub shader_non_defalt: bool,
+    pub face_cam: bool
 }
 
 impl Prop {
@@ -74,11 +75,17 @@ impl Prop {
             phys_shape: physhape::NULL,
             phys_id: -1,
 
-            shader_non_defalt: false
+            shader_non_defalt: false,
+            face_cam: false
         }
     }
 
     pub fn set_rotation(&mut self, target: Vector3<f32>) {
         self.rotation = Vector3::new(target.x,target.y,target.z);
+    }
+
+    pub fn look_at(&mut self, target: Vector3<f32>) {
+        let a = nalgebra::Rotation3::face_towards(&(target), &Vector3::y()).euler_angles();
+        self.set_rotation(Vector3::new(a.0,a.1,a.2));
     }
 }
