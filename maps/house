@@ -3,7 +3,7 @@ Kitsune Engine V1
 >AmbientColor 0 0 0
 >SkyColor 0.4862745 0.6980392 0.8980392
 >SunIntensity 300
->Baseplate 500 0.2 0.509804 0.137255 1
+>Baseplate 1 0.2 0.509804 0.137255 1
 
 >Texture_Reference 1 rocks/rock_boulder_dry_diff_1k.png
 >Texture_Reference 2 rocks/rock_boulder_dry_disp_1k.png
@@ -11,6 +11,7 @@ Kitsune Engine V1
 >Texture_Reference 4 protogen.png
 >Texture_Reference 5 sprites/mikubit.png
 >Texture_Reference 6 props/lantern_texture.png
+>Texture_Reference 7 turtle.png
 
 >Model_Reference 1 rocks/rock_1.obj
 >Model_Reference 2 dock.obj
@@ -21,6 +22,17 @@ Kitsune Engine V1
 
 >Shader_Reference 1 water
 
+Brush 38.24997 19.29995 -57.74994 3.699999 5.599997 0.4999999
+	+NAME friend
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+face_cam
+	+Texture 1 7
+	+Texture 2 7
+	+Texture 3 7
+	+Texture 4 7
+	+Texture 5 7
+	+Texture 6 7
 Legacy_Brick 23.5 8 -42.5 66 17 80
 	+NAME island_mass
 	+COLOR 0.5 0.5 0.5
@@ -257,9 +269,11 @@ Legacy_Brick 27.125 26.625 -50 6.75 0.25 1
 Legacy_Brick 27.125 26.875 -49.875 0.75 4.75 0.75
 	+NAME green house_c
 	+COLOR 0.1294118 0.4313726 0.1333333
-Brush 11.5 21.5 1 1 1 1
+Brush 21.79999 27.7 -39.89999 1 1 1
 	+NAME miku
 	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+face_cam
 	+Texture 1 5
 	+Texture 2 5
 	+Texture 3 5
@@ -272,7 +286,7 @@ Legacy_Brick 32.125 20.875 -30 5.25 8.75 1
 Legacy_Brick 21.625 20.875 -30 5.75 8.75 1
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
-Legacy_Brick 26.75 28.375 -30 16 6.25 1
+Legacy_Brick 30.84999 28.575 -30 24.20001 6.65 1
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
 Legacy_Brick 27 16.625 -39.75 9 0.25 19.5
@@ -281,7 +295,7 @@ Legacy_Brick 27 16.625 -39.75 9 0.25 19.5
 Light 27 25.25 -40.1 1 1 2.5
 	+NAME New Light
 	+COLOR 0.5 0.5 0.5
-Legacy_Brick 26.75 16.625 -14.525 16 0.25 30.95001
+Legacy_Brick 26.25 16.625 -14.525 15 0.25 30.95001
 	+NAME livingroom1
 	+COLOR 0.3232 0.5 0.26
 Legacy_Brick 27.375 7.5 -88.75 31.75 18 12.5
@@ -406,9 +420,10 @@ Model_static 26.87417 26.475 -39.8826 0.5 0.5 0.5
 	+NOCOLLISION
 	+Model 4
 	+Texture 1 6
-Model_static 60.02414 59.82497 15.46739 8.699997 8.699997 8.699997
+Model_static 54.8318 55.52498 11.75858 7.699988 7.699988 7.699988
 	+NAME LightHouse
 	+COLOR 0.5 0.3867 0.335
+	+ROT 0 270.9997 0
 	+NOCOLLISION
 	+Model 5
 	+Texture 1 1
@@ -419,19 +434,19 @@ Legacy_Brick 20.125 16 -119.875 10.25 1 50.25
 Legacy_Brick 38.875 20.875 -30 8.25 8.75 1
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
-Legacy_Brick 42.50501 20.875 -26.125 1 8.75 6.75
+Legacy_Brick 42.50501 28.07496 -26.125 1 23.15003 6.75
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
-Legacy_Brick 47.625 20.875 -22.25 11.25 8.75 1
+Legacy_Brick 47.625 22.97499 -22.25 11.25 12.95001 1
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
-Legacy_Brick 53.875 20.875 -31.265 1.25 8.75 19.03
+Legacy_Brick 53.875 23.07498 -31.265 1.25 13.15001 19.03
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
 Legacy_Brick 62.97499 20.875 -40.23999 16.95 8.75 1
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
-Legacy_Brick 71.94998 20.875 -25.295 1 8.75 30.94999
+Legacy_Brick 71.94998 23.07498 -25.295 1 13.15001 30.94999
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
 Legacy_Brick 63.025 20.875 -10.32 17.05 8.75 1
@@ -444,13 +459,13 @@ Light 15.25 20.75 -105 1 1 1
 Legacy_Brick 62.94998 16.625 -30.73498 17.40001 0.25 18.16998
 	+NAME bedroom
 	+COLOR 0.3232 0.5 0.26
-Legacy_Brick 38.44999 16.625 -20.42499 7.399999 0.25 19.15
+Legacy_Brick 37.94999 16.625 -20.42499 8.4 0.25 19.15
 	+NAME livingroom2
 	+COLOR 0.3232 0.5 0.26
-Legacy_Brick 44.65498 16.625 2.500011 19.81001 0.25 26.80001
+Legacy_Brick 44.15498 16.625 2.500011 20.81001 0.25 26.80001
 	+NAME kitchen1
 	+COLOR 0.5 0.1792667 0.16
-Legacy_Brick 56.935 16.625 -16.27998 29.43004 0.25 10.81999
+Legacy_Brick 56.835 16.625 -16.22998 29.63004 0.25 10.91999
 	+NAME hallwayh
 	+COLOR 0.3232 0.5 0.26
 Legacy_Brick 27 16.34599 -50.06805 9 0.25 1.360005
@@ -460,7 +475,7 @@ Legacy_Brick 27 16.34599 -50.06805 9 0.25 1.360005
 Legacy_Brick -185.3064 14.98816 -172.3607 60.89999 70.89999 62.89999
 	+NAME BIIG ROCK
 	+COLOR 0.5 0.5 0.5
-	+ROT 0.8823088 6.722306 357.5964
+	+ROT 0.8823091 6.722306 357.5964
 	+NOCOLLISION
 Legacy_Brick 52.1 17.1 17.54998 5.399998 1.2 2.899999
 	+NAME hell
@@ -480,7 +495,7 @@ Legacy_Brick 54.69996 20.70001 19.84998 5.399998 1.2 2.899999
 Legacy_Brick 55.89996 21.90002 19.34998 5.399998 1.2 2.899999
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
-	+ROT 0 95.99999 0
+	+ROT 0 95.99998 0
 Legacy_Brick 56.79996 23.10002 18.44998 5.399998 1.2 2.899999
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
@@ -809,3 +824,108 @@ Legacy_Brick 51.84193 120.7 14.79543 5.399998 1.2 2.899999
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
 	+ROT 0 264 0
+Legacy_Brick 26.275 20.875 1.43 15.05 8.75 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 33.275 20.875 7.055 1.049999 8.75 10.25
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 34.875 17 -5.200001 1.75 0.5 11.6
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 34.875 18.25 -5.200001 1.75 0.5 11.6
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 34.875 19.5 -5.200001 1.75 0.5 11.6
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 33.875 18.25 -5 0.25 3 12
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Brush 34.825 19.875 -4.724999 2.35 0.25 11.95
+	+NAME New Brush
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 34.75 18.125 -11.725 2 3.25 1.95
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 40.92501 19.5 -11.6 1.75 0.5 10.59999
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+Legacy_Brick 40.87501 18.25 -11.6 1.75 0.5 10.49999
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+Legacy_Brick 40.87501 17 -11.6 1.75 0.5 10.49999
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+Legacy_Brick 41.07501 18.25 -12.591 0.232 3 10.9
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+Brush 40.18 19.85751 -11.74299 13.054 0.2710001 2.112
+	+NAME New Brush
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 46.30005 18.14998 -11.7 0.6000004 3.299999 2
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 34.75 18.125 0.8250012 2 3.25 0.6499999
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Light 43.99998 24.20003 -5.999999 1 1 1
+	+NAME New Light
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 66.37507 20.875 -22.25 10.14999 8.75 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 55.52512 20.875 -22.25 2.049988 8.75 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 63.02515 27.47502 -22.25 17.04998 4.550001 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 68.76806 32.75699 -25.89499 1 17.75 33.54997
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 0 45
+Legacy_Brick 56.69308 32.36809 -25.89499 1.3 16.65 33.54997
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 0 315
+Legacy_Brick 63.02515 27.92501 -40.25 17.04998 5.450003 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 48.67498 30.70443 -21.12056 11.35 11.65 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 45 0 0
+Legacy_Brick 18.30501 23.42499 -14.225 1 13.85001 32.55002
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 30.99923 35.22328 -14.64499 1.3 31.45 35.64997
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 0 292
+Legacy_Brick 33.64997 32.82504 -30 18.6 1.950001 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 36.09993 34.87503 -30 13.7 2.250001 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 38.7499 37.07501 -30 8.399986 2.250001 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 41.54987 39.27498 -30 2.799989 2.250001 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 42.50501 32.52494 -14.67501 1 14.25001 16.24998
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 48.67498 31.05798 -12.5469 11.35 12.65 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 315 0 0
+Legacy_Brick 64.95496 16.625 2.500011 20.81001 0.25 26.80001
+	+NAME kitchen1
+	+COLOR 0.5 0.1792667 0.16

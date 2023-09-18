@@ -126,6 +126,9 @@ void main() {
     // else if(local.x >= 0.8)
     // color = vec4(result*vec3(1.0,0.0,0.0), 1.0);
     // else v_normal
-    color = vec4(result*texture(texture1, v_tex_coords).rgb, 1.0);
+
+    vec4 tecx = texture(texture1, v_tex_coords).rgba;
+
+    color = vec4(result*tecx.rgb, tecx.a);
     
 }

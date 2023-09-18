@@ -380,6 +380,7 @@ fn main(){
         //now later maybe trans props could be fed screen buffer :3
         for po in &trans_props {
             let prop = propz.get_mut(&po).unwrap();
+            if prop.transparency == 0.0 {continue;}
 
             if !prop.render {continue;}
 
