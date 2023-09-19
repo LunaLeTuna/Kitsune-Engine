@@ -38,6 +38,7 @@ Kitsune Engine V1
 >Texture_Reference 31 coutch.png
 >Texture_Reference 32 geen1.png
 >Texture_Reference 33 geen2n.png
+>Texture_Reference 34 ham.png
 
 >Model_Reference 1 rocks/rock_1.obj
 >Model_Reference 2 dock.obj
@@ -60,11 +61,91 @@ Kitsune Engine V1
 >Model_Reference 19 coutch.obj
 >Model_Reference 20 geen1.obj
 >Model_Reference 21 geen2.obj
+>Model_Reference 22 ham.obj
 
 >Shader_Reference 1 water
 >Shader_Reference 2 tub_water
 >Shader_Reference 3 plantt
+>Shader_Reference 4 pbr_test
 
+Brush 23.74375 20.04797 -3.152892 3.141001 2.576001 0.17
+	+NAME crt
+	+COLOR 0.5 0.5 0.5
+	+Texture 1 4
+	+Texture 2 4
+	+Texture 3 4
+	+Texture 4 4
+	+Texture 5 4
+	+Texture 6 4
+Model_static 69.12758 19.52051 -32.46609 0.6719993 0.6719993 0.6719993
+	+NAME ham
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+ROT 0 180 0
+	+NOCOLLISION
+	+Model 22
+	+Texture 1 34
+Brush 57.83426 18.98798 26.04361 0.194 0.194 0.03299999
+	+NAME jellyfish ^^
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+Shader 3
+	+face_cam
+	+Texture 1 29
+	+Texture 2 29
+	+Texture 3 29
+	+Texture 4 29
+	+Texture 5 29
+	+Texture 6 29
+Brush 59.20426 19.77798 26.52762 0.194 0.194 0.029
+	+NAME jellyfish ^^
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+Shader 3
+	+face_cam
+	+Texture 1 29
+	+Texture 2 29
+	+Texture 3 29
+	+Texture 4 29
+	+Texture 5 29
+	+Texture 6 29
+Brush 58.49027 19.34699 25.33711 0.122 0.122 0.02599995
+	+NAME jellyfish ^^
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+Shader 3
+	+face_cam
+	+Texture 1 29
+	+Texture 2 29
+	+Texture 3 29
+	+Texture 4 29
+	+Texture 5 29
+	+Texture 6 29
+Model_static 58.32526 18.98798 26.11811 1.33 1.33 1.33
+	+NAME case
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+ROT 0 199.9999 0
+	+NOCOLLISION
+	+Model 15
+	+Texture 1 26
+Model_static 58.28933 19.02148 26.11734 1.397 1.397 1.438
+	+NAME water
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+ROT 0 199.9999 0
+	+NOCOLLISION
+	+Model 17
+	+Shader 2
+	+Texture 1 28
+Model_static 58.32526 18.98798 26.11811 1.33 1.33 1.33
+	+NAME plant
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 199.9999 0
+	+NOCOLLISION
+	+Model 16
+	+Shader 3
+	+Texture 1 27
 Model_static 30.79599 15.91902 22.48546 4.066998 4.066998 4.066998
 	+NAME geen1
 	+COLOR 0.5 0.5 0.5
@@ -80,6 +161,7 @@ Model_static 30.79599 15.91902 22.48546 4.066998 4.066998 4.066998
 	+ROT 0 270 0
 	+NOCOLLISION
 	+Model 21
+	+Shader 4
 	+Texture 1 33
 Model_static 24.3615 17.05549 -12.06306 1.572 1.572 1.572
 	+NAME coutch
@@ -97,10 +179,11 @@ Model_static 58.70554 16.7955 -36.13906 2.508 2.508 2.508
 	+NOCOLLISION
 	+Model 18
 	+Texture 1 30
-Brush 21.72865 18.34748 -25.83213 0.194 0.194 0.194
+Brush 21.72065 18.34748 -25.91513 0.21 0.194 0.028
 	+NAME jellyfish ^^
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0.9
+	+Shader 3
 	+face_cam
 	+Texture 1 29
 	+Texture 2 29
@@ -108,10 +191,11 @@ Brush 21.72865 18.34748 -25.83213 0.194 0.194 0.194
 	+Texture 4 29
 	+Texture 5 29
 	+Texture 6 29
-Brush 22.51967 19.85448 -26.41012 0.289 0.289 0.289
+Brush 22.51967 19.85448 -26.52563 0.289 0.289 0.05800001
 	+NAME jellyfish ^^
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0.9
+	+Shader 3
 	+face_cam
 	+Texture 1 29
 	+Texture 2 29
@@ -119,10 +203,11 @@ Brush 22.51967 19.85448 -26.41012 0.289 0.289 0.289
 	+Texture 4 29
 	+Texture 5 29
 	+Texture 6 29
-Brush 21.87766 22.22148 -25.71212 0.6909999 0.6909999 0.6909999
+Brush 21.87766 22.22148 -25.74962 0.6909999 0.6909999 0.05599984
 	+NAME jellyfish ^^
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0.9
+	+Shader 3
 	+face_cam
 	+Texture 1 29
 	+Texture 2 29
@@ -130,10 +215,11 @@ Brush 21.87766 22.22148 -25.71212 0.6909999 0.6909999 0.6909999
 	+Texture 4 29
 	+Texture 5 29
 	+Texture 6 29
-Brush 22.72066 20.66848 -26.62112 0.6909999 0.6909999 0.6909999
+Brush 22.47866 20.66848 -26.40063 0.6909999 0.6909999 0.05800004
 	+NAME jellyfish ^^
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0.9
+	+Shader 3
 	+face_cam
 	+Texture 1 29
 	+Texture 2 29
@@ -1483,3 +1569,59 @@ Legacy_Brick 19.65647 22.44498 15.341 3.036999 11.89001 27.422
 Light 27 26.312 13.493 1 1 1
 	+NAME New Light
 	+COLOR 0.5 0.5 0.5
+Legacy_Brick 24.48301 18.56399 -1.647999 5.438 0.4259998 3.412
+	+NAME New Brick
+	+COLOR 0.45 0.38115 0.2205
+Legacy_Brick 24.48301 21.51499 -1.647999 5.438 0.4259998 3.412
+	+NAME New Brick
+	+COLOR 0.45 0.38115 0.2205
+Legacy_Brick 25.437 20.00649 -1.647999 0.2719991 2.661001 3.412
+	+NAME New Brick
+	+COLOR 0.45 0.38115 0.2205
+Legacy_Brick 21.988 20.00649 -1.647999 0.4259989 2.661001 3.412
+	+NAME New Brick
+	+COLOR 0.45 0.38115 0.2205
+Legacy_Brick 26.57847 17.40252 -2.971811 1.11 2.378 1.065
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 9.961563 359.1195 9.923269
+Legacy_Brick 22.34699 17.63245 -2.747057 1.11 2.852 1.065
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 9.961549 84.11958 9.923255
+Legacy_Brick 22.18799 17.63245 -0.4770572 1.11 2.852 1.065
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 9.961559 169.1196 9.923252
+Legacy_Brick 26.63698 17.63245 -0.5850568 1.11 2.852 1.065
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 9.96157 264.1195 9.923267
+Legacy_Brick 23.7475 20.00649 -1.087 3.258999 2.661001 2.290001
+	+NAME New Brick
+	+COLOR 0.45 0.38115 0.2205
+Legacy_Brick 25.41652 22.57048 -2.349 0.2309988 3.251001 0.2159994
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 345 1.325837E-06 335
+Legacy_Brick 24.02151 22.57048 -2.326 0.2309988 3.251001 0.2159994
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 353.7203 346.3503 40.75232
+Legacy_Brick 27.069 20.00649 -1.647999 0.2719991 2.661001 3.412
+	+NAME New Brick
+	+COLOR 0.45 0.38115 0.2205
+Legacy_Brick 26.2685 20.00649 -1.3995 1.456999 2.661001 2.915001
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 26.2685 20.00649 -2.097 1.456999 2.661001 2.220002
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 26.29662 20.76431 -3.422501 0.6799992 0.6830013 0.16
+	+NAME New Brick
+	+COLOR 0.21 0.21 0.21
+	+ROT 0 0 345
+Legacy_Brick 26.29662 19.73931 -3.422501 0.6799992 0.6830013 0.16
+	+NAME New Brick
+	+COLOR 0.21 0.21 0.21
+	+ROT 0 0 70.00001

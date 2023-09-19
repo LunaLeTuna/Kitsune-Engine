@@ -528,7 +528,7 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
 
     uniform.add("material.diffuse".to_owned(), get_texture(texturez, prop, 0));
     uniform.add("material.specular".to_owned(), get_texture(texturez, prop, 1));
-    uniform.add("material.shininess".to_owned(), &0.5);
+    uniform.add("material.shininess".to_owned(), &0.1);
 
     uniform.add("time".to_owned(), &loop_wawa);
 
