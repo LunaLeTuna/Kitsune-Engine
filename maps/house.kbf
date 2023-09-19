@@ -23,6 +23,21 @@ Kitsune Engine V1
 >Texture_Reference 16 granit.png
 >Texture_Reference 17 bush.png
 >Texture_Reference 18 island.png
+>Texture_Reference 19 bookshelfs/bookshelf1.png
+>Texture_Reference 20 bookshelfs/bookshelf2.png
+>Texture_Reference 21 bookshelfs/bookshelf3.png
+>Texture_Reference 22 bookshelfs/bookshelf3.png
+>Texture_Reference 23 sprites/mongus.png
+>Texture_Reference 24 sprites/luma.png
+>Texture_Reference 25 sprites/cubby.png
+>Texture_Reference 26 tubs/case.png
+>Texture_Reference 27 tubs/plant.png
+>Texture_Reference 28 tubs/water.png
+>Texture_Reference 29 jellyfish.png
+>Texture_Reference 30 bed.png
+>Texture_Reference 31 coutch.png
+>Texture_Reference 32 geen1.png
+>Texture_Reference 33 geen2n.png
 
 >Model_Reference 1 rocks/rock_1.obj
 >Model_Reference 2 dock.obj
@@ -34,9 +49,184 @@ Kitsune Engine V1
 >Model_Reference 8 stove.obj
 >Model_Reference 9 bush.obj
 >Model_Reference 10 island.obj
+>Model_Reference 11 bookshelfs/bookshelf1.obj
+>Model_Reference 12 bookshelfs/bookshelf2.obj
+>Model_Reference 13 bookshelfs/bookshelf3.obj
+>Model_Reference 14 bookshelfs/bookshelf4.obj
+>Model_Reference 15 tubs/case.obj
+>Model_Reference 16 tubs/plant.obj
+>Model_Reference 17 tubs/water.obj
+>Model_Reference 18 bed.obj
+>Model_Reference 19 coutch.obj
+>Model_Reference 20 geen1.obj
+>Model_Reference 21 geen2.obj
 
 >Shader_Reference 1 water
+>Shader_Reference 2 tub_water
+>Shader_Reference 3 plantt
 
+Model_static 30.79599 15.91902 22.48546 4.066998 4.066998 4.066998
+	+NAME geen1
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+ROT 0 270 0
+	+NOCOLLISION
+	+Model 20
+	+Texture 1 32
+Model_static 30.79599 15.91902 22.48546 4.066998 4.066998 4.066998
+	+NAME geen2
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+ROT 0 270 0
+	+NOCOLLISION
+	+Model 21
+	+Texture 1 33
+Model_static 24.3615 17.05549 -12.06306 1.572 1.572 1.572
+	+NAME coutch
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+ROT 0 270 0
+	+NOCOLLISION
+	+Model 19
+	+Texture 1 31
+Model_static 58.70554 16.7955 -36.13906 2.508 2.508 2.508
+	+NAME bed
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+ROT 0 270 0
+	+NOCOLLISION
+	+Model 18
+	+Texture 1 30
+Brush 21.72865 18.34748 -25.83213 0.194 0.194 0.194
+	+NAME jellyfish ^^
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+face_cam
+	+Texture 1 29
+	+Texture 2 29
+	+Texture 3 29
+	+Texture 4 29
+	+Texture 5 29
+	+Texture 6 29
+Brush 22.51967 19.85448 -26.41012 0.289 0.289 0.289
+	+NAME jellyfish ^^
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+face_cam
+	+Texture 1 29
+	+Texture 2 29
+	+Texture 3 29
+	+Texture 4 29
+	+Texture 5 29
+	+Texture 6 29
+Brush 21.87766 22.22148 -25.71212 0.6909999 0.6909999 0.6909999
+	+NAME jellyfish ^^
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+face_cam
+	+Texture 1 29
+	+Texture 2 29
+	+Texture 3 29
+	+Texture 4 29
+	+Texture 5 29
+	+Texture 6 29
+Brush 22.72066 20.66848 -26.62112 0.6909999 0.6909999 0.6909999
+	+NAME jellyfish ^^
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+face_cam
+	+Texture 1 29
+	+Texture 2 29
+	+Texture 3 29
+	+Texture 4 29
+	+Texture 5 29
+	+Texture 6 29
+Brush 66.47416 18.92499 6.667386 1 1 1
+	+NAME amonguie
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+face_cam
+	+Texture 1 23
+	+Texture 2 23
+	+Texture 3 23
+	+Texture 4 23
+	+Texture 5 23
+	+Texture 6 23
+Brush 37.37416 24.12499 6.667386 1 1 1
+	+NAME luma
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+face_cam
+	+Texture 1 24
+	+Texture 2 24
+	+Texture 3 24
+	+Texture 4 24
+	+Texture 5 24
+	+Texture 6 24
+Brush 41.27415 23.825 22.66737 1 1 1
+	+NAME companion cube :3
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+face_cam
+	+Texture 1 25
+	+Texture 2 25
+	+Texture 3 25
+	+Texture 4 25
+	+Texture 5 25
+	+Texture 6 25
+Model_static 21.75316 19.39999 -26.14509 1.6 1.6 1.6
+	+NAME case
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+ROT 0 345 0
+	+NOCOLLISION
+	+Model 15
+	+Texture 1 26
+Model_static 21.78215 19.43349 -26.12386 1.667 1.667 1.708
+	+NAME water
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+ROT 0 345 0
+	+NOCOLLISION
+	+Model 17
+	+Shader 2
+	+Texture 1 28
+Model_static 21.75316 19.39999 -26.14509 1.6 1.6 1.6
+	+NAME plant
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 345 0
+	+NOCOLLISION
+	+Model 16
+	+Shader 3
+	+Texture 1 27
+Model_static 37.65318 20.19997 6.654922 3.399999 3.399999 3.399999
+	+NAME bookshelf1
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+	+NOCOLLISION
+	+Model 11
+	+Texture 1 19
+Model_static 51.03337 20.09997 28.37342 3.399999 3.399999 3.399999
+	+NAME bookshelf2
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 354.9999 0
+	+NOCOLLISION
+	+Model 12
+	+Texture 1 20
+Model_static 43.18737 20.09997 24.05938 3.399999 3.399999 3.399999
+	+NAME bookshelf3
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 315 0
+	+NOCOLLISION
+	+Model 13
+	+Texture 1 21
+Model_static 38.64639 20.19997 16.02532 3.399999 3.399999 3.399999
+	+NAME bookshelf4
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 285 0
+	+NOCOLLISION
+	+Model 14
+	+Texture 1 22
 Model_static 34.55614 16.29998 -26.62025 13.99999 19.4 19
 	+NAME island
 	+COLOR 0.5 0.5 0.5
@@ -351,7 +541,7 @@ Legacy_Brick 27 16.625 -39.75 9 0.25 19.5
 Light 27 25.25 -40.1 1 1 2.5
 	+NAME New Light
 	+COLOR 0.5 0.5 0.5
-Legacy_Brick 26.25 16.625 -14.525 15 0.25 30.95001
+Legacy_Brick 26.25 16.625 -14.5495 15 0.25 30.90101
 	+NAME livingroom1
 	+COLOR 0.3232 0.5 0.26
 Legacy_Brick 27.375 7.5 -89.40002 31.75 18 13.8
@@ -479,10 +669,10 @@ Model_static 55.13179 55.9249 11.35858 7.699988 7.699988 7.699988
 	+NOCOLLISION
 	+Model 5
 	+Texture 1 9
-Model_static 54.7318 55.9249 11.35858 7.699988 7.699988 7.699988
+Model_static 61.33179 55.9249 11.35858 7.699988 7.699988 7.699988
 	+NAME LightHouseStairs
 	+COLOR 0.5 0.3867 0.335
-	+ROT 0 270.9997 0
+	+ROT 0 335.9997 0
 	+NOCOLLISION
 	+Model 7
 	+Texture 1 10
@@ -546,10 +736,10 @@ Legacy_Brick -185.3064 14.98816 -172.3607 60.89999 70.89999 62.89999
 	+COLOR 0.5 0.5 0.5
 	+ROT 0.8823091 6.722306 357.5964
 	+NOCOLLISION
-Legacy_Brick 26.025 20.875 1.63 15.55 8.75 0.5999999
+Legacy_Brick 33.148 20.875 1.3465 1.304 8.75 1.167
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
-Legacy_Brick 34.57499 21.325 7.355 4.249999 9.650003 11.45
+Legacy_Brick 35.18148 21.325 7.355 3.036999 9.650003 11.45
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
 Legacy_Brick 34.875 17 -5.200001 1.75 0.5 11.6
@@ -941,7 +1131,7 @@ Legacy_Brick 30.84999 28.575 -29.34999 24.20001 6.65 0.4999999
 Legacy_Brick 63.025 23.57497 -11.07 17.05 14.15001 0.4
 	+NAME New Brick
 	+COLOR 0.925412 0.93 0.5859
-Legacy_Brick 35.93178 21.325 17.75676 4.349998 9.650003 10.55
+Legacy_Brick 36.48526 21.325 17.60846 3.203998 9.650003 10.55
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
 	+ROT 0 15 0
@@ -1076,7 +1266,7 @@ Legacy_Brick 54.92513 20.92501 -22.45 3.449987 8.650002 0.6
 Legacy_Brick 35.45001 28.575 1.300001 2.599977 6.65 0.8
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
-Legacy_Brick 26.025 20.875 0.9299996 15.55 8.75 0.5999999
+Legacy_Brick 23.30449 20.875 0.9299996 10.10899 8.75 0.5999999
 	+NAME New Brick
 	+COLOR 0.4848 0.5 0.34
 Legacy_Brick 26.35002 28.575 0.9000007 15.19998 6.65 0.5999999
@@ -1106,14 +1296,15 @@ Legacy_Brick 21.57504 16.87498 -29.01998 5.949991 0.6999999 0.3000007
 Legacy_Brick 18.82505 16.87498 -14.21996 0.4499907 0.6999999 29.89999
 	+NAME New Brick
 	+COLOR 0.04975333 0.05 0.0315
-Legacy_Brick 26.37505 16.87498 0.5300393 15.54999 0.6999999 0.3999857
+Legacy_Brick 23.53054 16.87498 0.5300393 9.860981 0.6999999 0.3999857
 	+NAME New Brick
 	+COLOR 0.04975333 0.05 0.0315
+	+NOCOLLISION
 Model_static -3.519596 17.59611 -19.54219 2.1 2.1 2.1
 	+NAME bush
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0.9
-	+ROT 2.976534 253.1877 6.869646
+	+ROT 2.976534 253.1877 6.86965
 	+NOCOLLISION
 	+Model 9
 	+Texture 1 17
@@ -1153,7 +1344,7 @@ Model_static 1.421587 17.09611 -51.90372 3.1 2.1 2.1
 	+NAME bush
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0.9
-	+ROT 347.0475 59.13257 7.630728
+	+ROT 347.0475 59.13259 7.630723
 	+NOCOLLISION
 	+Model 9
 	+Texture 1 17
@@ -1210,7 +1401,7 @@ Legacy_Brick 25.04999 8 15.80003 62.90001 17 37.40002
 	+NAME island_mass
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0
-Legacy_Brick 13.89999 27.45001 3.250026 40.60001 25.90001 1.700028
+Legacy_Brick 5.859986 27.45001 3.250026 24.52002 25.90001 1.700028
 	+NAME island_mass
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0
@@ -1248,7 +1439,7 @@ Legacy_Brick 59.88775 27.45001 -92.47946 45.70003 25.90001 3.100026
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0
 	+ROT 0 345 0
-Legacy_Brick 82.58773 27.45001 -75.87946 45.70003 25.90001 3.100026
+Legacy_Brick 78.27776 27.45001 -75.95647 45.70003 25.90001 3.100026
 	+NAME island_mass
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0
@@ -1258,8 +1449,37 @@ Legacy_Brick 96.92196 27.35001 -4.50298 41.10003 25.70001 3.700063
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0
 	+ROT 0 -5.293397E-05 0
-Legacy_Brick 100.322 27.35001 -36.15298 5.300025 25.70001 87.40005
+Legacy_Brick 91.57359 27.35001 -41.34347 3.040025 25.70001 98.43405
 	+NAME island_mass
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0
-	+ROT 0 14.99994 0
+	+ROT 0 4.999939 0
+Legacy_Brick 58.1785 19.061 -33.42399 7.534999 4.659997 12.12
+	+NAME bed collision
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0
+Light 63 25.07001 -31.411 1 1 1
+	+NAME New Light
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 24.26351 19.2025 -12.6 8.493005 4.797 4.276
+	+NAME coutch trans awawawawa
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0
+Legacy_Brick 26.25 16.625 16.311 15 0.25 30.95001
+	+NAME livingroom1
+	+COLOR 0.40855 0.19 0.5
+Legacy_Brick 33.93748 22.44498 15.0575 3.036999 11.89001 27.989
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 25.67348 22.44498 28.1705 13.621 11.89001 1.763004
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Legacy_Brick 26.25 28.71399 16.311 15 0.7380002 30.95001
+	+NAME livingroom1
+	+COLOR 0.40855 0.19 0.5
+Legacy_Brick 19.65647 22.44498 15.341 3.036999 11.89001 27.422
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+Light 27 26.312 13.493 1 1 1
+	+NAME New Light
+	+COLOR 0.5 0.5 0.5

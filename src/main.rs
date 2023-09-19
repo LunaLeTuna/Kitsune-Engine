@@ -14,7 +14,7 @@ use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, Cursor
 use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use glium::texture::SrgbTexture2d;
 
-use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul, f32::consts::PI, collections::VecDeque};
+use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul, f32::consts::PI, collections::VecDeque, fs};
 use std::collections::HashMap;
 use winit::platform::run_return::EventLoopExtRunReturn;
 
@@ -74,7 +74,7 @@ fn main(){
             },
             alpha: glium::BlendingFunction::Addition {
                 source: glium::LinearBlendingFactor::One,
-                destination: glium::LinearBlendingFactor::OneMinusSourceAlpha,
+                destination: glium::LinearBlendingFactor::DestinationAlpha,
             },
             constant_value: (0.0, 0.0, 0.0, 0.0),
         },
@@ -321,6 +321,23 @@ fn main(){
                 }
             }
             _ => (),
+        }
+
+        #[cfg(debug_assertions)]
+        {
+            for (index, mut sh) in shaderz.iter_mut() {
+                let name = sh.url.clone();
+                let metadataF = fs::metadata(format!("{name}.frag")).expect("failed to check shader file");
+                let metadataV = fs::metadata(format!("{name}.vert")).expect("failed to check shader file");
+
+                if(metadataF.modified().unwrap() != sh.time_changed_f || metadataV.modified().unwrap() != sh.time_changed_v) {
+                    sh.time_changed_f = metadataF.modified().unwrap() ;
+                    sh.time_changed_v = metadataV.modified().unwrap() ;
+                    // sh = &mut Shader::craft(&name, &display);
+                    // shaderz.insert(0, Shader::craft(&name, &display));
+                    println!("{} has been updated", name);
+                }
+            }
         }
 
         real_char.step(&mut phys_world, &mut propz, delta_time);
