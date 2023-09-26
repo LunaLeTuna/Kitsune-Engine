@@ -1,0 +1,3 @@
+default_map house.kbf
+run_script testing.js
+char_pov firstperson

@@ -7,8 +7,8 @@ use crate::{props::{Prop, phytype, physhape}, cameras::Camera, ke_units::{Vec2, 
 
 #[derive(Clone, PartialEq)]
 pub enum character_type {
-    Third,
-    Second,
+    First,
+    Scroller,
     NoClip,
     Scripted,
     Disabled,
@@ -116,7 +116,7 @@ impl Character {
         let a = input.virtual_keycode.unwrap_or_else(|| winit::event::VirtualKeyCode::NoConvert);
         let state = input.state;
         match self.character_type {
-            character_type::Third => {
+            character_type::First => {
                 let speed = self.speed;
                 match a {
                     winit::event::VirtualKeyCode::W => {
@@ -150,7 +150,7 @@ impl Character {
                     _ => ()
                 }
             },
-            character_type::Second => todo!(),
+            character_type::Scroller => todo!(),
             character_type::NoClip => todo!(),
             character_type::Scripted => todo!(),
             character_type::Disabled => todo!(),
@@ -159,7 +159,7 @@ impl Character {
 
     pub fn interp_mouse(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, camera_map: &mut HashMap<i32, Camera>, mouse_delta: Vector2<f32>, screen_size: Vector2<f32>, delta_time: f32){
         match self.character_type {
-            character_type::Third => {
+            character_type::First => {
                 //print("mouse x: " + event.xpos);
                 //print("mouse y: " + event.ypos);
 
@@ -195,7 +195,7 @@ impl Character {
 
                 //p_cam.set_rotation(Vector3::new(self.pitch, self.yaw, 0.0));
             },
-            character_type::Second => todo!(),
+            character_type::Scroller => todo!(),
             character_type::NoClip => todo!(),
             character_type::Scripted => todo!(),
             character_type::Disabled => todo!(),

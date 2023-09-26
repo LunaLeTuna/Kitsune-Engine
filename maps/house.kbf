@@ -68,6 +68,9 @@ Kitsune Engine V1
 >Shader_Reference 3 plantt
 >Shader_Reference 4 pbr_test
 
+Script
+	+file testing.js
+	+notglobal
 Brush 23.74375 20.04797 -3.152892 3.141001 2.576001 0.17
 	+NAME crt
 	+COLOR 0.5 0.5 0.5

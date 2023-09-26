@@ -1,5 +1,6 @@
 use cameras::Camera;
 use char_control::{Character, character_type};
+use config::keconfig;
 use glium::{glutin::ContextBuilder, index::{NoIndices, PrimitiveType}, DepthTest};
 use kbf::{load, Environment};
 use ke_units::{Vec2, radians};
@@ -8,6 +9,7 @@ use models::Model;
 use nalgebra::{Vector3, Vector2, Matrix3, Matrix4, Rotation, Rotation3, Unit};
 use physic_props::*;
 use props::{Prop, phytype, physhape, proptype};
+use script::ScriptSpace;
 use shaders::{ShadvType, Shader};
 use textures::Texture;
 use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, CursorGrabMode}, event::{StartCause, Event, WindowEvent, DeviceEvent}, dpi::LogicalPosition};
@@ -18,6 +20,7 @@ use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul, f32::cons
 use std::collections::HashMap;
 use winit::platform::run_return::EventLoopExtRunReturn;
 
+pub mod config;
 pub mod fs_system;
 pub mod cameras;
 pub mod dynamic_uniform;
@@ -29,7 +32,8 @@ pub mod shaders;
 pub mod textures;
 pub mod kbf;
 pub mod physic_props;
-mod char_control;
+pub mod char_control;
+pub mod script;
 
 
 lazy_static::lazy_static! {
@@ -37,6 +41,10 @@ lazy_static::lazy_static! {
 
 
 fn main(){
+
+
+    let keconf = keconfig::parse("./KE_config".to_string());
+
 
     // project settings
     // which this will allow for the engine executable can
@@ -130,7 +138,7 @@ fn main(){
     let mut phys_world = PhysWorld::init_phys_world();
 
     let (world_emv, lightz) = {
-        let map = load("./maps/house.kbf");
+        let map = load(&("./maps/".to_owned()+&keconf.default_map));
 
         let txCount = (texturez.len() as i32)-1;
 
@@ -227,12 +235,16 @@ fn main(){
     main_cam.refresh();
     camera_map.insert(0, main_cam);
 
-    let mut real_char = Character::new(character_type::Third, &display, &mut propz, &modelz, &mut phys_world, &mut camera_map);
+    let mut real_char = Character::new(keconf.char_pov, &display, &mut propz, &modelz, &mut phys_world, &mut camera_map);
     _main_camera = real_char.camera;
 
     if world_emv.spawnpoints.len() != 0 {
         real_char.tp(&mut phys_world, &mut propz, world_emv.spawnpoints[0]);
     }
+
+    let mut js_world = ScriptSpace::new();
+    js_world.add_script("./scripts/".to_owned()+&"testing.js".to_string());
+    js_world.run();
 
     // thread scheduler :3
     // now i'm not sure how other engines do it
@@ -274,6 +286,8 @@ fn main(){
         .as_millis() as f64;
 
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
+        js_world.job_runs();
+
         *control_flow = ControlFlow::Poll;
 
         current_timestamp = SystemTime::now()
