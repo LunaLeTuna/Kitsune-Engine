@@ -44,7 +44,7 @@ impl keconfig {
                     }
                     continue;
                 }
-                ["run_script", stm] => {
+                ["runtime_script", stm] => {
                     conf.run_script = stm.to_string();
                     continue;
                 },

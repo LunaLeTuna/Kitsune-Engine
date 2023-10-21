@@ -1,10 +1,11 @@
-use std::time::{Instant, Duration};
+use std::{time::{Instant, Duration}, collections::HashMap, borrow::BorrowMut, sync::RwLock};
 
-use boa_engine::{Context, JsResult, JsValue, JsArgs, Source, property::Attribute, NativeFunction, value::TryFromJs, JsNativeError};
+use boa_engine::{Context, JsResult, JsValue, JsArgs, Source, property::Attribute, NativeFunction, value::TryFromJs, JsNativeError, builtins::function};
 use boa_runtime::Console;
 use futures_util::Future;
+use nalgebra::Vector3;
 
-use crate::fs_system::grab;
+use crate::{fs_system::grab, props::Prop, PROPS};
 
 pub struct ScriptSpace<'a> {
     pub world: i16,
@@ -68,6 +69,38 @@ fn lossy_conversion(value: &JsValue, _context: &mut Context) -> JsResult<i16> {
     }
 }
 
+fn mod_prop_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut womp = Prop::new("nya :3".to_owned());
+    womp.model = 0;
+    womp.textures = vec![0,0];
+    let mut propz = PROPS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
+    let stx = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let sty = st.get("y").unwrap().as_f64().unwrap() as f32;
+    let stz = st.get("z").unwrap().as_f64().unwrap() as f32;
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.position = Vector3::new(stx, sty, stz);
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn create_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut womp = Prop::new("nya :3".to_owned());
+    womp.model = 0;
+    womp.textures = vec![0,0];
+    let mut propz = PROPS.write().unwrap();
+    let i = propz.len() as i32;
+    propz.insert(i, womp);
+    
+    Ok(JsValue::Integer(i))
+
+}
+
 impl ScriptSpace<'_> {
 
     pub fn new() -> ScriptSpace<'static>{
@@ -101,6 +134,13 @@ impl ScriptSpace<'_> {
             context,
             scripts: Vec::new(),
         }
+    }
+
+    pub fn pinpropz(&mut self){
+
+        self.context.register_global_builtin_callable("create_prop", 1, NativeFunction::from_fn_ptr(create_prop));
+        self.context.register_global_builtin_callable("mod_prop_pos", 1, NativeFunction::from_fn_ptr(mod_prop_pos));
+        
     }
 
     pub fn add_script(&mut self, location: String){

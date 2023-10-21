@@ -98,6 +98,7 @@ impl Character {
         }
     }
 
+    //I think teleports player... I forgot
     pub fn tp(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, place: Vector3<f32>){
         let leprop = propz.get_mut(&self.body).unwrap();
         leprop.position = place;

@@ -1,0 +1,16 @@
+Kitsune Engine V1
+
+>AmbientColor 0 0 0
+>SkyColor 0.4862745 0.6980392 0.8980392
+>SunIntensity 300
+>Baseplate 100 0.2 0.509804 0.137255 1
+
+Brush 23.74375 20.04797 -3.152892 3.141001 2.576001 0.17
+	+NAME crt
+	+COLOR 0.5 0.5 0.5
+	+Texture 1 4
+	+Texture 2 4
+	+Texture 3 4
+	+Texture 4 4
+	+Texture 5 4
+	+Texture 6 4

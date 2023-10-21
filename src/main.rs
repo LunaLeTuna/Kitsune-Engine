@@ -11,12 +11,13 @@ use physic_props::*;
 use props::{Prop, phytype, physhape, proptype};
 use script::ScriptSpace;
 use shaders::{ShadvType, Shader};
+use smol::lock::RwLockReadGuard;
 use textures::Texture;
 use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, CursorGrabMode}, event::{StartCause, Event, WindowEvent, DeviceEvent}, dpi::LogicalPosition};
 use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use glium::texture::SrgbTexture2d;
 
-use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul, f32::consts::PI, collections::VecDeque, fs};
+use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul, f32::consts::PI, collections::VecDeque, fs, sync::RwLock};
 use std::collections::HashMap;
 use winit::platform::run_return::EventLoopExtRunReturn;
 
@@ -37,8 +38,8 @@ pub mod script;
 
 
 lazy_static::lazy_static! {
+    static ref PROPS: RwLock<HashMap<i32, Prop>> = RwLock::new(HashMap::new());
 }
-
 
 fn main(){
 
@@ -92,11 +93,14 @@ fn main(){
 
     let mut _uniform = dynamic_uniform::DynamicUniforms::new();
 
-
+    let mut js_world = ScriptSpace::new();
+    js_world.pinpropz();
+    js_world.add_script("./scripts/".to_owned()+&"testing.js".to_string());
+    js_world.run();
 
     // this is where assets are stored :3
     // gonna call these lists
-    let mut propz: HashMap<i32, Prop> = HashMap::new();
+    let mut propz = PROPS.write().unwrap();
     let mut modelz: HashMap<i32, Model> = HashMap::new();
     let mut texturez: HashMap<i32, Texture> = HashMap::new();
     let mut shaderz: HashMap<i32, Shader> = HashMap::new();
@@ -138,6 +142,7 @@ fn main(){
     let mut phys_world = PhysWorld::init_phys_world();
 
     let (world_emv, lightz) = {
+
         let map = load(&("./maps/".to_owned()+&keconf.default_map));
 
         let txCount = (texturez.len() as i32)-1;
@@ -193,27 +198,27 @@ fn main(){
         (map.environment, map.lights)
     };
 
-    {
-        let mut womp = Prop::new("nya :3".to_owned());
-        womp.model = 0;
-        womp.textures = vec![0,0];
-        womp.phys_shape = physhape::Box;
-        womp.phys_type = phytype::Dynamic;
-        womp.position = Vector3::new(0.0, 16.0, 0.0);
-        phys_world.create_phy(&mut womp, &modelz);
+    // {
+    //     let mut womp = Prop::new("nya :3".to_owned());
+    //     womp.model = 0;
+    //     womp.textures = vec![0,0];
+    //     womp.phys_shape = physhape::Box;
+    //     womp.phys_type = phytype::Dynamic;
+    //     womp.position = Vector3::new(0.0, 16.0, 0.0);
+    //     phys_world.create_phy(&mut womp, &modelz);
         
-        propz.insert((propz.len() as i32), womp);
-    }
+    //     propz.insert((propz.len() as i32), womp);
+    // }
 
-    {
-        let mut womp = Prop::new("nya :3".to_owned());
-        womp.model = 1;
-        womp.textures = vec![0,0];
-        womp.position = Vector3::new(-2.0, 2.0, -30.0);
-        womp.set_rotation(Vector3::new(radians(45.0),radians(0.0),radians(0.0)));
+    // {
+    //     let mut womp = Prop::new("nya :3".to_owned());
+    //     womp.model = 1;
+    //     womp.textures = vec![0,0];
+    //     womp.position = Vector3::new(-2.0, 2.0, -30.0);
+    //     womp.set_rotation(Vector3::new(radians(45.0),radians(0.0),radians(0.0)));
         
-        propz.insert((propz.len() as i32), womp);
-    }
+    //     propz.insert((propz.len() as i32), womp);
+    // }
 
     // eventually make this an array of lights inside a hashmap list
     let light = [1.4, 0.4, 0.7f32];
@@ -238,13 +243,11 @@ fn main(){
     let mut real_char = Character::new(keconf.char_pov, &display, &mut propz, &modelz, &mut phys_world, &mut camera_map);
     _main_camera = real_char.camera;
 
+    
+        
     if world_emv.spawnpoints.len() != 0 {
         real_char.tp(&mut phys_world, &mut propz, world_emv.spawnpoints[0]);
     }
-
-    let mut js_world = ScriptSpace::new();
-    js_world.add_script("./scripts/".to_owned()+&"testing.js".to_string());
-    js_world.run();
 
     // thread scheduler :3
     // now i'm not sure how other engines do it
@@ -285,6 +288,8 @@ fn main(){
         .unwrap()
         .as_millis() as f64;
 
+    drop(propz);
+
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
         js_world.job_runs();
 
@@ -301,6 +306,7 @@ fn main(){
 
         // womp this is where events from the window thingamabob does things
         // pretty much we are gonna quoue mouse and keyboards
+        let mut propz = PROPS.try_write().unwrap();
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::Resized(_) => {
@@ -385,7 +391,7 @@ fn main(){
         // now in theory one could get all the closest props and push refrences of those props in to a list
         // then replace propz here to that list to implement some sorta calling
         // i'ma do that later
-        for po in &mut propz {
+        for po in propz.iter_mut() {
             let prop = po.1;
             
             //sync physics prop to visual prop
