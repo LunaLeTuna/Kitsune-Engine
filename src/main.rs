@@ -17,7 +17,7 @@ use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, Cursor
 use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use glium::texture::SrgbTexture2d;
 
-use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul, f32::consts::PI, collections::VecDeque, fs, sync::RwLock};
+use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul, f32::consts::PI, collections::VecDeque, fs, sync::RwLock, path};
 use std::collections::HashMap;
 use winit::platform::run_return::EventLoopExtRunReturn;
 
@@ -88,15 +88,11 @@ fn main(){
             constant_value: (0.0, 0.0, 0.0, 0.0),
         },
         backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+        // backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
         ..Default::default()
     };
 
     let mut _uniform = dynamic_uniform::DynamicUniforms::new();
-
-    let mut js_world = ScriptSpace::new();
-    js_world.pinpropz();
-    js_world.add_script("./scripts/".to_owned()+&"testing.js".to_string());
-    js_world.run();
 
     // this is where assets are stored :3
     // gonna call these lists
@@ -154,7 +150,14 @@ fn main(){
         let mdCount = (modelz.len() as i32)-1;
 
         for md in map.models {
-            modelz.insert(mdCount+md.0, models::load_obj(&("./models/".to_owned()+&md.1), &display));
+            if(md.1.ends_with(".obj")){
+                modelz.insert(mdCount+md.0, models::load_obj(&("./models/".to_owned()+&md.1), &display));
+            }else if(md.1.ends_with(".fbx")){
+                modelz.insert(mdCount+md.0, models::load_fbx(&("./models/".to_owned()+&md.1), &display));
+            }else if(md.1.ends_with(".gltf")){
+                modelz.insert(mdCount+md.0, models::load_gltf(&("./models/".to_owned()+&md.1), &display));
+            }
+            
         }
 
         let shCount = (shaderz.len() as i32)-1;
@@ -165,7 +168,7 @@ fn main(){
         }
 
 
-        let mut partnp = 0;
+        let mut partnp = propz.len() as i32;
 
         for np in map.props {
             let mut np = np;
@@ -290,8 +293,16 @@ fn main(){
 
     drop(propz);
 
+    let mut js_world = ScriptSpace::new();
+    js_world.pinpropz();
+    js_world.add_script("./scripts/".to_owned()+&"testing.js".to_string());
+    js_world.run();
+
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
-        js_world.job_runs();
+        let delta_time = ((current_timestamp - last_timestamp)*0.1) as f32;
+        //dbg!(delta_time);
+        last_timestamp = current_timestamp;
+        js_world.job_runs(delta_time);
 
         *control_flow = ControlFlow::Poll;
 
@@ -300,9 +311,7 @@ fn main(){
         .unwrap()
         .as_millis() as f64;
 
-        let mut delta_time = ((current_timestamp - last_timestamp)*0.1) as f32;
-        //dbg!(delta_time);
-        last_timestamp = current_timestamp;
+        
 
         // womp this is where events from the window thingamabob does things
         // pretty much we are gonna quoue mouse and keyboards
@@ -414,7 +423,7 @@ fn main(){
             // }
         };
 
-        //now later maybe trans props could be fed screen buffer :3
+        //now later maybe trans props could be fed a screen buffer :3
         for po in &trans_props {
             let prop = propz.get_mut(&po).unwrap();
             if prop.transparency == 0.0 {continue;}

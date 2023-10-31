@@ -1,9 +1,10 @@
 use std::{time::{Instant, Duration}, collections::HashMap, borrow::BorrowMut, sync::RwLock};
 
-use boa_engine::{Context, JsResult, JsValue, JsArgs, Source, property::Attribute, NativeFunction, value::TryFromJs, JsNativeError, builtins::function};
+use boa_engine::{Context, JsResult, JsValue, JsArgs, Source, property::Attribute, NativeFunction, value::TryFromJs, JsNativeError, builtins::{function, string, error}};
 use boa_runtime::Console;
 use futures_util::Future;
 use nalgebra::Vector3;
+use serde_json::json;
 
 use crate::{fs_system::grab, props::Prop, PROPS};
 
@@ -89,6 +90,24 @@ fn mod_prop_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> 
 
 }
 
+fn get_prop_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+
+    let json = json!({
+        "x": w.position.x,
+        "y": w.position.y,
+        "z": w.position.z
+    });
+
+    let fvalue = JsValue::from_json(&json, _ctx).unwrap();
+    
+    Ok(fvalue)
+
+}
+
 fn create_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut womp = Prop::new("nya :3".to_owned());
     womp.model = 0;
@@ -98,6 +117,28 @@ fn create_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> J
     propz.insert(i, womp);
     
     Ok(JsValue::Integer(i))
+
+}
+
+//gets prop by name
+fn get_existing_prop_by_name(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let sat = _nargs.get_or_undefined(0).as_string().unwrap().as_ref();
+
+    let propname = match std::string::String::from_utf16(sat) {
+        Ok(x) => x,
+        Err(_) => "".to_owned()
+    };
+
+    let propz = PROPS.read().unwrap();
+    let w = propz.clone().into_iter();
+
+    for (i, prop) in w{
+        if(prop.name == propname){
+            return Ok(JsValue::Integer(i))
+        }
+    }
+    
+    Ok(JsValue::Integer(-1))
 
 }
 
@@ -138,8 +179,11 @@ impl ScriptSpace<'_> {
 
     pub fn pinpropz(&mut self){
 
+        self.context.register_global_builtin_callable("get_existing_prop_by_name", 1, NativeFunction::from_fn_ptr(get_existing_prop_by_name));
+
         self.context.register_global_builtin_callable("create_prop", 1, NativeFunction::from_fn_ptr(create_prop));
         self.context.register_global_builtin_callable("mod_prop_pos", 1, NativeFunction::from_fn_ptr(mod_prop_pos));
+        self.context.register_global_builtin_callable("get_prop_pos", 1, NativeFunction::from_fn_ptr(get_prop_pos));
         
     }
 
@@ -165,8 +209,9 @@ impl ScriptSpace<'_> {
         }
     }
 
-    pub fn job_runs(&mut self){
-        match self.context.eval(Source::from_bytes("loop()")) {
+    pub fn job_runs(&mut self, delta: f32){
+        //match self.context.eval(Source::from_bytes(&("loop(".to_owned()+&delta.to_string().to_owned()+")"))) {
+        match self.context.eval(Source::from_bytes(&("dispatchEvent(`tick`,".to_owned()+&delta.to_string().to_owned()+")"))) {
             Ok(res) => {
                 // println!(
                 //     "{}",

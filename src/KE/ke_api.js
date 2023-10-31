@@ -52,7 +52,7 @@ class Prop {
     }
 
     get position() {
-        //return ops.get_prop_pos(this._KE_Prop);
+        return get_prop_pos(this._KE_Prop);
     }
 
     set rotation(vec3i) {
@@ -119,9 +119,18 @@ class Prop {
         //return ops.get_prop_texture(this._KE_Prop, 1);
     }
 
-    constructor() {
-        this._KE_Prop = create_prop();
+    constructor(l) {
+        this._KE_Prop = l ?? create_prop();
     }
+}
+
+function getByName(name){
+    var idd = get_existing_prop_by_name(name);
+    if(idd == -1) {
+        console.log(`Error: can't fine prop "${name}"`)
+        return null;
+    }
+    return new Prop(idd);
 }
 
 class Camera {

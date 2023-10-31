@@ -1,13 +1,24 @@
-console.log('Hello World from a JS code string!')
+// console.log('Hello World from a JS code string!')
 
-var awa = new Prop();
+// var awa = new Prop();
 
-let aaa = 0;
-function loop(){
-    //awawawa("meowmeowmeowmeomwoemwomeowmo")
-    //console.log("meow");
-    awa.position = new Vector3(0,Math.sin(aaa)*20,0);
-    aaa+=0.1%Math.PI*2;
-}
+// var whatrprop = getByName("thisisbad")
 
-"awa"
+// console.log(JSON.stringify(whatrprop.position))
+
+// let aaa = 0;
+
+// //at some point this could be made to be hot loaded :3
+// function loop(delta){
+//     //awawawa("meowmeowmeowmeomwoemwomeowmo")
+//     //console.log("meow");
+//     awa.position = new Vector3(Math.sin(aaa)*20,4,Math.cos(aaa)*20);
+
+//     aaa+=(0.1*delta)%(Math.PI*2);
+
+//     // console.log(JSON.stringify({pos:awa.position}))
+// }
+
+// addEventListener("tick",loop)
+
+// "awa"

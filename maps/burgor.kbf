@@ -5,8 +5,10 @@ Kitsune Engine V1
 >SunIntensity 300
 >Baseplate 20 0.2 0.509804 0.137255 1
 
+>Model_Reference 1 block.obj
+>Model_Reference 2 block.gltf
 
-
+>Texture_Reference 1 protogen.png
 
 Legacy_Brick 0.5 0 16.375 44 1 47.75
 	+NAME New Brick
@@ -215,3 +217,8 @@ Light 2 0 18 1 1 1
 Light 3 11 2 1 1 1
 	+NAME New Light
 	+COLOR 0.5 0.5 0.5
+Model_static 3 5 2 1 1 1
+	+NAME thisisbad
+	+COLOR 0.5 0.5 0.5
+	+Model 2
+	+Texture 1 1
