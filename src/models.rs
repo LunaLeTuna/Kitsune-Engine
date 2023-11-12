@@ -82,7 +82,7 @@ pub fn load_obj<'a>(location: &str, display: &'a glium::Display) -> Model<'a> {
         });
     }
 
-    dbg!(location,pos.len(),nor.len(),tex.len());
+    //dbg!(location,pos.len(),nor.len(),tex.len());
 
     Model {
         name: "nya",

@@ -1,3 +1,4 @@
+use boa_engine::{value, builtins::string};
 use cameras::Camera;
 use char_control::{Character, character_type};
 use config::keconfig;
@@ -6,18 +7,25 @@ use kbf::{load, Environment};
 use ke_units::{Vec2, radians};
 use lights::PointLight;
 use models::Model;
+use multiplayer::Sockreq;
 use nalgebra::{Vector3, Vector2, Matrix3, Matrix4, Rotation, Rotation3, Unit};
 use physic_props::*;
 use props::{Prop, phytype, physhape, proptype};
+use rapier3d::crossbeam::channel::{Receiver, Sender};
+use rust_socketio::{ClientBuilder, Payload, RawClient};
+use socketioxide::SocketIo;
 use script::ScriptSpace;
+use serde_json::{json, Value};
 use shaders::{ShadvType, Shader};
-use smol::lock::RwLockReadGuard;
+use smol::{lock::{RwLockReadGuard, futures}, future::FutureExt};
 use textures::Texture;
 use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, CursorGrabMode}, event::{StartCause, Event, WindowEvent, DeviceEvent}, dpi::LogicalPosition};
 use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use glium::texture::SrgbTexture2d;
+use axum::routing::get;
+use axum::Server;
 
-use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH}, ops::Mul, f32::consts::PI, collections::VecDeque, fs, sync::RwLock, path};
+use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH, Duration}, ops::Mul, f32::consts::PI, collections::VecDeque, fs, sync::{RwLock, Mutex, Arc, mpsc::channel}, path, thread::sleep};
 use std::collections::HashMap;
 use winit::platform::run_return::EventLoopExtRunReturn;
 
@@ -35,11 +43,13 @@ pub mod kbf;
 pub mod physic_props;
 pub mod char_control;
 pub mod script;
+pub mod multiplayer;
 
 
 lazy_static::lazy_static! {
     static ref PROPS: RwLock<HashMap<i32, Prop>> = RwLock::new(HashMap::new());
 }
+
 
 fn main(){
 
@@ -67,8 +77,11 @@ fn main(){
 
     let binding = &display.gl_window();
     let v = binding.window();
-    v.set_cursor_grab(CursorGrabMode::Locked);
-    v.set_cursor_visible(false);
+
+    if(!keconf.headless){
+        v.set_cursor_grab(CursorGrabMode::Locked);
+        v.set_cursor_visible(false);
+    }
 
     let params = DrawParameters {
         depth: Depth {
@@ -243,37 +256,14 @@ fn main(){
     main_cam.refresh();
     camera_map.insert(0, main_cam);
 
-    let mut real_char = Character::new(keconf.char_pov, &display, &mut propz, &modelz, &mut phys_world, &mut camera_map);
+    let mut real_char: Character;
+
+    real_char = Character::new(keconf.char_pov, &display, &mut propz, &modelz, &mut phys_world, &mut camera_map);
     _main_camera = real_char.camera;
 
-    
-        
     if world_emv.spawnpoints.len() != 0 {
         real_char.tp(&mut phys_world, &mut propz, world_emv.spawnpoints[0]);
     }
-
-    // thread scheduler :3
-    // now i'm not sure how other engines do it
-    // nor how this is going to work without lag
-    // but not gonna do this rn
-    // too lazy
-    //
-    //
-    // First thread:
-    // handles when other threads fire
-    // next handles changes to props that other threads request
-    // last handles rendering
-    //
-    //
-    // Second thread:
-    // This thread handles physics and entity interactions
-    // Then handles Scripting
-    //
-    //
-    // Third thread:
-    // Loads map files
-    // Gets assets
-    // probably works with networking
 
     let mut loop_wawa: f32 = 0.0;
 
@@ -296,13 +286,140 @@ fn main(){
     let mut js_world = ScriptSpace::new();
     js_world.pinpropz();
     js_world.add_script("./scripts/".to_owned()+&"testing.js".to_string());
+
     js_world.run();
+
+    if(keconf.is_server){
+        js_world.run_server();
+    }
+
+    //networking simple
+    // ";w; oh nyoooooo networkin is sow haarrrdua"
+    // not anymore, shut up; I did it for you righ here :3
+
+    //yeah soooo.... 
+
+    if(keconf.is_server){
+        std::thread::spawn(move || {
+
+            async fn w(){
+                let (layer, io) = SocketIo::new_layer();
+
+                io.ns("/", |socket, auth: Value| async move {
+                    println!("Socket connected on / namespace with id: {}", socket.id);
+        
+                    // Add a callback triggered when the socket receive an 'abc' event
+                    // The json data will be deserialized to MyData
+                    socket.on("update", |socket, data: Value, bin, _| async move {
+                        println!("Received abc event: {:?} {:?}", data, bin);
+                        socket.bin(bin).emit("update", data).ok();
+                    });
+        
+                    // // Add a callback triggered when the socket receive an 'acb' event
+                    // // Ackknowledge the message with the ack callback
+                    // socket.on("update", |_, data: Value, bin, ack| async move {
+                    //     println!("Received acb event: {:?} {:?}", data, bin);
+                    //     ack.bin(bin).send(data).ok();
+                    // });
+                    // Add a callback triggered when the socket disconnect
+                    // The reason of the disconnection will be passed to the callback
+                    socket.on_disconnect(|socket, reason| async move {
+                        println!("Socket.IO disconnected: {} {}", socket.id, reason);
+                    });
+                });
+        
+                let app = axum::Router::new()
+                .route("/", get(|| async { "this is a kitsune engine exclusive" }))
+                .layer(layer);
+        
+                let _ = Server::bind(&"0.0.0.0:3000".parse().unwrap())
+                    .serve(app.into_make_service())
+                    .await;
+            }
+
+            let tokio_thread = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+
+            tokio_thread
+                .block_on(w());
+
+            
+        });
+        sleep(Duration::from_secs(15))
+        }
+
+        let network_requests: Arc<Mutex<HashMap<u64,Sockreq>>> = Arc::new(Mutex::new(HashMap::new()));
+        let next_slot: Arc<Mutex<u64>> = Arc::new(Mutex::new(0));
+        let (sender, receiver) = channel::<String>();
+        let (senderEmit, receiverEmit) = channel::<Value>();
+
+        let socket = if(!keconf.headless){
+
+            let nr_clone = network_requests.clone();
+            let ns_clone = next_slot.clone();
+
+            let what = move |whatt: String| {
+                println!("awawawa: {}", js_world.world);
+                let mut lock_nr = nr_clone.lock().expect("Error with poisoned lock");
+                let mut lock_ns = ns_clone.lock().expect("Error with poisoned lock");
+                *lock_ns += 1;
+
+                sender.send(whatt);
+                
+                // lock_nr.insert(*lock_ns, Sockreq{
+                //     name: "awawa".to_owned(),
+                //     data: serde_json::from_str(&whatt).unwrap(),
+                // });
+
+                //js_world.triggerlis("wah".to_string(), serde_json::from_str(&"{}").unwrap());
+            };
+
+        let socket = ClientBuilder::new("http://localhost:3000/")
+            .namespace("/")
+            .on("update", move |payload: Payload, socket: RawClient| {
+
+                match payload {
+                    Payload::String(whatt) => {
+                        what(whatt);
+                        //js_world.triggerlis("wah".to_string(), serde_json::from_str("&str").unwrap());
+                        //println!("Received: {}", str);
+                    },
+                    Payload::Binary(bin_data) => {},
+                }
+        })
+            .on("error", |err, _| eprintln!("Error: {:#?}", err))
+            .connect()
+            .expect("Connection failed");
+
+        //sleep(Duration::from_secs(2));
+
+        // let json_payload = json!({"position": {"x":0,"y":0,"z":0}, "velocity": {"x":0,"y":0,"z":0}});
+        // socket
+        //     .emit("update", json_payload)
+        //     .expect("Server unreachable");
+
+        js_world.pinemit(senderEmit);
+
+        Some(socket)
+    }else{
+        js_world.pindummyemit();
+        None
+    };
 
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
         let delta_time = ((current_timestamp - last_timestamp)*0.1) as f32;
         //dbg!(delta_time);
         last_timestamp = current_timestamp;
-        js_world.job_runs(delta_time);
+
+        if(keconf.is_server){
+            js_world.job_server_runs(delta_time);
+        }
+
+        if(!keconf.headless){
+            js_world.job_runs(delta_time);
+        }
 
         *control_flow = ControlFlow::Poll;
 
@@ -311,6 +428,32 @@ fn main(){
         .unwrap()
         .as_millis() as f64;
 
+        // let binding = network_requests.clone();
+        // let what = binding.lock().unwrap();
+
+        // for (index, packet) in what.iter() {
+        //     //print!("{}", index);
+        //     //js_world.triggerlis(&"wah".to_string(), &packet.data);
+        // }
+
+        if(!keconf.headless){
+            match receiver.try_recv() {
+                Ok(packet) => {
+                    js_world.triggerlis(&"client_update".to_string(), &packet);
+                }
+                _ => (),
+            }
+
+            match receiverEmit.try_recv() {
+                Ok(packet) => {
+                    let socket = socket.as_ref().unwrap();
+                        socket
+                        .emit("update", packet)
+                        .expect("Server unreachable");
+                }
+                _ => (),
+            }
+        }
         
 
         // womp this is where events from the window thingamabob does things
@@ -341,10 +484,13 @@ fn main(){
             Event::DeviceEvent { device_id, event } => {
                 match event {
                     DeviceEvent::MouseMotion { delta } => {
-                        let (width, height) = display.get_framebuffer_dimensions();
-                        let a = Vector2::new(delta.0 as f32, delta.1 as f32);
-                        real_char.interp_mouse(&mut phys_world, &mut propz, &mut camera_map, a, screen_size, delta_time);
-                        v.set_cursor_position(LogicalPosition::new(width/2, height/2));
+                        if(!keconf.headless){
+                            let (width, height) = display.get_framebuffer_dimensions();
+                            let a = Vector2::new(delta.0 as f32, delta.1 as f32);
+                            real_char.interp_mouse(&mut phys_world, &mut propz, &mut camera_map, a, screen_size, delta_time);
+                        
+                            v.set_cursor_position(LogicalPosition::new(width/2, height/2));
+                        }
                     }
                     _ => {}
                 }
@@ -368,19 +514,6 @@ fn main(){
                 }
             }
         }
-
-        real_char.step(&mut phys_world, &mut propz, delta_time);
-
-        //step physics world
-        phys_world.step();
-
-        //if cam prop parent moved, we move cam
-        let main_cam = camera_map.get_mut(&_main_camera).unwrap();
-        if main_cam.parent_prop != -1 {
-            main_cam.position = propz.get(&main_cam.parent_prop).unwrap().position+main_cam.parent_offset;
-            //main_cam.look_at(Vector3::new(0.0, 0.0, 0.0)); funny testing
-            main_cam.refresh();
-        }
         
 
         //
@@ -388,53 +521,81 @@ fn main(){
         // from this line and down
         //
 
-        // start drawing frame
-        let mut target = display.draw();
-        target.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
-
         // let mut to_remove: Vec<i32> = Vec::new();
 
         loop_wawa += 1.0;
 
+        if(keconf.headless){
+            //step physics world
+            phys_world.step();
 
-        // now in theory one could get all the closest props and push refrences of those props in to a list
-        // then replace propz here to that list to implement some sorta calling
-        // i'ma do that later
-        for po in propz.iter_mut() {
-            let prop = po.1;
-            
-            //sync physics prop to visual prop
-            phys_world._sync_prop(prop, CopyWhat::All);
+            for po in propz.iter_mut() {
+                let prop = po.1;
+                phys_world._sync_prop(prop, CopyWhat::All);
+            };
+        }
 
-            if !prop.render {continue;}
-            if prop.face_cam {
-                if(main_cam.position.z<prop.position.z){
-                    prop.look_at(main_cam.position-prop.position);
-                }else{
-                    prop.look_at(prop.position-main_cam.position);
-                }
+        if(!keconf.headless){
+
+            // start drawing frame
+            let mut target = display.draw();
+            target.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
+
+            real_char.step(&mut phys_world, &mut propz, delta_time);
+
+            //step physics world
+            phys_world.step();
+
+            //if cam prop parent moved, we move cam
+            let main_cam = camera_map.get_mut(&_main_camera).unwrap();
+            if main_cam.parent_prop != -1 {
+                main_cam.position = propz.get(&main_cam.parent_prop).unwrap().position+main_cam.parent_offset;
+                //main_cam.look_at(Vector3::new(0.0, 0.0, 0.0)); funny testing
+                main_cam.refresh();
             }
-            if prop.transparency != 1.0 {continue;}
 
-            render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &texturez, &mut target, &modelz, &shaderz, &params);
+            // now in theory one could get all the closest props and push refrences of those props in to a list
+            // then replace propz here to that list to implement some sorta calling
+            // i'ma do that later
+            for po in propz.iter_mut() {
+                let prop = po.1;
+                
+                //sync physics prop to visual prop
+                phys_world._sync_prop(prop, CopyWhat::All);
 
-            // if prop.position.y < -2.0 {
-            //     to_remove.push(*po.0);
-            // }
-        };
+                if !prop.render {continue;}
+                if prop.face_cam {
+                    if(main_cam.position.z<prop.position.z){
+                        prop.look_at(main_cam.position-prop.position);
+                    }else{
+                        prop.look_at(prop.position-main_cam.position);
+                    }
+                }
+                if prop.transparency != 1.0 {continue;}
 
-        //now later maybe trans props could be fed a screen buffer :3
-        for po in &trans_props {
-            let prop = propz.get_mut(&po).unwrap();
-            if prop.transparency == 0.0 {continue;}
+                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &texturez, &mut target, &modelz, &shaderz, &params);
 
-            if !prop.render {continue;}
+                // if prop.position.y < -2.0 {
+                //     to_remove.push(*po.0);
+                // }
+            };
 
-            render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &texturez, &mut target, &modelz, &shaderz, &params);
-        };
+        
+            //now later maybe trans props could be fed a screen buffer :3
+            for po in &trans_props {
+                let prop = propz.get_mut(&po).unwrap();
+                if prop.transparency == 0.0 {continue;}
 
-        // finish frame and put on window probably
-        target.finish().unwrap();
+                if !prop.render {continue;}
+
+                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &texturez, &mut target, &modelz, &shaderz, &params);
+            };
+
+            // finish frame and put on window probably
+        
+            target.finish().unwrap();
+        }
+        
 
         // for amongus in to_remove {
         //     dbg!(amongus);

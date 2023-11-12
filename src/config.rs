@@ -5,7 +5,9 @@ pub struct keconfig {
     pub run_script: String,
     pub char_pov: character_type, //character controller type
     pub hotswap: bool, //to update assets in realtime by modifying their file
-    pub debug: bool //print to console
+    pub debug: bool, //print to console
+    pub headless: bool,
+    pub is_server: bool
 }
 
 impl keconfig {
@@ -15,7 +17,9 @@ impl keconfig {
             char_pov: character_type::First,
             run_script: "".to_string(),
             hotswap: false,
-            debug: false
+            debug: false,
+            headless: false,
+            is_server: false
         };
 
         let file = grab(&location);
@@ -54,6 +58,14 @@ impl keconfig {
                 }
                 ["debug"] => {
                     conf.debug = true;
+                    continue;
+                }
+                ["headless"] => {
+                    conf.headless = true;
+                    continue;
+                }
+                ["is_server"] => {
+                    conf.is_server = true;
                     continue;
                 }
                 _ => {}

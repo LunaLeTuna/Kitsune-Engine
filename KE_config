@@ -1,4 +1,6 @@
 default_map burgor.kbf
-default_map house.kbf
+--default_map house.kbf
 runtime_script testing.js
 char_pov firstperson
+--headless
+is_server

@@ -1,24 +1,61 @@
-// console.log('Hello World from a JS code string!')
+console.log('Hello World from a JS code string!')
 
-// var awa = new Prop();
+var awa = new Prop();
 
-// var whatrprop = getByName("thisisbad")
+var whatrprop = getByName("thisisbad")
 
-// console.log(JSON.stringify(whatrprop.position))
+console.log(JSON.stringify(whatrprop.position))
 
-// let aaa = 0;
+let aaa = 0;
 
-// //at some point this could be made to be hot loaded :3
-// function loop(delta){
-//     //awawawa("meowmeowmeowmeomwoemwomeowmo")
-//     //console.log("meow");
-//     awa.position = new Vector3(Math.sin(aaa)*20,4,Math.cos(aaa)*20);
+// for multiplayer
+function server_start(){
+    //awawawa("meowmeowmeowmeomwoemwomeowmo")
+    console.log("meow");
 
-//     aaa+=(0.1*delta)%(Math.PI*2);
+    // console.log(JSON.stringify({pos:awa.position}))
+}
 
-//     // console.log(JSON.stringify({pos:awa.position}))
-// }
+addEventListener("server_start",server_start)
 
-// addEventListener("tick",loop)
 
-// "awa"
+// multiplayer loop
+function server_loop(delta){
+    //awawawa("meowmeowmeowmeomwoemwomeowmo")
+    //console.log("meow");
+    // awa.position = new Vector3(Math.sin(aaa)*20,4,Math.cos(aaa)*20);
+
+    // aaa+=(0.1*delta)%(Math.PI*2);
+
+    // console.log(JSON.stringify({pos:awa.position}))
+}
+
+addEventListener("server_tick",server_loop)
+
+
+
+//at some point this could be made to be hot loaded :3
+function client_update(delta){
+    console.log(delta.position.x)
+}
+
+addEventListener("client_update",client_update)
+
+
+//at some point this could be made to be hot loaded :3
+function loop(delta){
+    //awawawa("meowmeowmeowmeomwoemwomeowmo")
+    //console.log("meow");
+    awa.position = new Vector3(Math.sin(aaa)*20,4,Math.cos(aaa)*20);
+
+    aaa+=(0.1*delta)%(Math.PI*2);
+
+    emit({"player_id":1})
+
+    // console.log(JSON.stringify({pos:awa.position}))
+}
+
+addEventListener("tick",loop)
+
+
+"awa"

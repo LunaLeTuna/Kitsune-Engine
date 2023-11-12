@@ -1,10 +1,11 @@
-use std::{time::{Instant, Duration}, collections::HashMap, borrow::BorrowMut, sync::RwLock};
+use std::{time::{Instant, Duration}, collections::HashMap, borrow::BorrowMut, sync::{RwLock, mpsc::Sender}, future::Future};
 
-use boa_engine::{Context, JsResult, JsValue, JsArgs, Source, property::Attribute, NativeFunction, value::TryFromJs, JsNativeError, builtins::{function, string, error}};
+use boa_engine::{Context, JsResult, JsValue, JsArgs, Source, property::{Attribute, PropertyKey}, NativeFunction, value::TryFromJs, JsNativeError, builtins::{function, string, error, json}, JsString};
 use boa_runtime::Console;
-use futures_util::Future;
 use nalgebra::Vector3;
-use serde_json::json;
+use serde_json::{json, Value};
+use rust_socketio::{ClientBuilder, Payload, RawClient, client::Client};
+use smol::future::FutureExt;
 
 use crate::{fs_system::grab, props::Prop, PROPS};
 
@@ -71,9 +72,6 @@ fn lossy_conversion(value: &JsValue, _context: &mut Context) -> JsResult<i16> {
 }
 
 fn mod_prop_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
-    let mut womp = Prop::new("nya :3".to_owned());
-    womp.model = 0;
-    womp.textures = vec![0,0];
     let mut propz = PROPS.write().unwrap();
     let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
     let stx = st.get("x").unwrap().as_f64().unwrap() as f32;
@@ -187,6 +185,24 @@ impl ScriptSpace<'_> {
         
     }
 
+    pub fn pinemit(&mut self, reseve: Sender<Value>){
+
+        let wopper = move | _this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>| -> JsResult<JsValue> {
+            let st = _nargs.get_or_undefined(0).to_json(_ctx)?;
+            reseve.send(st);
+            Ok(JsValue::Boolean(true))
+        };
+        self.context.register_global_builtin_callable("emit", 1, unsafe { NativeFunction::from_closure(wopper) });
+    }
+
+    pub fn pindummyemit(&mut self){
+
+        let wopper = move | _this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>| -> JsResult<JsValue> {
+            Ok(JsValue::Boolean(false))
+        };
+        self.context.register_global_builtin_callable("emit", 1, unsafe { NativeFunction::from_closure(wopper) });
+    }
+
     pub fn add_script(&mut self, location: String){
         let js_code: String = grab(&location);
 
@@ -209,9 +225,68 @@ impl ScriptSpace<'_> {
         }
     }
 
+    //this inits server functions
+    pub fn run_server(&mut self){
+
+        for code in &self.scripts {
+            match self.context.eval(Source::from_bytes(&("dispatchEvent(`server_start`,null)"))) {
+                Ok(res) => {
+                    // println!(
+                    //     "{}",
+                    //     res.to_string(&mut self.context).unwrap().to_std_string_escaped()
+                    // );
+                }
+                Err(e) => {
+                    // Pretty print the error
+                    eprintln!("Uncaught {e}");
+                }
+            };
+        }
+    }
+
+    pub fn triggerlis(&mut self, what:&String, data: &String){
+        //match self.context.eval(Source::from_bytes(&("loop(".to_owned()+&delta.to_string().to_owned()+")"))) {
+
+            // let globalThis = self.context.global_object();
+
+            // let a = globalThis.get(PropertyKey::String("dispatchEvent".into()), &mut self.context);
+
+            // a.unwrap().as_callable();
+
+        match self.context.eval(Source::from_bytes(&("dispatchEvent(`".to_owned()+what+"`,"+data+")"))) {
+            Ok(res) => {
+                // println!(
+                //     "{}",
+                //     res.to_string(&mut self.context).unwrap().to_std_string_escaped()
+                // );
+            }
+            Err(e) => {
+                // Pretty print the error
+                eprintln!("Uncaught {e}");
+            }
+        };
+    }
+
+
     pub fn job_runs(&mut self, delta: f32){
         //match self.context.eval(Source::from_bytes(&("loop(".to_owned()+&delta.to_string().to_owned()+")"))) {
         match self.context.eval(Source::from_bytes(&("dispatchEvent(`tick`,".to_owned()+&delta.to_string().to_owned()+")"))) {
+            Ok(res) => {
+                // println!(
+                //     "{}",
+                //     res.to_string(&mut self.context).unwrap().to_std_string_escaped()
+                // );
+            }
+            Err(e) => {
+                // Pretty print the error
+                eprintln!("Uncaught {e}");
+            }
+        };
+    }
+
+    pub fn job_server_runs(&mut self, delta: f32){
+        //match self.context.eval(Source::from_bytes(&("loop(".to_owned()+&delta.to_string().to_owned()+")"))) {
+        match self.context.eval(Source::from_bytes(&("dispatchEvent(`server_tick`,".to_owned()+&delta.to_string().to_owned()+")"))) {
             Ok(res) => {
                 // println!(
                 //     "{}",

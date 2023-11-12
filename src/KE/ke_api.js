@@ -180,3 +180,28 @@ function dispatchEvent(name, data) {
         element(data);
     });
 }
+
+var _Socket_EVENT_LIST = {};
+
+var socket = {
+
+    "emit": function (name, data) {
+    },
+
+    "addEventListener": function (name, fn) {
+        if (_Socket_EVENT_LIST.hasOwnProperty(name)) {
+            _Socket_EVENT_LIST[name].push(fn);
+        } else {
+            _KE_EVENT_LIST[name] = [];
+            _KE_EVENT_LIST[name].push(fn);
+        }
+    },
+
+    "dispatchEvent": function (name, data) {
+        if (!_Socket_EVENT_LIST.hasOwnProperty(name)) return;
+        _Socket_EVENT_LIST[name].forEach(element => {
+            element(data);
+        });
+    }
+
+}
