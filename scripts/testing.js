@@ -36,7 +36,7 @@ addEventListener("server_tick",server_loop)
 
 //at some point this could be made to be hot loaded :3
 function client_update(delta){
-    console.log(delta.position.x)
+    console.log(delta)
 }
 
 addEventListener("client_update",client_update)
@@ -50,7 +50,7 @@ function loop(delta){
 
     aaa+=(0.1*delta)%(Math.PI*2);
 
-    emit({"player_id":1})
+    emit({"playerpoid":1})
 
     // console.log(JSON.stringify({pos:awa.position}))
 }

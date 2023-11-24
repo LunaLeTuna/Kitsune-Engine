@@ -48,6 +48,7 @@ pub mod multiplayer;
 
 lazy_static::lazy_static! {
     static ref PROPS: RwLock<HashMap<i32, Prop>> = RwLock::new(HashMap::new());
+    static ref FIRST: Arc<RwLock<String>> = Arc::new(RwLock::new(format!("")));
 }
 
 
@@ -307,12 +308,48 @@ fn main(){
 
                 io.ns("/", |socket, auth: Value| async move {
                     println!("Socket connected on / namespace with id: {}", socket.id);
+
+                    socket.join(socket.id.to_string());
+
+                    let binding = FIRST.clone();
+                    let firs = binding.read().unwrap().to_string();
+                    if *firs == format!("") {
+                        let mut firs = FIRST.write().unwrap();
+                        *firs = socket.id.to_string();
+                        //for some reason, the first connection dosn't get the join emit, so...
+                        //we gonna do this
+                        socket.emit("join", json!({
+                            "id":socket.id,
+                        }));
+                    }
+
+                        socket.to(firs).emit("join", json!({
+                            "id":socket.id,
+                        }));
         
-                    // Add a callback triggered when the socket receive an 'abc' event
-                    // The json data will be deserialized to MyData
                     socket.on("update", |socket, data: Value, bin, _| async move {
-                        println!("Received abc event: {:?} {:?}", data, bin);
-                        socket.bin(bin).emit("update", data).ok();
+
+                        
+                        // probasbly want to do match instead of unwrap here so there isn't some odd security thing problem
+                        // bleehhhh not doing that
+                        let to = "\"\"";//data.get("to").unwrap().to_string();
+                        //dbg!(to.clone());
+
+                        let data = data;//.get("data").unwrap();
+                        let ishost = {
+                            let binding = FIRST.clone();
+                            let firs = binding.read().unwrap().to_string();
+                            firs == socket.id.to_string()
+                        };
+                        if(to == "\"\""){
+                            socket.bin(bin).broadcast().except(socket.id.to_string()).emit("update", json!({"fromid":socket.id,"ishost":ishost,"data":data})).ok();
+                        }else{
+                           socket.bin(bin).to(to).emit("update", json!({"fromid":socket.id,"ishost":ishost,"data":data})).ok();
+                        }
+                        // sender.send(Sockreq { 
+                        //     name: format!("create"), 
+                        //     data: data
+                        //  });
                     });
         
                     // // Add a callback triggered when the socket receive an 'acb' event
@@ -361,7 +398,7 @@ fn main(){
             let ns_clone = next_slot.clone();
 
             let what = move |whatt: String| {
-                println!("awawawa: {}", js_world.world);
+                //println!("awawawa: {}", js_world.world);
                 let mut lock_nr = nr_clone.lock().expect("Error with poisoned lock");
                 let mut lock_ns = ns_clone.lock().expect("Error with poisoned lock");
                 *lock_ns += 1;
