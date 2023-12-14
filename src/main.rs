@@ -318,33 +318,47 @@ fn main(){
                         *firs = socket.id.to_string();
                         //for some reason, the first connection dosn't get the join emit, so...
                         //we gonna do this
-                        socket.emit("join", json!({
+                        socket.emit("update", json!({
+                            "type":"join",
                             "id":socket.id,
                         }));
                     }
 
-                        socket.to(firs).emit("join", json!({
+                        socket.to(firs).emit("update", json!({
+                            "type":"join",
                             "id":socket.id,
                         }));
         
                     socket.on("update", |socket, data: Value, bin, _| async move {
 
+                        let mut dat: Option<Value> = None;
                         
                         // probasbly want to do match instead of unwrap here so there isn't some odd security thing problem
                         // bleehhhh not doing that
-                        let to = "\"\"";//data.get("to").unwrap().to_string();
+                        let to = match data.get("to") {
+                            Some(a) => {
+                                dat = Some(data.get("data").unwrap().clone());
+                                a.to_string()
+                            },
+                            None => {
+                                dat = Some(data);
+                                format!("\"\"")
+                            }
+                        };
                         //dbg!(to.clone());
 
-                        let data = data;//.get("data").unwrap();
+                        let data = dat.unwrap();//.get("data").unwrap();
+
+                        let binding = FIRST.clone();
+                        let firs = binding.read().unwrap().to_string();
+                        
                         let ishost = {
-                            let binding = FIRST.clone();
-                            let firs = binding.read().unwrap().to_string();
                             firs == socket.id.to_string()
                         };
                         if(to == "\"\""){
-                            socket.bin(bin).broadcast().except(socket.id.to_string()).emit("update", json!({"fromid":socket.id,"ishost":ishost,"data":data})).ok();
+                            socket.bin(bin).broadcast().except(socket.id.to_string()).emit("update", json!({"type":"update","fromid":socket.id,"ishost":ishost,"data":data})).ok();
                         }else{
-                           socket.bin(bin).to(to).emit("update", json!({"fromid":socket.id,"ishost":ishost,"data":data})).ok();
+                           socket.bin(bin).to(to).emit("update", json!({"type":"update","fromid":socket.id,"ishost":ishost,"data":data})).ok();
                         }
                         // sender.send(Sockreq { 
                         //     name: format!("create"), 
@@ -384,7 +398,7 @@ fn main(){
 
             
         });
-        sleep(Duration::from_secs(15))
+        sleep(Duration::from_secs(2))
         }
 
         let network_requests: Arc<Mutex<HashMap<u64,Sockreq>>> = Arc::new(Mutex::new(HashMap::new()));
@@ -397,21 +411,7 @@ fn main(){
             let nr_clone = network_requests.clone();
             let ns_clone = next_slot.clone();
 
-            let what = move |whatt: String| {
-                //println!("awawawa: {}", js_world.world);
-                let mut lock_nr = nr_clone.lock().expect("Error with poisoned lock");
-                let mut lock_ns = ns_clone.lock().expect("Error with poisoned lock");
-                *lock_ns += 1;
-
-                sender.send(whatt);
-                
-                // lock_nr.insert(*lock_ns, Sockreq{
-                //     name: "awawa".to_owned(),
-                //     data: serde_json::from_str(&whatt).unwrap(),
-                // });
-
-                //js_world.triggerlis("wah".to_string(), serde_json::from_str(&"{}").unwrap());
-            };
+            let sendera = sender.clone();
 
         let socket = ClientBuilder::new("http://localhost:3000/")
             .namespace("/")
@@ -419,13 +419,24 @@ fn main(){
 
                 match payload {
                     Payload::String(whatt) => {
-                        what(whatt);
+                        sender.send(whatt);
                         //js_world.triggerlis("wah".to_string(), serde_json::from_str("&str").unwrap());
                         //println!("Received: {}", str);
                     },
                     Payload::Binary(bin_data) => {},
                 }
         })
+        .on("update", move |payload: Payload, socket: RawClient| {
+
+            match payload {
+                Payload::String(whatt) => {
+                    sendera.send(whatt);
+                    //js_world.triggerlis("wah".to_string(), serde_json::from_str("&str").unwrap());
+                    //println!("Received: {}", str);
+                },
+                Payload::Binary(bin_data) => {},
+            }
+    })
             .on("error", |err, _| eprintln!("Error: {:#?}", err))
             .connect()
             .expect("Connection failed");
@@ -535,18 +546,16 @@ fn main(){
             _ => (),
         }
 
-        #[cfg(debug_assertions)]
-        {
+        if(keconf.shader_hotswap){
             for (index, mut sh) in shaderz.iter_mut() {
                 let name = sh.url.clone();
                 let metadataF = fs::metadata(format!("{name}.frag")).expect("failed to check shader file");
                 let metadataV = fs::metadata(format!("{name}.vert")).expect("failed to check shader file");
 
                 if(metadataF.modified().unwrap() != sh.time_changed_f || metadataV.modified().unwrap() != sh.time_changed_v) {
-                    sh.time_changed_f = metadataF.modified().unwrap() ;
-                    sh.time_changed_v = metadataV.modified().unwrap() ;
-                    // sh = &mut Shader::craft(&name, &display);
-                    // shaderz.insert(0, Shader::craft(&name, &display));
+                    sh.time_changed_f = metadataF.modified().unwrap();
+                    sh.time_changed_v = metadataV.modified().unwrap();
+                    sh = &mut Shader::craft(&name, &display);
                     println!("{} has been updated", name);
                 }
             }

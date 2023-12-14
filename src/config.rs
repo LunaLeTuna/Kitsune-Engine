@@ -5,6 +5,7 @@ pub struct keconfig {
     pub run_script: String,
     pub char_pov: character_type, //character controller type
     pub hotswap: bool, //to update assets in realtime by modifying their file
+    pub shader_hotswap: bool,
     pub debug: bool, //print to console
     pub headless: bool,
     pub is_server: bool
@@ -19,7 +20,8 @@ impl keconfig {
             hotswap: false,
             debug: false,
             headless: false,
-            is_server: false
+            is_server: false,
+            shader_hotswap: false,
         };
 
         let file = grab(&location);
@@ -52,8 +54,8 @@ impl keconfig {
                     conf.run_script = stm.to_string();
                     continue;
                 },
-                ["hotswap"] => {
-                    conf.hotswap = true;
+                ["shader_hotswap"] => {
+                    conf.shader_hotswap = true;
                     continue;
                 }
                 ["debug"] => {

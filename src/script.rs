@@ -192,7 +192,7 @@ impl ScriptSpace<'_> {
             reseve.send(st);
             Ok(JsValue::Boolean(true))
         };
-        self.context.register_global_builtin_callable("emit", 1, unsafe { NativeFunction::from_closure(wopper) });
+        self.context.register_global_builtin_callable("_emit", 1, unsafe { NativeFunction::from_closure(wopper) });
     }
 
     pub fn pindummyemit(&mut self){
@@ -200,7 +200,7 @@ impl ScriptSpace<'_> {
         let wopper = move | _this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>| -> JsResult<JsValue> {
             Ok(JsValue::Boolean(false))
         };
-        self.context.register_global_builtin_callable("emit", 1, unsafe { NativeFunction::from_closure(wopper) });
+        self.context.register_global_builtin_callable("_emit", 1, unsafe { NativeFunction::from_closure(wopper) });
     }
 
     pub fn add_script(&mut self, location: String){

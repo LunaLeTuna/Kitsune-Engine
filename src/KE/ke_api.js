@@ -163,6 +163,30 @@ function print(a) {
     //Deno.core.print(a);
 }
 
+
+
+
+// var firstID = "";
+// var __gotFirstYet = false;
+// function _first_player(delta){
+//     // if(delta.type == "join" && !__gotFirstYet){ //for server
+//     //     //firstID = delta.id
+//     // }
+// }
+// addEventListener("client_update", _first_player)
+
+function serverEmit(data){
+    dispatchEvent("client_update", {"type":"update","fromid":"server","ishost":true,"data":data});
+    _emit(data);
+}
+
+function emit(data){
+    _emit(data);
+}
+
+
+
+
 var _KE_EVENT_LIST = {};
 
 function addEventListener(name, fn) {

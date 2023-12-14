@@ -48,7 +48,7 @@ fn pivot_point(place: Vector2<f32>, center: Vector2<f32>, rot:f32) -> Vector2<f3
 impl Character {
     pub fn new(character_type:character_type, display: &Display, propz: &mut HashMap<i32, Prop>, modelz: &HashMap<i32, Model>, phys_world: &mut PhysWorld, camera_map: &mut HashMap<i32, Camera> ) -> Character {
         
-        let mut womp = Prop::new("nya :3".to_owned());
+        let mut womp = Prop::new("TheCharacterController".to_owned());
         womp.model = 0;
         womp.textures = vec![0,0];
         womp.phys_shape = physhape::Capsule;

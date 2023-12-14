@@ -4,19 +4,13 @@ use std::time::SystemTime;
 use glium::Program;
 use nalgebra::{Vector2, Vector3};
 
-#[cfg(debug_assertions)]
+
 pub struct Shader {
     pub name: String,
     pub program: Program,
     pub url: String,
     pub time_changed_f: SystemTime,
     pub time_changed_v: SystemTime,
-}
-
-#[cfg(not(debug_assertions))]
-pub struct Shader {
-    pub name: String,
-    pub program: Program,
 }
 
 #[derive(Clone, Copy)]
@@ -40,7 +34,7 @@ impl Shader {
 
         let prg = Program::from_source(display, &vert_sause, &frag_sause, None).unwrap();
 
-        #[cfg(debug_assertions)]
+
         let sh = {
             let metadata_f = fs::metadata(format!("{location}.frag")).expect("failed to check shader file");
             let metadata_v = fs::metadata(format!("{location}.vert")).expect("failed to check shader file");
@@ -52,12 +46,6 @@ impl Shader {
                 time_changed_f: metadata_f.modified().unwrap(),
                 time_changed_v: metadata_v.modified().unwrap(),
             }
-        };
-
-        #[cfg(not(debug_assertions))]
-        let sh = Shader {
-            name: "nya".into(),
-            program: prg,
         };
 
         sh
