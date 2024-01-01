@@ -7,9 +7,18 @@ Kitsune Engine V1
 
 >Model_Reference 1 block.obj
 >Model_Reference 2 block.gltf
+>Model_Reference 3 rocks/rock_1.obj
 
 >Texture_Reference 1 protogen.png
 
+>Shader_Reference 1 depthtest
+
+Model_static 0.5 3 16.375 2 2 2
+	+NAME meow
+	+COLOR 0.5 0.321075 0.245
+	+Shader 1
+	+TRANS 0.9
+	+Model 3
 Legacy_Brick 0.5 0 16.375 44 1 47.75
 	+NAME New Brick
 	+COLOR 0.5 0.321075 0.245

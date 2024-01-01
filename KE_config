@@ -1,7 +1,8 @@
 default_map burgor.kbf
 --default_map house.kbf
-runtime_script testing.js
+runtime_script index.js
 --shader_hotswap
 char_pov firstperson
 --headless
-is_server
+--is_server
+--has_multiplayer

@@ -2,11 +2,11 @@ use boa_engine::{value, builtins::string};
 use cameras::Camera;
 use char_control::{Character, character_type};
 use config::keconfig;
-use glium::{glutin::ContextBuilder, index::{NoIndices, PrimitiveType}, DepthTest};
+use glium::{glutin::{ContextBuilder, platform::unix::x11::ffi::WidthValue}, index::{NoIndices, PrimitiveType}, DepthTest, framebuffer::SimpleFrameBuffer, texture::{DepthStencilTexture2d, DepthTexture2d}, implement_vertex};
 use kbf::{load, Environment};
 use ke_units::{Vec2, radians};
 use lights::PointLight;
-use models::Model;
+use models::{Model, Vertex, Vertex2D};
 use multiplayer::Sockreq;
 use nalgebra::{Vector3, Vector2, Matrix3, Matrix4, Rotation, Rotation3, Unit};
 use physic_props::*;
@@ -129,6 +129,9 @@ fn main(){
 
         let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/model";
         shaderz.insert(2, Shader::craft(&de_shader, &display));
+
+        let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/screen/direct";
+        shaderz.insert(3, Shader::craft(&de_shader, &display));
 
         let pig_model = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.obj";
         modelz.insert(0, models::load_obj(&pig_model, &display));
@@ -286,11 +289,11 @@ fn main(){
 
     let mut js_world = ScriptSpace::new();
     js_world.pinpropz();
-    js_world.add_script("./scripts/".to_owned()+&"testing.js".to_string());
+    js_world.add_script("./scripts/".to_owned()+&keconf.run_script);
 
     js_world.run();
 
-    if(keconf.is_server){
+    if(keconf.is_server && keconf.has_multiplayer){
         js_world.run_server();
     }
 
@@ -300,7 +303,7 @@ fn main(){
 
     //yeah soooo.... 
 
-    if(keconf.is_server){
+    if(keconf.is_server && keconf.has_multiplayer){
         std::thread::spawn(move || {
 
             async fn w(){
@@ -406,7 +409,7 @@ fn main(){
         let (sender, receiver) = channel::<String>();
         let (senderEmit, receiverEmit) = channel::<Value>();
 
-        let socket = if(!keconf.headless){
+        let socket = if(!keconf.headless && keconf.has_multiplayer){
 
             let nr_clone = network_requests.clone();
             let ns_clone = next_slot.clone();
@@ -456,12 +459,67 @@ fn main(){
         None
     };
 
+    let (width, height) = display.get_framebuffer_dimensions();
+    let lastscreen_texture = glium::texture::SrgbTexture2d::empty(&display, width, height).unwrap();
+
+    let (width, height) = display.get_framebuffer_dimensions();
+    let lastscreen_depth_texture = glium::texture::DepthTexture2d::empty(&display, width, height).unwrap();
+
+    let mut lastscreenbuffer = glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, &lastscreen_texture, &lastscreen_depth_texture).unwrap();
+    lastscreenbuffer.clear_color(1.0, 0.0, 1.0, 1.0);
+    lastscreenbuffer.clear_depth(1.0);
+
+    let (width, height) = display.get_framebuffer_dimensions();
+    let screen_texture = glium::texture::SrgbTexture2d::empty(&display, width, height).unwrap();
+
+    let (width, height) = display.get_framebuffer_dimensions();
+    let screen_depth_texture = glium::texture::DepthTexture2d::empty(&display, width, height).unwrap();
+
+    let mut screenbuffer = glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, &screen_texture, &screen_depth_texture).unwrap();
+    screenbuffer.clear_color(1.0, 0.0, 1.0, 1.0);
+    screenbuffer.clear_depth(1.0);
+
+    let screen_vertex = {
+        glium::VertexBuffer::new(
+            &display,
+            &[
+                Vertex2D {
+                    position: [-1.0, -1.0],
+                    tex_coords: [0.0, 0.0],
+                },
+                Vertex2D {
+                    position: [-1.0, 1.0],
+                    tex_coords: [0.0, 1.0],
+                },
+                Vertex2D {
+                    position: [1.0, 1.0],
+                    tex_coords: [1.0, 1.0],
+                },
+                Vertex2D {
+                    position: [1.0, -1.0],
+                    tex_coords: [1.0, 0.0],
+                },
+            ],
+        )
+        .unwrap()
+    };
+
+
+
+    // shadow stuff for later awawawawawa
+    // let shadow_map_size = 1024;
+    // let shadow_texture = glium::texture::DepthTexture2d::empty(&display, shadow_map_size, shadow_map_size).unwrap();
+
+    // let mut shadowbuffer = glium::framebuffer::SimpleFrameBuffer::depth_only(&display, &shadow_texture).unwrap();
+    // shadowbuffer.clear_color(1.0, 1.0, 1.0, 1.0);
+    // shadowbuffer.clear_depth(1.0);
+
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
         let delta_time = ((current_timestamp - last_timestamp)*0.1) as f32;
         //dbg!(delta_time);
         last_timestamp = current_timestamp;
 
-        if(keconf.is_server){
+        if(keconf.is_server && keconf.has_multiplayer){
             js_world.job_server_runs(delta_time);
         }
 
@@ -586,6 +644,7 @@ fn main(){
             // start drawing frame
             let mut target = display.draw();
             target.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
+            screenbuffer.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
 
             real_char.step(&mut phys_world, &mut propz, delta_time);
 
@@ -619,12 +678,14 @@ fn main(){
                 }
                 if prop.transparency != 1.0 {continue;}
 
-                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &texturez, &mut target, &modelz, &shaderz, &params);
+                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &mut target, &modelz, &shaderz, &params);
 
                 // if prop.position.y < -2.0 {
                 //     to_remove.push(*po.0);
                 // }
             };
+
+            lastscreenbuffer.blit_buffers_from_simple_framebuffer(&screenbuffer, &glium::Rect { left: 0, bottom: 0, width: width, height: height }, &glium::BlitTarget { left: 0, bottom: 0, width: width as i32, height: height as i32 }, glium::uniforms::MagnifySamplerFilter::Nearest, glium::BlitMask { color: true, depth: true, stencil: false });
 
         
             //now later maybe trans props could be fed a screen buffer :3
@@ -634,11 +695,14 @@ fn main(){
 
                 if !prop.render {continue;}
 
-                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &texturez, &mut target, &modelz, &shaderz, &params);
+                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &mut target, &modelz, &shaderz, &params);
             };
 
+            //screen_compile(loop_wawa, &screen_vertex, &3, &shader_vars, &screen_texture, &mut screenbuffer, &mut target, &shaderz, &params);
+
+            target.blit_buffers_from_simple_framebuffer(&screenbuffer, &glium::Rect { left: 0, bottom: 0, width: width, height: height }, &glium::BlitTarget { left: 0, bottom: 0, width: width as i32, height: height as i32 }, glium::uniforms::MagnifySamplerFilter::Nearest, glium::BlitMask { color: true, depth: true, stencil: false });
+
             // finish frame and put on window probably
-        
             target.finish().unwrap();
         }
         
@@ -652,7 +716,56 @@ fn main(){
     });
 }
 
-fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_vars: &HashMap<String, ShadvType>, world_emv: &Environment, lightz: &Vec<PointLight>, texturez: &HashMap<i32, Texture>, target: &mut glium::Frame, modelz: &HashMap<i32, Model<'_>>, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>) {
+fn screen_compile(loop_wawa: f32, screen_model: &VertexBuffer<Vertex2D>, screen_shader: &i32, shader_vars: &HashMap<String, ShadvType>, screen_texture: &SrgbTexture2d, screenbuffer: &mut  SimpleFrameBuffer, target: &mut glium::Frame, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>){
+    let mut uniform = dynamic_uniform::DynamicUniforms::new();
+    
+    // shader globle vars
+    for (name, value) in shader_vars {
+        let name = name.to_string();
+        match value {
+            ShadvType::Bool(value) => {
+                uniform.add(name, value);
+            }
+            ShadvType::Integer(value) => {
+                uniform.add(name, value);
+            }
+            ShadvType::Float(value) => {
+                uniform.add(name, value);
+            }
+            ShadvType::Vec2(value) => {
+                uniform.add(name, value.as_ref());
+            }
+            ShadvType::Vec3(value) => {
+                uniform.add(name, value.as_ref());
+            }
+        }
+    }
+
+    uniform.add("time".to_owned(), &loop_wawa);
+
+    uniform.add("matrix".to_owned(), &[
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0f32]
+    ]);
+
+    uniform.add("screenbuffer".to_owned(), screen_texture);
+
+    // here we draw the prop on the frame
+    target
+        .draw(
+            screen_model,
+            NoIndices(PrimitiveType::TriangleStrip),
+            &shaderz.get(screen_shader).unwrap().program,
+            &uniform,
+            params,
+        )
+        .unwrap();
+
+}
+
+fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_vars: &HashMap<String, ShadvType>, world_emv: &Environment, lightz: &Vec<PointLight>, screen_texture: &SrgbTexture2d, screenbuffer: &mut  SimpleFrameBuffer, texturez: &HashMap<i32, Texture>, target: &mut glium::Frame, modelz: &HashMap<i32, Model<'_>>, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>) {
     //this is where all the shader values get pushed so we can send them to gpu
     let mut uniform = dynamic_uniform::DynamicUniforms::new();
 
@@ -766,6 +879,16 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
     uniform.add("material.specular".to_owned(), get_texture(texturez, prop, 1));
     uniform.add("material.shininess".to_owned(), &0.1);
 
+    // let sb = &glium::uniforms::Sampler::new(&screen_texture)
+    // .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+    // .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest);
+
+    uniform.add("screenbuffer".to_owned(), screen_texture);
+
+    let (width, height) = screenbuffer.get_dimensions();
+    let binding = [width as f32,height as f32];
+    uniform.add("framebufferSize".to_owned(), &binding);
+
     uniform.add("time".to_owned(), &loop_wawa);
 
     let mut currrent_text = 0;
@@ -775,7 +898,7 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
     }
 
     // here we draw the prop on the frame
-    target
+    screenbuffer
         .draw(
             get_model(modelz, prop),
             NoIndices(PrimitiveType::TrianglesList),

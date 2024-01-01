@@ -34,8 +34,17 @@ function server_start(){
 
 var nya = new Vector3(Math.sin(aaa)*20,4,Math.cos(aaa)*20);
 
+var server_tick_send_rate = 500;
+var server_tick_now = 0;
+
 // multiplayer loop
 function server_loop(delta){
+    if(server_tick_send_rate <= server_tick_now){
+        server_tick_now=0;
+    }else{
+        server_tick_now++;
+        return;
+    }
     //awawawa("meowmeowmeowmeomwoemwomeowmo")
     //console.log("meow");
     nya = {"type":"pig_update","pos":new Vector3(Math.sin(aaa)*20,4,Math.cos(aaa)*20)}
@@ -69,7 +78,7 @@ function client_update(delta){
     }
     
     if(delta.type == "update"){
-        console.log(delta.data.type, delta.fromid);
+        //console.log(delta.data.type, delta.fromid);
 
         //player updates
         if(delta.fromid == myid){return}
@@ -116,12 +125,19 @@ function client_update(delta){
 
 addEventListener("client_update",client_update)
 
+var client_tick_send_rate = 500;
+var client_tick_now = 0;
 
 //at some point this could be made to be hot loaded :3
 function loop(delta){
     //awawawa("meowmeowmeowmeomwoemwomeowmo")
     //console.log(JSON.stringify(myBody.position));
-    emit({"type": "player pos update", "data":{"newpos":myBody.position}})
+    if(client_tick_now >= client_tick_send_rate){
+        emit({"type": "player pos update", "data":{"newpos":myBody.position}})
+        client_tick_now=0;
+    }else{
+        client_tick_now++;
+    }
 
     // console.log(JSON.stringify({pos:awa.position}))
 }

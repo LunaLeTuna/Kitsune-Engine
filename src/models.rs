@@ -16,6 +16,14 @@ pub struct Vertex {
 
 implement_vertex!(Vertex, position, normal, tex_coords);
 
+#[derive(Copy, Clone)]
+pub struct Vertex2D {
+    pub position: [f32; 2],
+    pub tex_coords: [f32; 2],
+}
+
+implement_vertex!(Vertex2D, position, tex_coords);
+
 pub fn convert_ke_to_gl(ver: &[Vertex], display: &glium::Display) -> VertexBuffer<Vertex> {
     VertexBuffer::new(display, ver).unwrap()
 }

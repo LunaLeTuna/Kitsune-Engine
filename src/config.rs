@@ -8,7 +8,8 @@ pub struct keconfig {
     pub shader_hotswap: bool,
     pub debug: bool, //print to console
     pub headless: bool,
-    pub is_server: bool
+    pub is_server: bool,
+    pub has_multiplayer: bool
 }
 
 impl keconfig {
@@ -16,12 +17,13 @@ impl keconfig {
         let mut conf = keconfig{
             default_map: "".to_string(),
             char_pov: character_type::First,
-            run_script: "".to_string(),
+            run_script: "index.js".to_string(),
             hotswap: false,
             debug: false,
             headless: false,
             is_server: false,
             shader_hotswap: false,
+            has_multiplayer: false
         };
 
         let file = grab(&location);
@@ -64,6 +66,10 @@ impl keconfig {
                 }
                 ["headless"] => {
                     conf.headless = true;
+                    continue;
+                }
+                ["has_multiplayer"] => {
+                    conf.has_multiplayer = true;
                     continue;
                 }
                 ["is_server"] => {
