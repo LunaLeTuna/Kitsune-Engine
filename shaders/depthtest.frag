@@ -123,8 +123,8 @@ void main() {
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
       result += CalcPointLight(pointLights[i], norm, v_position, viewDir);
 
-    vec4 tecx = texture(screenbuffer, (gl_FragCoord.xy/framebufferSize.xy)+(v_tex_coords*0.1)).rgba;
+    vec4 tecx = texture(screenbuffer, (gl_FragCoord.xy/framebufferSize.xy)+(v_tex_coords*0.5)).rgba;
 
-    color = vec4(tecx.r, tecx.g, tecx.b/2, tecx.a);
+    color = vec4(result, 1.0)*vec4(tecx.r, tecx.g, tecx.b/2, tecx.a);
     
 }

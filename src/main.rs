@@ -102,7 +102,29 @@ fn main(){
             constant_value: (0.0, 0.0, 0.0, 0.0),
         },
         backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
-        // backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
+        //backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
+        ..Default::default()
+    };
+
+    let screenparams = DrawParameters {
+        depth: Depth {
+            test: DepthTest::IfLess,
+            write: true,
+            ..Default::default()
+        },
+        blend: glium::Blend {
+            color: glium::BlendingFunction::Addition {
+                source: glium::LinearBlendingFactor::SourceAlpha,
+                destination: glium::LinearBlendingFactor::OneMinusSourceAlpha,
+            },
+            alpha: glium::BlendingFunction::Addition {
+                source: glium::LinearBlendingFactor::One,
+                destination: glium::LinearBlendingFactor::DestinationAlpha,
+            },
+            constant_value: (0.0, 0.0, 0.0, 0.0),
+        },
+        //backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+        backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
         ..Default::default()
     };
 
@@ -461,8 +483,6 @@ fn main(){
 
     let (width, height) = display.get_framebuffer_dimensions();
     let lastscreen_texture = glium::texture::SrgbTexture2d::empty(&display, width, height).unwrap();
-
-    let (width, height) = display.get_framebuffer_dimensions();
     let lastscreen_depth_texture = glium::texture::DepthTexture2d::empty(&display, width, height).unwrap();
 
     let mut lastscreenbuffer = glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, &lastscreen_texture, &lastscreen_depth_texture).unwrap();
@@ -471,8 +491,6 @@ fn main(){
 
     let (width, height) = display.get_framebuffer_dimensions();
     let screen_texture = glium::texture::SrgbTexture2d::empty(&display, width, height).unwrap();
-
-    let (width, height) = display.get_framebuffer_dimensions();
     let screen_depth_texture = glium::texture::DepthTexture2d::empty(&display, width, height).unwrap();
 
     let mut screenbuffer = glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, &screen_texture, &screen_depth_texture).unwrap();
@@ -498,6 +516,10 @@ fn main(){
                 Vertex2D {
                     position: [1.0, -1.0],
                     tex_coords: [1.0, 0.0],
+                },
+                Vertex2D {
+                    position: [-1.0, -1.0],
+                    tex_coords: [0.0, 0.0],
                 },
             ],
         )
@@ -698,9 +720,9 @@ fn main(){
                 render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &mut target, &modelz, &shaderz, &params);
             };
 
-            //screen_compile(loop_wawa, &screen_vertex, &3, &shader_vars, &screen_texture, &mut screenbuffer, &mut target, &shaderz, &params);
+            screen_compile(loop_wawa, &screen_vertex, &3, &shader_vars, &screen_texture, &screen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
 
-            target.blit_buffers_from_simple_framebuffer(&screenbuffer, &glium::Rect { left: 0, bottom: 0, width: width, height: height }, &glium::BlitTarget { left: 0, bottom: 0, width: width as i32, height: height as i32 }, glium::uniforms::MagnifySamplerFilter::Nearest, glium::BlitMask { color: true, depth: true, stencil: false });
+            //target.blit_buffers_from_simple_framebuffer(&screenbuffer, &glium::Rect { left: 0, bottom: 0, width: width, height: height }, &glium::BlitTarget { left: 0, bottom: 0, width: width as i32, height: height as i32 }, glium::uniforms::MagnifySamplerFilter::Nearest, glium::BlitMask { color: true, depth: true, stencil: false });
 
             // finish frame and put on window probably
             target.finish().unwrap();
@@ -716,7 +738,7 @@ fn main(){
     });
 }
 
-fn screen_compile(loop_wawa: f32, screen_model: &VertexBuffer<Vertex2D>, screen_shader: &i32, shader_vars: &HashMap<String, ShadvType>, screen_texture: &SrgbTexture2d, screenbuffer: &mut  SimpleFrameBuffer, target: &mut glium::Frame, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>){
+fn screen_compile(loop_wawa: f32, screen_model: &VertexBuffer<Vertex2D>, screen_shader: &i32, shader_vars: &HashMap<String, ShadvType>, screen_texture: &SrgbTexture2d, screen_depth_texture: &DepthTexture2d, screenbuffer: &mut  SimpleFrameBuffer, target: &mut glium::Frame, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>){
     let mut uniform = dynamic_uniform::DynamicUniforms::new();
     
     // shader globle vars
@@ -751,6 +773,16 @@ fn screen_compile(loop_wawa: f32, screen_model: &VertexBuffer<Vertex2D>, screen_
     ]);
 
     uniform.add("screenbuffer".to_owned(), screen_texture);
+    
+    let binding = glium::uniforms::Sampler::new(screen_depth_texture)
+    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+    .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
+    .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual));
+    uniform.add("screenbufferdepth".to_owned(), &binding);
+
+    let (width, height) = screenbuffer.get_dimensions();
+    let binding = [width as f32,height as f32];
+    uniform.add("framebufferSize".to_owned(), &binding);
 
     // here we draw the prop on the frame
     target
@@ -877,7 +909,7 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
 
     uniform.add("material.diffuse".to_owned(), get_texture(texturez, prop, 0));
     uniform.add("material.specular".to_owned(), get_texture(texturez, prop, 1));
-    uniform.add("material.shininess".to_owned(), &0.1);
+    uniform.add("material.shininess".to_owned(), &0.5);
 
     // let sb = &glium::uniforms::Sampler::new(&screen_texture)
     // .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)

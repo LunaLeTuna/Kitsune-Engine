@@ -21,9 +21,5 @@ void main() {
     v_tex_coords = tex_coords;
     local = normalize(normal);
 
-    if(v_position.y >= 20){
-        v_position = vec3(v_position.x, (sin(v_position.x*time*0.002))*0.1+v_position.y, v_position.z);
-    }
-
     gl_Position = perspective * view * vec4(v_position, 1.0);
 }

@@ -1,7 +1,11 @@
-#version 140
-uniform sampler2D tex;
+#version 330 core
+uniform sampler2D screenbuffer;
+uniform sampler2D screenbufferdepth;
+uniform float time;
 in vec2 v_tex_coords;
-out vec4 color;
+out vec4 FragColor;
 void main() {
-    color = texture(tex, v_tex_coords);
+
+    FragColor = texture(screenbuffer, v_tex_coords).rgba;
+    
 }
