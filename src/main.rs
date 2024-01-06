@@ -310,7 +310,7 @@ fn main(){
     drop(propz);
 
     let mut js_world = ScriptSpace::new();
-    js_world.pinpropz();
+    js_world.pinpropz(); //adds functions to js to minipulate props
     js_world.add_script("./scripts/".to_owned()+&keconf.run_script);
 
     js_world.run();
@@ -597,6 +597,12 @@ fn main(){
                     main_cam.reproject(screen_size);
                 }
                 WindowEvent::KeyboardInput { device_id, input, is_synthetic } => {
+                    js_world.triggerlis(&"keypress".to_string(), &json!(
+                        {
+                            "which": input.scancode,
+                            "is_synthetic": is_synthetic
+                        }
+                    ).to_string());
                     real_char.interp_key(&mut phys_world, &mut propz, input, delta_time);
                 }
                 WindowEvent::CloseRequested { .. } => {
@@ -720,7 +726,7 @@ fn main(){
                 render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &mut target, &modelz, &shaderz, &params);
             };
 
-            screen_compile(loop_wawa, &screen_vertex, &3, &shader_vars, &screen_texture, &screen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
+            screen_compile(loop_wawa, &screen_vertex, &3, &shader_vars, &screen_texture, &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
 
             //target.blit_buffers_from_simple_framebuffer(&screenbuffer, &glium::Rect { left: 0, bottom: 0, width: width, height: height }, &glium::BlitTarget { left: 0, bottom: 0, width: width as i32, height: height as i32 }, glium::uniforms::MagnifySamplerFilter::Nearest, glium::BlitMask { color: true, depth: true, stencil: false });
 
