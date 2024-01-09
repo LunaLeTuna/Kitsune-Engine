@@ -5,9 +5,6 @@ uniform float time;
 in vec2 v_tex_coords;
 out vec4 FragColor;
 
-uniform bool horizontal = true;
-uniform float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
-
 void main() {
 
     //if(v_tex_coords.x > (sin(v_tex_coords.y*20+time*0.002)*0.02)+0.5)

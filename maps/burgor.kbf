@@ -5,15 +5,19 @@ Kitsune Engine V1
 >SunIntensity 300
 >Baseplate 20 0.2 0.509804 0.137255 1
 
->Model_Reference 1 block.obj
->Model_Reference 2 block.gltf
->Model_Reference 3 rocks/rock_1.obj
+>Model_Reference 1 block.glb
+>Model_Reference 2 rocks/rock_1.obj
 
 >Texture_Reference 1 protogen.png
 
 >Shader_Reference 1 depthtest
 
 
+Model_static 3 1 2 5 5 5
+	+NAME thisisbad
+	+COLOR 0.5 0.5 0.5
+	+Model 1
+	+Texture 1 1
 Model_static 0.5 3 16.375 0.3 0.3 0.3
 	+NAME meow
 	+COLOR 0.5 0.321075 0.245
@@ -24,7 +28,7 @@ Model_static 0.5 1 16.375 2 2 2
 	+COLOR 0.5 0.321075 0.245
 	+Shader 1
 	+TRANS 0.9
-	+Model 3
+	+Model 2
 Legacy_Brick 0.5 0 16.375 44 1 47.75
 	+NAME New Brick
 	+COLOR 0.5 0.321075 0.245
@@ -232,8 +236,3 @@ Light 2 0 18 1 1 1
 Light 3 11 2 1 1 1
 	+NAME New Light
 	+COLOR 0.5 0.5 0.5
-Model_static 3 5 2 1 1 1
-	+NAME thisisbad
-	+COLOR 0.5 0.5 0.5
-	+Model 2
-	+Texture 1 1

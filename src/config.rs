@@ -1,4 +1,4 @@
-use crate::{fs_system::grab, char_control::character_type};
+use crate::{fs_system::grab, char_control::character_type, ke_units::parsef};
 
 pub struct keconfig {
     pub default_map: String,
@@ -9,7 +9,8 @@ pub struct keconfig {
     pub debug: bool, //print to console
     pub headless: bool,
     pub is_server: bool,
-    pub has_multiplayer: bool
+    pub has_multiplayer: bool,
+    pub mouse_sensitivity: f32
 }
 
 impl keconfig {
@@ -23,7 +24,8 @@ impl keconfig {
             headless: false,
             is_server: false,
             shader_hotswap: false,
-            has_multiplayer: false
+            has_multiplayer: false,
+            mouse_sensitivity: 4.0
         };
 
         let file = grab(&location);
@@ -54,6 +56,10 @@ impl keconfig {
                 }
                 ["runtime_script", stm] => {
                     conf.run_script = stm.to_string();
+                    continue;
+                },
+                ["mouse_sensitivity", stm] => {
+                    conf.mouse_sensitivity = parsef(stm);
                     continue;
                 },
                 ["shader_hotswap"] => {

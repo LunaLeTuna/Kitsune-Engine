@@ -1,0 +1,44 @@
+Kitsune Engine V1
+
+>AmbientColor 0 0 0
+>SkyColor 0 0.004400005 0.04
+>SunIntensity 300
+>Baseplate 20 0.2 0.509804 0.137255 1
+
+>Texture_Reference 1 protogen.png
+>Texture_Reference 2 drill.png
+>Texture_Reference 3 drill_r.png
+>Texture_Reference 4 drill_n.png
+
+>Model_Reference 1 block.glb
+>Model_Reference 2 rocks/rock_1.obj
+>Model_Reference 3 drill.obj
+
+>Shader_Reference 1 depthtest
+
+Model_static -6.577431 0.5 15.47849 3.3 3.3 3.3
+	+NAME drill
+	+COLOR 0.5 0.321075 0.245
+	+Model 3
+	+Texture 1 2
+	+Texture 2 3
+	+Texture 3 4
+Model_static 7.5 1 35.375 2 2 2
+	+NAME meow
+	+COLOR 0.5 0.321075 0.245
+	+TRANS 0.9
+	+Model 2
+	+Shader 1
+Legacy_Brick -3.5 0 27.875 114 1 134.75
+	+NAME New Brick
+	+COLOR 0.5 0.321075 0.245
+Spawn_Point -12.93687 2.063128 37.06313 1.25 1.25 1.25
+	+NAME New Spawn
+	+COLOR 0.5 0.5 0.5
+Light 17 10 35 1 1 1
+	+NAME New Light
+	+COLOR 0.5 0.5 0.5
+Script 3 7 2 5 5 5
+	+NAME intro
+	+file cutscenes/intro.js
+	+fire start()

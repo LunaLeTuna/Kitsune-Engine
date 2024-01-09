@@ -1,4 +1,5 @@
 use boa_engine::{value, builtins::string};
+use buffer::Buffer;
 use cameras::Camera;
 use char_control::{Character, character_type};
 use config::keconfig;
@@ -22,7 +23,7 @@ use textures::Texture;
 use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, CursorGrabMode}, event::{StartCause, Event, WindowEvent, DeviceEvent}, dpi::LogicalPosition};
 use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use glium::texture::SrgbTexture2d;
-use axum::routing::get;
+use axum::{routing::get, http::Request};
 use axum::Server;
 
 use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH, Duration}, ops::Mul, f32::consts::PI, collections::VecDeque, fs, sync::{RwLock, Mutex, Arc, mpsc::channel}, path, thread::sleep};
@@ -39,15 +40,30 @@ pub mod models;
 pub mod props;
 pub mod shaders;
 pub mod textures;
+pub mod buffer;
 pub mod kbf;
 pub mod physic_props;
 pub mod char_control;
 pub mod script;
 pub mod multiplayer;
 
+pub enum KERequest {
+    Create_Model(String),
+    Create_Texture(String),
+    Pin_Texture_Buffer(i32,i32),
+    Create_Buffer(String),
+    Create_Camera(String),
+    Pin_Buffer_Camera(i32,i32),
+    NULL,
+}
 
 lazy_static::lazy_static! {
     static ref PROPS: RwLock<HashMap<i32, Prop>> = RwLock::new(HashMap::new());
+    pub static ref MODEL_COUNT: RwLock<i32> = RwLock::new(0);
+    pub static ref TEXTURE_COUNT: RwLock<i32> = RwLock::new(0);
+    pub static ref CAMERA_COUNT: RwLock<i32> = RwLock::new(0);
+    pub static ref BUFFER_COUNT: RwLock<i32> = RwLock::new(0);
+    static ref REQUESTS: RwLock<Vec<KERequest>> = RwLock::new(Vec::new());
     static ref FIRST: Arc<RwLock<String>> = Arc::new(RwLock::new(format!("")));
 }
 
@@ -135,6 +151,7 @@ fn main(){
     let mut propz = PROPS.write().unwrap();
     let mut modelz: HashMap<i32, Model> = HashMap::new();
     let mut texturez: HashMap<i32, Texture> = HashMap::new();
+    let mut bufferz: HashMap<i32, Buffer> = HashMap::new();
     let mut shaderz: HashMap<i32, Shader> = HashMap::new();
     let mut shader_vars: HashMap<String, ShadvType> = HashMap::new();
 
@@ -160,6 +177,7 @@ fn main(){
 
         let pig_skin = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.png";
         texturez.insert(0, Texture::craft(&pig_skin, &display));
+        *TEXTURE_COUNT.write().expect("RwLock poisoned") += 1;
 
         let box_model = _KE_MAIN_DEPENDENTS.to_owned()+"/model/brush.obj";
         modelz.insert(1, models::load_obj(&box_model, &display));
@@ -193,10 +211,9 @@ fn main(){
                 modelz.insert(mdCount+md.0, models::load_obj(&("./models/".to_owned()+&md.1), &display));
             }else if(md.1.ends_with(".fbx")){
                 modelz.insert(mdCount+md.0, models::load_fbx(&("./models/".to_owned()+&md.1), &display));
-            }else if(md.1.ends_with(".gltf")){
+            }else if(md.1.ends_with(".gltf") || md.1.ends_with(".glb")){
                 modelz.insert(mdCount+md.0, models::load_gltf(&("./models/".to_owned()+&md.1), &display));
             }
-            
         }
 
         let shCount = (shaderz.len() as i32)-1;
@@ -297,15 +314,19 @@ fn main(){
 
     let mut screen_size = Vector2::new(width as f32, height as f32);
 
+    let low_limit = 0.0167;
+    let height_limit = 0.1;
+
+
     let mut current_timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
-        .as_millis() as f64;
+        .as_millis() as f32;
 
     let mut last_timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
-        .as_millis() as f64;
+        .as_millis() as f32;
 
     drop(propz);
 
@@ -537,9 +558,21 @@ fn main(){
     // shadowbuffer.clear_depth(1.0);
 
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
-        let delta_time = ((current_timestamp - last_timestamp)*0.1) as f32;
+
+        current_timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as f32;
+
+        let mut deltatime: f32 = ( current_timestamp - last_timestamp ) / 1000.0;
+        if ( deltatime < low_limit ){
+            deltatime = low_limit;
+        }else if ( deltatime > height_limit ){
+            deltatime = height_limit;
+        }
+
+        let mut delta_time = deltatime*2.74;
         //dbg!(delta_time);
-        last_timestamp = current_timestamp;
 
         if(keconf.is_server && keconf.has_multiplayer){
             js_world.job_server_runs(delta_time);
@@ -550,11 +583,6 @@ fn main(){
         }
 
         *control_flow = ControlFlow::Poll;
-
-        current_timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_millis() as f64;
 
         // let binding = network_requests.clone();
         // let what = binding.lock().unwrap();
@@ -621,7 +649,7 @@ fn main(){
                         if(!keconf.headless){
                             let (width, height) = display.get_framebuffer_dimensions();
                             let a = Vector2::new(delta.0 as f32, delta.1 as f32);
-                            real_char.interp_mouse(&mut phys_world, &mut propz, &mut camera_map, a, screen_size, delta_time);
+                            real_char.interp_mouse(&mut phys_world, &mut propz, &mut camera_map, a, screen_size, delta_time*keconf.mouse_sensitivity);
                         
                             v.set_cursor_position(LogicalPosition::new(width/2, height/2));
                         }
@@ -633,7 +661,8 @@ fn main(){
         }
 
         if(keconf.shader_hotswap){
-            for (index, mut sh) in shaderz.iter_mut() {
+            for x in 0..shaderz.len() as i32 {
+                let mut sh = shaderz.get_mut(&x).unwrap();
                 let name = sh.url.clone();
                 let metadataF = fs::metadata(format!("{name}.frag")).expect("failed to check shader file");
                 let metadataV = fs::metadata(format!("{name}.vert")).expect("failed to check shader file");
@@ -641,7 +670,7 @@ fn main(){
                 if(metadataF.modified().unwrap() != sh.time_changed_f || metadataV.modified().unwrap() != sh.time_changed_v) {
                     sh.time_changed_f = metadataF.modified().unwrap();
                     sh.time_changed_v = metadataV.modified().unwrap();
-                    sh = &mut Shader::craft(&name, &display);
+                    *sh = Shader::craft(&name, &display);
                     println!("{} has been updated", name);
                 }
             }
@@ -733,6 +762,8 @@ fn main(){
             // finish frame and put on window probably
             target.finish().unwrap();
         }
+
+        last_timestamp = current_timestamp;
         
 
         // for amongus in to_remove {
@@ -795,7 +826,7 @@ fn screen_compile(loop_wawa: f32, screen_model: &VertexBuffer<Vertex2D>, screen_
         .draw(
             screen_model,
             NoIndices(PrimitiveType::TriangleStrip),
-            &shaderz.get(screen_shader).unwrap().program,
+            &shaderz.get(screen_shader).unwrap().program.as_ref().unwrap(),
             &uniform,
             params,
         )
@@ -940,7 +971,7 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
         .draw(
             get_model(modelz, prop),
             NoIndices(PrimitiveType::TrianglesList),
-            get_shader(shaderz, prop),
+            &get_shader(shaderz, prop),
             &uniform,
             params,
         )
@@ -949,8 +980,13 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
 
 fn get_shader<'a>(shadersz: &'a HashMap<i32, Shader>, prop: &Prop) -> &'a Program {
     match shadersz.get(&prop.shader) {
-        Some(shader) => &shader.program,
-        None => &shadersz.get(&0).unwrap().program,
+        Some(shader) => {
+            match &shader.program {
+                Some(real) => &real,
+                None => &shadersz.get(&0).unwrap().program.as_ref().unwrap(),
+            }
+        },
+        None => &shadersz.get(&0).unwrap().program.as_ref().unwrap(),
     }
 }
 

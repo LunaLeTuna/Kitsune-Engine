@@ -1,9 +1,11 @@
 use glium::texture::{RawImage2d, SrgbTexture2d};
 use glium::Display;
 
+use crate::TEXTURE_COUNT;
+
 pub struct Texture {
     pub name: String,
-    pub texture: SrgbTexture2d,
+    pub texture: SrgbTexture2d
 }
 
 impl Texture {

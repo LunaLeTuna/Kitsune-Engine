@@ -5,12 +5,12 @@ var awa = new Prop();
 
 var aaa = 0;
 
-function pressed(event){
-    //awawawa("meowmeowmeowmeomwoemwomeowmo")
-    console.log(event.which);
-}
+// function pressed(event){
+//     //awawawa("meowmeowmeowmeomwoemwomeowmo")
+//     console.log(event.which);
+// }
 
-addEventListener("keypress",pressed)
+// addEventListener("keypress",pressed)
 
 
 //at some point this could be made to be hot loaded :3

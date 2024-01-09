@@ -60,6 +60,7 @@ uniform sampler2D screenbuffer;
 uniform vec3 Color;
 uniform vec3 view;
 uniform vec2 framebufferSize;
+uniform float time;
 
 const vec3 specular_color = vec3(1.0, 1.0, 1.0);
 
@@ -125,6 +126,6 @@ void main() {
 
     vec4 tecx = texture(screenbuffer, (gl_FragCoord.xy/framebufferSize.xy)+(v_tex_coords*0.5)).rgba;
 
-    color = vec4(result, 1.0)*vec4(tecx.r, tecx.g, tecx.b/2, tecx.a);
+    color = vec4(local, 1.0)*vec4(tecx.r, tecx.g, tecx.b/2, tecx.a);
     
 }

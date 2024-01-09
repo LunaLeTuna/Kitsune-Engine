@@ -7,7 +7,7 @@ use nalgebra::{Vector2, Vector3};
 
 pub struct Shader {
     pub name: String,
-    pub program: Program,
+    pub program: Option<Program>,
     pub url: String,
     pub time_changed_f: SystemTime,
     pub time_changed_v: SystemTime,
@@ -32,20 +32,36 @@ impl Shader {
 
         let frag_sause = fs::read_to_string(format!("{location}.frag")).unwrap();
 
-        let prg = Program::from_source(display, &vert_sause, &frag_sause, None).unwrap();
+        //print!("{}\n", location);
+        let prg = Program::from_source(display, &vert_sause, &frag_sause, None);
 
+        let metadata_f = fs::metadata(format!("{location}.frag")).expect("failed to check shader file");
+        let metadata_v = fs::metadata(format!("{location}.vert")).expect("failed to check shader file");
 
-        let sh = {
-            let metadata_f = fs::metadata(format!("{location}.frag")).expect("failed to check shader file");
-            let metadata_v = fs::metadata(format!("{location}.vert")).expect("failed to check shader file");
+        let sh = match prg {
+            Ok(program) => {
+                
+    
+                Shader {
+                    name: "nya".into(),
+                    program: Some(program),
+                    url: location.to_owned(),
+                    time_changed_f: metadata_f.modified().unwrap(),
+                    time_changed_v: metadata_v.modified().unwrap(),
+                }
+            },
+            Err(wtf) => {
 
-            Shader {
-                name: "nya".into(),
-                program: prg,
-                url: location.to_owned(),
-                time_changed_f: metadata_f.modified().unwrap(),
-                time_changed_v: metadata_v.modified().unwrap(),
-            }
+                print!("SHADER ERR: {}", wtf);
+    
+                Shader {
+                    name: "nya".into(),
+                    program: None,
+                    url: location.to_owned(),
+                    time_changed_f: metadata_f.modified().unwrap(),
+                    time_changed_v: metadata_v.modified().unwrap(),
+                }
+            },
         };
 
         sh

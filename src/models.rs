@@ -131,6 +131,8 @@ pub fn load_gltf<'a>(location: &str, display: &'a glium::Display) -> Model<'a> {
 
     let (gltf, buffers, images) = gltf::import(location).unwrap();
 
+    //let gltf = Gltf::open(location).unwrap();
+
     let mut pos: Vec<[f32; 3]> = vec![];
     let mut nor: Vec<[f32; 3]> = vec![];
     let mut tex: Vec<[f32; 2]> = vec![];
@@ -139,25 +141,56 @@ pub fn load_gltf<'a>(location: &str, display: &'a glium::Display) -> Model<'a> {
     let mut tf: Vec<usize> = vec![];
     let mut nf: Vec<usize> = vec![];
 
+    for scene in gltf.scenes() {
+        for node in scene.nodes() {
+            println!(
+                "Node #{} has {} children",
+                node.index(),
+                node.children().count(),
+            );
+        }
+    }
+
     for mesh in gltf.meshes() {
-        // println!("Mesh #{}", mesh.index());
+        println!("Mesh #{}", mesh.index());
         for primitive in mesh.primitives() {
-            // println!("- Primitive #{}", primitive.index());
+            println!("- Primitive #{}", primitive.index());
             let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-            if let Some(iter) = reader.read_normals() {
-                for vertex_normal in iter {
-                    // println!("{:?}", vertex_normal);
-                    nor.push(vertex_normal);
-                }
-            }
             if let Some(iter) = reader.read_positions() {
                 for vertex_position in iter {
-                    pos.push(vertex_position);
-                    tex.push([0.5,0.5]);
+                    println!("{:?}", vertex_position);
                 }
             }
         }
-    }
+     }
+
+    for mesh in gltf.meshes() {
+        println!("Mesh #{}", mesh.index());
+        for primitive in mesh.primitives() {
+            println!("- Primitive #{}", primitive.index());
+            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
+            if let Some(iter) = reader.read_positions() {
+                for vertex_position in iter {
+                    pos.push(vertex_position);
+                }
+            }
+            if let Some(iter) = reader.read_normals() {
+                for vertex_normal in iter {
+                    nor.push(vertex_normal);
+                }
+            }
+            if let Some(iter) = reader.read_tex_coords(primitive.index() as u32) {
+                match iter.into_f32().unwrap() {
+                    gltf::mesh::util::ReadTexCoords::F32(iter) => {
+                        for vertex_texcor in iter {
+                            tex.push(vertex_texcor);
+                        }
+                    },
+                    _ => ()
+                }
+            }
+        }
+     }
 
     let mut final_v: Vec<Vertex> = Vec::new();
  
@@ -169,7 +202,7 @@ pub fn load_gltf<'a>(location: &str, display: &'a glium::Display) -> Model<'a> {
         });
     }
 
-    // dbg!(location,pos.len(),nor.len(),tex.len());
+    dbg!(location,final_v.len(),pos.len(),nor.len(),tex.len());
 
     Model {
         name: "nya",
