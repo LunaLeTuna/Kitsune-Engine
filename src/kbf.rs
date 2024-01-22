@@ -21,7 +21,8 @@ pub struct World {
     pub lights: Vec<PointLight>,
     pub textures: HashMap<i32, String>,
     pub models: HashMap<i32, String>,
-    pub shaders: HashMap<i32, String>
+    pub shaders: HashMap<i32, String>,
+    pub scripts: Vec<String>
 }
 
 pub fn load(location: &str) -> World{
@@ -53,8 +54,10 @@ pub fn load(location: &str) -> World{
     let mut line_number = 1;
     let mut current_prop = 1;
     let mut currentn_light = 0;
+    let mut currentn_script = 0;
     let mut inside_obj = false;
     let mut inside_light = false;
+    let mut inside_script = false;
     for line in file.lines() {
         let dat: Vec<&str> = line.split_whitespace().collect();
 
@@ -187,6 +190,21 @@ pub fn load(location: &str) -> World{
                     currentn_light += 1;
                 }
             }
+            if inside_script {
+                let mut current_script = neo_scripts.get_mut(currentn_script).unwrap();
+                if dat.first().unwrap().chars().next().unwrap() == '+'{
+                    match dat.as_slice() {
+                        ["+file", namet] => {
+                            current_script = &mut namet.to_string();
+                        }
+                        _ => {}
+                    }
+                } else {
+                    inside_obj = false;
+                    inside_script = false;
+                    currentn_script += 1;
+                }
+            }
             //this section is just for init of entities
             if !inside_obj && !inside_light {
                 match dat.as_slice() {
@@ -239,6 +257,10 @@ pub fn load(location: &str) -> World{
                     }
                     ["Prefab", x,y,z, xs,ys,zs] => {
                         todo!()
+                    }
+                    ["Script", script_local] => {
+                        neo_scripts.push(script_local.to_string());
+                        inside_script = true;
                     }
                     _ => {}
                 }
@@ -402,7 +424,8 @@ pub fn load(location: &str) -> World{
         lights: neo_light,
         textures: neo_textures,
         models: neo_models,
-        shaders: neo_shaders
+        shaders: neo_shaders,
+        scripts: neo_scripts
     }
 }
 

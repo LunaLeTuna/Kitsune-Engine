@@ -26,7 +26,7 @@ use glium::texture::SrgbTexture2d;
 use axum::{routing::get, http::Request};
 use axum::Server;
 
-use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH, Duration}, ops::Mul, f32::consts::PI, collections::VecDeque, fs, sync::{RwLock, Mutex, Arc, mpsc::channel}, path, thread::sleep};
+use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH, Duration}, ops::Mul, f32::consts::PI, collections::VecDeque, fs, sync::{RwLock, Mutex, Arc, mpsc::channel}, path, thread::sleep, hash::Hash};
 use std::collections::HashMap;
 use winit::platform::run_return::EventLoopExtRunReturn;
 
@@ -59,12 +59,14 @@ pub enum KERequest {
 
 lazy_static::lazy_static! {
     static ref PROPS: RwLock<HashMap<i32, Prop>> = RwLock::new(HashMap::new());
+    //count is for scripts, so script item creation knows what id to give a new item
+    pub static ref SHADER_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref MODEL_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref TEXTURE_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref CAMERA_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref BUFFER_COUNT: RwLock<i32> = RwLock::new(0);
-    static ref REQUESTS: RwLock<Vec<KERequest>> = RwLock::new(Vec::new());
-    static ref FIRST: Arc<RwLock<String>> = Arc::new(RwLock::new(format!("")));
+    pub static ref REQUESTS: RwLock<Vec<KERequest>> = RwLock::new(Vec::new());
+    pub static ref FIRST: Arc<RwLock<String>> = Arc::new(RwLock::new(format!("")));
 }
 
 
@@ -154,6 +156,7 @@ fn main(){
     let mut bufferz: HashMap<i32, Buffer> = HashMap::new();
     let mut shaderz: HashMap<i32, Shader> = HashMap::new();
     let mut shader_vars: HashMap<String, ShadvType> = HashMap::new();
+    let mut bufferz: HashMap<i32, SimpleFrameBuffer> = HashMap::new();
 
     let mut trans_props: Vec<i32> = Vec::new();
 
@@ -172,15 +175,19 @@ fn main(){
         let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/screen/direct";
         shaderz.insert(3, Shader::craft(&de_shader, &display));
 
+        *SHADER_COUNT.write().expect("RwLock poisoned") += 4;
+
         let pig_model = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.obj";
         modelz.insert(0, models::load_obj(&pig_model, &display));
+
+        let box_model = _KE_MAIN_DEPENDENTS.to_owned()+"/model/brush.obj";
+        modelz.insert(1, models::load_obj(&box_model, &display));
+
+        *MODEL_COUNT.write().expect("RwLock poisoned") += 2;
 
         let pig_skin = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.png";
         texturez.insert(0, Texture::craft(&pig_skin, &display));
         *TEXTURE_COUNT.write().expect("RwLock poisoned") += 1;
-
-        let box_model = _KE_MAIN_DEPENDENTS.to_owned()+"/model/brush.obj";
-        modelz.insert(1, models::load_obj(&box_model, &display));
 
         // propz.insert(0, Prop::new("nya".into()));
 
@@ -194,7 +201,7 @@ fn main(){
     //init physics system
     let mut phys_world = PhysWorld::init_phys_world();
 
-    let (world_emv, lightz) = {
+    let (world_emv, lightz, scripz) = {
 
         let map = load(&("./maps/".to_owned()+&keconf.default_map));
 
@@ -202,6 +209,7 @@ fn main(){
 
         for tx in map.textures {
             texturez.insert(txCount+tx.0, Texture::craft(&("./textures/".to_owned()+&tx.1), &display));
+            *TEXTURE_COUNT.write().expect("RwLock poisoned") += 1;
         }
 
         let mdCount = (modelz.len() as i32)-1;
@@ -214,6 +222,7 @@ fn main(){
             }else if(md.1.ends_with(".gltf") || md.1.ends_with(".glb")){
                 modelz.insert(mdCount+md.0, models::load_gltf(&("./models/".to_owned()+&md.1), &display));
             }
+            *MODEL_COUNT.write().expect("RwLock poisoned") += 1;
         }
 
         let shCount = (shaderz.len() as i32)-1;
@@ -221,6 +230,8 @@ fn main(){
         for sh in map.shaders {
             let de_shader = "./shaders/".to_owned()+&sh.1;
             shaderz.insert(shCount+sh.0, Shader::craft(&de_shader, &display));
+            
+            *SHADER_COUNT.write().expect("RwLock poisoned") += 1;
         }
 
 
@@ -254,7 +265,7 @@ fn main(){
             partnp+=1;
         }
 
-        (map.environment, map.lights)
+        (map.environment, map.lights, map.scripts)
     };
 
     // {
@@ -285,6 +296,9 @@ fn main(){
     // main cam is just id of the camera map
     let mut _main_camera = 0;
     let mut camera_map = HashMap::new();
+
+    let mut _main_buffer = 0;
+    
 
     // this gets the window's size and creates the camera to reflect it
     let (width, height) = display.get_framebuffer_dimensions();
@@ -321,18 +335,22 @@ fn main(){
     let mut current_timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
-        .as_millis() as f32;
+        .as_secs_f32();
 
     let mut last_timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
-        .as_millis() as f32;
+        .as_secs_f32();
 
     drop(propz);
 
     let mut js_world = ScriptSpace::new();
     js_world.pinpropz(); //adds functions to js to minipulate props
     js_world.add_script("./scripts/".to_owned()+&keconf.run_script);
+
+    for scr in scripz {
+        js_world.add_script("./scripts/".to_owned()+&scr);
+    }
 
     js_world.run();
 
@@ -517,6 +535,9 @@ fn main(){
     let mut screenbuffer = glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, &screen_texture, &screen_depth_texture).unwrap();
     screenbuffer.clear_color(1.0, 0.0, 1.0, 1.0);
     screenbuffer.clear_depth(1.0);
+    bufferz.insert(0, screenbuffer);
+
+    *BUFFER_COUNT.write().expect("RwLock poisoned") += 1;
 
     let screen_vertex = {
         glium::VertexBuffer::new(
@@ -562,7 +583,7 @@ fn main(){
         current_timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
-        .as_millis() as f32;
+        .as_secs_f32();
 
         let mut deltatime: f32 = ( current_timestamp - last_timestamp ) / 1000.0;
         if ( deltatime < low_limit ){
@@ -573,6 +594,22 @@ fn main(){
 
         let mut delta_time = deltatime*2.74;
         //dbg!(delta_time);
+
+        let mut a = REQUESTS.write().unwrap();
+
+        for requ in &*a {
+            match requ {
+                KERequest::Create_Model(_) => todo!(),
+                KERequest::Create_Texture(_) => todo!(),
+                KERequest::Pin_Texture_Buffer(_, _) => todo!(),
+                KERequest::Create_Buffer(_) => todo!(),
+                KERequest::Create_Camera(_) => todo!(),
+                KERequest::Pin_Buffer_Camera(_, _) => todo!(),
+                KERequest::NULL => todo!(),
+            }
+        }
+
+        (*a).clear();
 
         if(keconf.is_server && keconf.has_multiplayer){
             js_world.job_server_runs(delta_time);
@@ -696,6 +733,9 @@ fn main(){
             };
         }
 
+        //loop through screenbuffers later by cameras
+        let mut screenbuffer = bufferz.get_mut(&_main_buffer).unwrap();
+
         if(!keconf.headless){
 
             // start drawing frame
@@ -754,6 +794,8 @@ fn main(){
 
                 render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &mut target, &modelz, &shaderz, &params);
             };
+
+            let mut screenbuffer = bufferz.get_mut(&_main_buffer).unwrap();
 
             screen_compile(loop_wawa, &screen_vertex, &3, &shader_vars, &screen_texture, &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
 
