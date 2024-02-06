@@ -12,6 +12,8 @@ pub struct Camera {
     pub rotation: Rotation3<f32>,
     pub up: Vector3<f32>,
 
+    pub draw_buffer_to: i16,
+
     pub parent_prop: i32, // prop id
     pub parent_offset: Vector3<f32>,
 
@@ -38,6 +40,7 @@ impl Camera {
             projection: Perspective3::new(aspect, radians(fov), near, far),
             position: Vector3::zeros(),
             rotation: Rotation3::new(Vector3::zeros()),
+            draw_buffer_to:0,
             aspect,
             view: Matrix4::new_scaling(1.0),
             parent_prop: -1,

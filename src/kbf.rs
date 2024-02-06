@@ -2,7 +2,7 @@
 //so i'ma barrow brick-hill's brk format for maps
 //the kitsune brick file :3
 
-use std::{collections::HashMap, string};
+use std::{collections::HashMap, fmt::format, string};
 
 use nalgebra::{Vector3, Rotation3};
 
@@ -151,6 +151,12 @@ pub fn load(location: &str) -> World{
                             current_brick.phys_type = phytype::NULL;
                             current_brick.phys_shape = physhape::NULL;
                         }
+                        ["+DYNAMICCOLLISION"] => {
+                            current_brick.phys_type = phytype::Dynamic;
+                        }
+                        ["+DYNAMICCOLIDERCOLLISION"] => { //I know this is a big stupid attribute, but could have been "DOESNOTOBEYTOYOURDUMBPHYSICSHAHA"; I for one think it's funny
+                            current_brick.phys_type = phytype::DynamicCollider;
+                        }
                         ["+Texture", slot, texture_id] => {
                             current_brick.textures[parse(slot)-1] = parsei(&texture_id);
                         }
@@ -191,11 +197,11 @@ pub fn load(location: &str) -> World{
                 }
             }
             if inside_script {
-                let mut current_script = neo_scripts.get_mut(currentn_script).unwrap();
+                let current_script = neo_scripts.get_mut(currentn_script).unwrap();
                 if dat.first().unwrap().chars().next().unwrap() == '+'{
                     match dat.as_slice() {
                         ["+file", namet] => {
-                            current_script = &mut namet.to_string();
+                            *current_script = namet.to_string();
                         }
                         _ => {}
                     }
@@ -258,8 +264,8 @@ pub fn load(location: &str) -> World{
                     ["Prefab", x,y,z, xs,ys,zs] => {
                         todo!()
                     }
-                    ["Script", script_local] => {
-                        neo_scripts.push(script_local.to_string());
+                    ["Script", x,y,z, xs,ys,zs] => {
+                        neo_scripts.push(format!(""));
                         inside_script = true;
                     }
                     _ => {}

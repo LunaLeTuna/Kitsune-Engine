@@ -8,6 +8,7 @@ use crate::shaders::ShadvType;
 pub enum phytype {
     Collider,
     Dynamic,
+    DynamicCollider,
     NULL,
 }
 #[derive(Clone, PartialEq)]

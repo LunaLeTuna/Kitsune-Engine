@@ -89,9 +89,8 @@ impl PhysWorld {
 
         // I don't think static collisions would need their prop to know its phys_id
         // too lazy to fix up rn
-        // let id = self.phys_handles.len() as i32;
-        // let rb_id = self.ridgid_world.insert(rigid_body);
-        // prop.phys_id = id;
+        let id = self.phys_handles.len() as i32;
+        prop.phys_id = id-1;
     }
 
     pub fn create_collider_capsule(&mut self, prop: &mut Prop) {
@@ -138,6 +137,10 @@ impl PhysWorld {
         .build();
 
         //rigid_body.set_rotation(prop.rotation.into(), false);
+
+        if(prop.phys_type == phytype::DynamicCollider){
+            rigid_body.set_locked_axes(LockedAxes::all(), false);
+        }
 
 
         self.last_ID += 1;
@@ -207,7 +210,7 @@ impl PhysWorld {
                 },
                 crate::props::physhape::NULL => {}, // don't do anything :3
             }
-        } else if prop.phys_type == phytype::Dynamic {
+        } else if prop.phys_type == phytype::Dynamic || prop.phys_type == phytype::DynamicCollider {
             match prop.phys_shape {
                 crate::props::physhape::Box => {
                     self.create_dynamic_box(prop);

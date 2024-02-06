@@ -133,76 +133,81 @@ pub fn load_gltf<'a>(location: &str, display: &'a glium::Display) -> Model<'a> {
 
     //let gltf = Gltf::open(location).unwrap();
 
-    let mut pos: Vec<[f32; 3]> = vec![];
-    let mut nor: Vec<[f32; 3]> = vec![];
-    let mut tex: Vec<[f32; 2]> = vec![];
-
-    let mut vf: Vec<usize> = vec![];
-    let mut tf: Vec<usize> = vec![];
-    let mut nf: Vec<usize> = vec![];
-
-    for scene in gltf.scenes() {
-        for node in scene.nodes() {
-            println!(
-                "Node #{} has {} children",
-                node.index(),
-                node.children().count(),
-            );
-        }
-    }
-
-    for mesh in gltf.meshes() {
-        println!("Mesh #{}", mesh.index());
-        for primitive in mesh.primitives() {
-            println!("- Primitive #{}", primitive.index());
-            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-            if let Some(iter) = reader.read_positions() {
-                for vertex_position in iter {
-                    println!("{:?}", vertex_position);
-                }
-            }
-        }
-     }
-
-    for mesh in gltf.meshes() {
-        println!("Mesh #{}", mesh.index());
-        for primitive in mesh.primitives() {
-            println!("- Primitive #{}", primitive.index());
-            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-            if let Some(iter) = reader.read_positions() {
-                for vertex_position in iter {
-                    pos.push(vertex_position);
-                }
-            }
-            if let Some(iter) = reader.read_normals() {
-                for vertex_normal in iter {
-                    nor.push(vertex_normal);
-                }
-            }
-            if let Some(iter) = reader.read_tex_coords(primitive.index() as u32) {
-                match iter.into_f32().unwrap() {
-                    gltf::mesh::util::ReadTexCoords::F32(iter) => {
-                        for vertex_texcor in iter {
-                            tex.push(vertex_texcor);
-                        }
-                    },
-                    _ => ()
-                }
-            }
-        }
-     }
-
     let mut final_v: Vec<Vertex> = Vec::new();
- 
-    for ((&v, &n), &t) in pos.iter().zip(nor.iter()).zip(tex.iter()) {
-        final_v.push(Vertex {
-            position: v,
-            normal: n,
-            tex_coords: t,
-        });
-    }
 
-    dbg!(location,final_v.len(),pos.len(),nor.len(),tex.len());
+     for m in gltf.meshes(){
+        for p in m.primitives(){
+            let r = p.reader(|buffer| Some(&buffers[buffer.index()]));
+            let mut indices = Vec::new();
+            if let Some(gltf::mesh::util::ReadIndices::U16(gltf::accessor::Iter::Standard(iter))) = r.read_indices(){
+                for v in iter{
+                    indices.push(v);
+                }
+            }
+            let mut posicao = Vec::new();
+            if let Some(iter) = r.read_positions(){
+                for v in iter{
+                    posicao.push(v);
+                }
+            }
+            let mut textura = Vec::new();
+            if let Some(gltf::mesh::util::ReadTexCoords::F32(gltf::accessor::Iter::Standard(iter))) = r.read_tex_coords(0){
+                for v in iter{
+                    textura.push(v);
+                }
+            }
+            let mut normais = Vec::new();
+            if let Some(iter) = r.read_normals(){
+                for v in iter{
+                    normais.push(v);
+                }
+            }
+            let mut ossosid = Vec::new();
+            if let Some(gltf::mesh::util::ReadJoints::U8(gltf::accessor::Iter::Standard(iter))) = r.read_joints(0){
+                for v in iter{
+                    ossosid.push(v);
+                }
+            }
+            let mut pesos = Vec::new();
+            if let Some(gltf::mesh::util::ReadWeights::F32(gltf::accessor::Iter::Standard(iter))) = r.read_weights(0){
+                for v in iter{
+                    pesos.push(v);
+                }
+            }
+            for q in indices{
+                final_v.push(Vertex {
+                    position: [posicao[q as usize][0] as f32,posicao[q as usize][1] as f32,posicao[q as usize][2] as f32],
+                    normal: [normais[q as usize][0] as f32,normais[q as usize][1] as f32,normais[q as usize][2] as f32],
+                    tex_coords: [textura[q as usize][0] as f32,textura[q as usize][1] as f32],
+                });
+                // // posição
+                // tudo.push(posicao[q as usize][0] as f32);
+                // tudo.push(posicao[q as usize][1] as f32);
+                // tudo.push(posicao[q as usize][2] as f32);
+                // // textura
+                // tudo.push(textura[q as usize][0] as f32);
+                // tudo.push(textura[q as usize][1] as f32);
+                // // normais
+                // tudo.push(normais[q as usize][0] as f32);
+                // tudo.push(normais[q as usize][1] as f32);
+                // tudo.push(normais[q as usize][2] as f32);
+                // // ossosid
+                // tudo.push(ossosid[q as usize][0] as f32);
+                // tudo.push(ossosid[q as usize][1] as f32);
+                // tudo.push(ossosid[q as usize][2] as f32);
+                // tudo.push(ossosid[q as usize][3] as f32);
+                // // pesos
+                // tudo.push(pesos[q as usize][0]);
+                // tudo.push(pesos[q as usize][1]);
+                // tudo.push(pesos[q as usize][2]);
+                // tudo.push(pesos[q as usize][3]);
+                // // aoffset
+                // tudo.push(0.0);
+                // tudo.push(0.0);
+                // tudo.push(0.0);
+            }
+        }
+    }
 
     Model {
         name: "nya",

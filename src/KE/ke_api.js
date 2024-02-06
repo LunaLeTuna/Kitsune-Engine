@@ -64,11 +64,11 @@ class Prop {
     }
 
     set scale(vec3i) {
-        //ops.mod_prop_scale(this._KE_Prop, vec3i);
+        mod_prop_scale(this._KE_Prop, vec3i);
     }
 
     get scale() {
-        //return ops.get_prop_scale(this._KE_Prop);
+        return get_prop_scale(this._KE_Prop);
     }
 
     set shader(modeli) {

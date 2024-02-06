@@ -10,7 +10,8 @@ pub struct keconfig {
     pub headless: bool,
     pub is_server: bool,
     pub has_multiplayer: bool,
-    pub mouse_sensitivity: f32
+    pub mouse_sensitivity: f32,
+    pub char_speed: f32
 }
 
 impl keconfig {
@@ -25,7 +26,8 @@ impl keconfig {
             is_server: false,
             shader_hotswap: false,
             has_multiplayer: false,
-            mouse_sensitivity: 4.0
+            mouse_sensitivity: 4.0,
+            char_speed: 0.0
         };
 
         let file = grab(&location);

@@ -234,7 +234,6 @@ fn main(){
             *SHADER_COUNT.write().expect("RwLock poisoned") += 1;
         }
 
-
         let mut partnp = propz.len() as i32;
 
         for np in map.props {
@@ -349,6 +348,7 @@ fn main(){
     js_world.add_script("./scripts/".to_owned()+&keconf.run_script);
 
     for scr in scripz {
+        dbg!("awa!", scr.clone());
         js_world.add_script("./scripts/".to_owned()+&scr);
     }
 
@@ -592,7 +592,7 @@ fn main(){
             deltatime = height_limit;
         }
 
-        let mut delta_time = deltatime*2.74;
+        let mut delta_time = deltatime;
         //dbg!(delta_time);
 
         let mut a = REQUESTS.write().unwrap();
@@ -762,9 +762,13 @@ fn main(){
             for po in propz.iter_mut() {
                 let prop = po.1;
                 
-                //sync physics prop to visual prop
-                phys_world._sync_prop(prop, CopyWhat::All);
-
+                //sync physics prop to visual prop or vis versa
+                if prop.phys_type == phytype::DynamicCollider {
+                    phys_world._sync_phys_prop(prop, CopyWhat::All);
+                }else if prop.phys_type == phytype::Dynamic {
+                    phys_world._sync_prop(prop, CopyWhat::All);
+                }
+                
                 if !prop.render {continue;}
                 if prop.face_cam {
                     if(main_cam.position.z<prop.position.z){
@@ -785,7 +789,6 @@ fn main(){
             lastscreenbuffer.blit_buffers_from_simple_framebuffer(&screenbuffer, &glium::Rect { left: 0, bottom: 0, width: width, height: height }, &glium::BlitTarget { left: 0, bottom: 0, width: width as i32, height: height as i32 }, glium::uniforms::MagnifySamplerFilter::Nearest, glium::BlitMask { color: true, depth: true, stencil: false });
 
         
-            //now later maybe trans props could be fed a screen buffer :3
             for po in &trans_props {
                 let prop = propz.get_mut(&po).unwrap();
                 if prop.transparency == 0.0 {continue;}
