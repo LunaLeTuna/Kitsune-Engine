@@ -141,6 +141,41 @@ fn get_prop_scale(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -
 
 }
 
+fn mod_prop_rot(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
+    let stx = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let sty = st.get("y").unwrap().as_f64().unwrap() as f32;
+    let stz = st.get("z").unwrap().as_f64().unwrap() as f32;
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.set_rotation(Vector3::new(stx, sty, stz));
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_prop_rot(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+
+    let json = json!({
+        "x": w.rotation.x,
+        "y": w.rotation.y,
+        "z": w.rotation.z
+    });
+
+    let fvalue = JsValue::from_json(&json, _ctx).unwrap();
+    
+    Ok(fvalue)
+
+}
+
 fn create_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut womp = Prop::new("nya :3".to_owned());
     womp.model = 0;
@@ -219,6 +254,8 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("get_prop_pos", 1, NativeFunction::from_fn_ptr(get_prop_pos));
         self.context.register_global_builtin_callable("mod_prop_scale", 1, NativeFunction::from_fn_ptr(mod_prop_scale));
         self.context.register_global_builtin_callable("get_prop_scale", 1, NativeFunction::from_fn_ptr(get_prop_scale));
+        self.context.register_global_builtin_callable("mod_prop_rot", 1, NativeFunction::from_fn_ptr(mod_prop_rot));
+        self.context.register_global_builtin_callable("get_prop_rot", 1, NativeFunction::from_fn_ptr(get_prop_rot));
         
         
     }

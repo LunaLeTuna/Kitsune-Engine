@@ -585,7 +585,7 @@ fn main(){
         .unwrap()
         .as_secs_f32();
 
-        let mut deltatime: f32 = ( current_timestamp - last_timestamp ) / 1000.0;
+        let mut deltatime: f32 = 1.0/( current_timestamp - last_timestamp );
         if ( deltatime < low_limit ){
             deltatime = low_limit;
         }else if ( deltatime > height_limit ){

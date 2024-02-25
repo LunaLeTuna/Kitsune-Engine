@@ -56,11 +56,11 @@ class Prop {
     }
 
     set rotation(vec3i) {
-        //ops.mod_prop_rot(this._KE_Prop, vec3i);
+        mod_prop_rot(this._KE_Prop, vec3i);
     }
 
     get rotation() {
-        //return ops.get_prop_rot(this._KE_Prop);
+        return get_prop_rot(this._KE_Prop);
     }
 
     set scale(vec3i) {

@@ -12,6 +12,9 @@ Kitsune Engine V1
 >Texture_Reference 5 maps/start/huge_room.png
 >Texture_Reference 6 maps/start/lift.png
 >Texture_Reference 7 maps/start/lift_door.png
+>Texture_Reference 8 fience.png
+>Texture_Reference 9 fience_r.png
+>Texture_Reference 10 fience_n.png
 
 >Model_Reference 1 block.glb
 >Model_Reference 2 rocks/rock_1.obj
@@ -25,6 +28,8 @@ Kitsune Engine V1
 >Model_Reference 10 maps/start/car.obj
 >Model_Reference 11 maps/start/lift.obj
 >Model_Reference 12 maps/start/lift_door.obj
+>Model_Reference 13 maps/start/lift_roof.obj
+>Model_Reference 14 maps/start/lift_wheel.obj
 
 >Shader_Reference 1 depthtest
 
@@ -48,29 +53,33 @@ Model_static 5.002059 4 96.9986 2 2 2
 	+NAME fenceies
 	+ROT 0 350 0
 	+Model 8
-	+Texture 1 2
-	+Texture 2 3
-	+Texture 3 4
+	+TRANS 0.9
+	+Texture 1 8
+	+Texture 2 9
+	+Texture 3 10
 Model_static -15 4 97 2 2 2
 	+NAME fenceies
 	+ROT 0 5.000001 0
 	+Model 8
-	+Texture 1 2
-	+Texture 2 3
-	+Texture 3 4
+	+TRANS 0.9
+	+Texture 1 8
+	+Texture 2 9
+	+Texture 3 10
 Model_static -5 4 96 2 2 2
 	+NAME fenceies
 	+Model 8
-	+Texture 1 2
-	+Texture 2 3
-	+Texture 3 4
+	+TRANS 0.9
+	+Texture 1 8
+	+Texture 2 9
+	+Texture 3 10
 Model_static 15.00317 4 98.99804 2 2 2
 	+NAME fenceies
 	+ROT 0 345 0
 	+Model 8
-	+Texture 1 2
-	+Texture 2 3
-	+Texture 3 4
+	+TRANS 0.9
+	+Texture 1 8
+	+Texture 2 9
+	+Texture 3 10
 Model_static 13 1 95 2 2 2
 	+NAME conieessss
 	+ROT 0 305 0
@@ -117,7 +126,7 @@ Model_static 7.5 1 35.375 2 2 2
 Legacy_Brick -3.5 0 27.875 114 1 134.75
 	+NAME New Brick
 	+COLOR 0.5 0.321075 0.245
-Spawn_Point 32.94653 264.0631 36.86143 1.25 1.25 1.25
+Spawn_Point 32.94653 315.063 36.86143 1.25 1.25 1.25
 	+NAME New Spawn
 	+COLOR 0.5 0.5 0.5
 	+ROT 0 265 0
@@ -128,14 +137,11 @@ Script 3 7 2 5 5 5
 	+NAME intro
 	+file cutscenes/intro.js
 	+fire start()
-Legacy_Brick 14.5 262 38 26 1 41
+Legacy_Brick 14.5 313.0498 38 26 1 41
 	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
-Legacy_Brick 2 271.5 39 1 18 39
+Legacy_Brick 2 322.5498 39 1 18 39
 	+NAME New Brick
-	+COLOR 0.5 0.5 0.5
-Light 33 274 37 1 1 1
-	+NAME New Light
 	+COLOR 0.5 0.5 0.5
 Light 32 240 37 1 1 1
 	+NAME New Light
@@ -146,38 +152,38 @@ Light 34 214 36 1 1 1
 Light 33 117 37 1 1 1
 	+NAME New Light
 	+COLOR 0.5 0.5 0.5
-Legacy_Brick 32.5 267.5 42 8 10 1
+Legacy_Brick 32.5 318.5498 42 8 10 1
 	+NAME Platform4
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0
 	+DYNAMICCOLIDERCOLLISION
-Legacy_Brick 32.5 267.5 32 10 10 1
+Legacy_Brick 32.5 318.5498 32 10 10 1
 	+NAME Platform3
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0
 	+DYNAMICCOLIDERCOLLISION
-Legacy_Brick 37 267.5 37 1 10 9
+Legacy_Brick 37 318.5498 37 1 10 9
 	+NAME Platform2
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0
 	+DYNAMICCOLIDERCOLLISION
-Legacy_Brick 28 267.5 37 1 10 9
+Legacy_Brick 28 318.5498 37 1 10 9
 	+NAME Platform1
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0
 	+DYNAMICCOLIDERCOLLISION
-Legacy_Brick 32.5 262 37 8 1 9
+Legacy_Brick 32.5 313.0498 37 8 1 9
 	+NAME Platform0
 	+COLOR 0.5 0.5 0.5
 	+DYNAMICCOLIDERCOLLISION
-Model_static 32.40654 263 36.88955 0.8500002 1 0.8499999
+Model_static 32.40654 314.0498 36.88955 0.8500002 1 0.8499999
 	+NAME Platform5
 	+COLOR 0.5 0.321075 0.245
 	+ROT 0 270 0
 	+NOCOLLISION
 	+Model 11
 	+Texture 1 6
-Model_static 28.08153 269.0001 33.61457 0.7000002 1 0.9999999
+Model_static 28.08153 320.0499 32.13959 0.95 1 1
 	+NAME Platform6
 	+COLOR 0.5 0.321075 0.245
 	+TRANS 0.9
@@ -185,7 +191,7 @@ Model_static 28.08153 269.0001 33.61457 0.7000002 1 0.9999999
 	+NOCOLLISION
 	+Model 12
 	+Texture 1 7
-Model_static 28.13153 268.9998 40.03957 0.6500002 1 0.9999999
+Model_static 28.13153 320.0496 41.43955 0.9999999 1 1
 	+NAME Platform7
 	+COLOR 0.5 0.321075 0.245
 	+TRANS 0.9
@@ -193,3 +199,27 @@ Model_static 28.13153 268.9998 40.03957 0.6500002 1 0.9999999
 	+NOCOLLISION
 	+Model 12
 	+Texture 1 7
+Model_static 32.40654 314.0498 36.88955 0.8500002 1 0.8499999
+	+NAME Platform8
+	+COLOR 0.5 0.321075 0.245
+	+ROT 0 270 0
+	+NOCOLLISION
+	+Model 13
+	+Texture 1 6
+Model_static 33.25658 323.8498 39.53954 0.8 0.8 0.8
+	+NAME Platform9
+	+COLOR 0.5 0.321075 0.245
+	+ROT 0 270 0
+	+NOCOLLISION
+	+Model 14
+	+Texture 1 6
+Model_static 31.13155 324.425 39.56451 0.4999999 0.4999999 0.4999999
+	+NAME Platform10
+	+COLOR 0.5 0.321075 0.245
+	+ROT 0 270 0
+	+NOCOLLISION
+	+Model 14
+	+Texture 1 6
+Trigger 32.5 318.5498 32 10 10 10
+	+NAME Enter_Drill
+	+fire enter

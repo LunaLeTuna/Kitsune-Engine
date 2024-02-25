@@ -82,7 +82,7 @@ impl Character {
         Character{
             body: new_id_prop,
             camera: new_id_cam,
-            speed: 15.0,
+            speed: 2.0,
             run_speed: 17.0,
             additive_speed: 0.0,
             is_running: false,
