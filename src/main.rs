@@ -327,20 +327,6 @@ fn main(){
 
     let mut screen_size = Vector2::new(width as f32, height as f32);
 
-    let low_limit = 0.0167;
-    let height_limit = 0.1;
-
-
-    let mut current_timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs_f32();
-
-    let mut last_timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs_f32();
-
     drop(propz);
 
     let mut js_world = ScriptSpace::new();
@@ -578,22 +564,23 @@ fn main(){
     // shadowbuffer.clear_color(1.0, 1.0, 1.0, 1.0);
     // shadowbuffer.clear_depth(1.0);
 
+    let mut nanos = SystemTime::now()
+    .duration_since(UNIX_EPOCH)
+    .unwrap()
+    .as_nanos();
+    let mut last_nanos = nanos;
+    let mut start = nanos;
+
     event_loop.borrow_mut().run_return(|event, _, control_flow| {
 
-        current_timestamp = SystemTime::now()
+        let mut nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
-        .as_secs_f32();
+        .as_nanos();
 
-        let mut deltatime: f32 = 1.0/( current_timestamp - last_timestamp );
-        if ( deltatime < low_limit ){
-            deltatime = low_limit;
-        }else if ( deltatime > height_limit ){
-            deltatime = height_limit;
-        }
-
-        let mut delta_time = deltatime;
-        //dbg!(delta_time);
+        let mut delta_time = (nanos - last_nanos) as f32*0.0000001;
+        //dbg!(delta_time, nanos, last_nanos);
+        last_nanos = nanos;
 
         let mut a = REQUESTS.write().unwrap();
 
@@ -807,8 +794,6 @@ fn main(){
             // finish frame and put on window probably
             target.finish().unwrap();
         }
-
-        last_timestamp = current_timestamp;
         
 
         // for amongus in to_remove {
