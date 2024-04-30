@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use rust_socketio::{ClientBuilder, Payload, RawClient, client::Client};
 use smol::future::FutureExt;
 
-use crate::{fs_system::grab, props::Prop, PROPS};
+use crate::{fs_system::grab, props::Prop, PointLight, LIGHTS, PROPS};
 
 pub struct ScriptSpace<'a> {
     pub world: i16,
@@ -210,6 +210,58 @@ fn get_existing_prop_by_name(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Con
 
 }
 
+//
+// lights
+//
+
+fn create_light(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut womp = PointLight::new();
+
+    //maybe position
+
+    let mut lightz = LIGHTS.write().unwrap();
+    let i = lightz.len();
+    lightz.insert(i, womp);
+    
+    Ok(JsValue::Integer(i as i32))
+
+}
+
+fn mod_light_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut lightz = LIGHTS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
+    let stx = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let sty = st.get("y").unwrap().as_f64().unwrap() as f32;
+    let stz = st.get("z").unwrap().as_f64().unwrap() as f32;
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = lightz.get_mut(propid as usize).unwrap();
+
+    w.position = Vector3::new(stx, sty, stz);
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_light_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut lightz = LIGHTS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = lightz.get(propid as usize).unwrap();
+
+    let json = json!({
+        "x": w.position.x,
+        "y": w.position.y,
+        "z": w.position.z
+    });
+
+    let fvalue = JsValue::from_json(&json, _ctx).unwrap();
+    
+    Ok(fvalue)
+
+}
+
 impl ScriptSpace<'_> {
 
     pub fn new() -> ScriptSpace<'static>{
@@ -256,6 +308,10 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("get_prop_scale", 1, NativeFunction::from_fn_ptr(get_prop_scale));
         self.context.register_global_builtin_callable("mod_prop_rot", 1, NativeFunction::from_fn_ptr(mod_prop_rot));
         self.context.register_global_builtin_callable("get_prop_rot", 1, NativeFunction::from_fn_ptr(get_prop_rot));
+
+        self.context.register_global_builtin_callable("create_light", 1, NativeFunction::from_fn_ptr(create_light));
+        self.context.register_global_builtin_callable("mod_light_pos", 1, NativeFunction::from_fn_ptr(mod_light_pos));
+        self.context.register_global_builtin_callable("get_light_pos", 1, NativeFunction::from_fn_ptr(get_light_pos));
         
         
     }

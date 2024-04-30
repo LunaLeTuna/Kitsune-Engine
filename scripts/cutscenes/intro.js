@@ -12,6 +12,7 @@ for(let at = 0; at <= 10; at++) {
         origin_pos:awa
     })
 }
+var liflight = new Light();
 
 var lwhere = 0;
 
@@ -40,6 +41,7 @@ function loop(delta){
         lift.forEach(element => {
             element.prop.position = new Vector3(element.origin_pos.x,element.origin_pos.y+lwhere,element.origin_pos.z);
         });
+        liflight.position = new Vector3(lift[0].origin_pos.x,lift[0].origin_pos.y+lwhere+10,lift[0].origin_pos.z);
 
         lift[9].prop.rotation = new Vector3((-lwhere*Math.PI/180.0)*15,ro,0);
         lift[10].prop.rotation = new Vector3((lwhere*Math.PI/180.0)*23,ro,0);
@@ -57,6 +59,7 @@ function loop(delta){
     }else if(!door_is_done){
         door_is_done=true
     }
+    
     
 }
 

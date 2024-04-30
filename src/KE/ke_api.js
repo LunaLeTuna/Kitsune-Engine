@@ -46,6 +46,20 @@ class Texture {
     }
 }
 
+class Light {
+
+    set position(vec3i) {
+        mod_light_pos(this._KE_Light, vec3i);
+    }
+
+    get position() {
+        return get_light_pos(this._KE_Light);
+    }
+    constructor(l) {
+        this._KE_Light = l ?? create_light();
+    }
+}
+
 class Prop {
     set position(vec3i) {
         mod_prop_pos(this._KE_Prop, vec3i);

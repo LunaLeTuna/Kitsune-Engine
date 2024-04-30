@@ -3,7 +3,7 @@ use buffer::Buffer;
 use cameras::Camera;
 use char_control::{Character, character_type};
 use config::keconfig;
-use glium::{glutin::{ContextBuilder, platform::unix::x11::ffi::WidthValue}, index::{NoIndices, PrimitiveType}, DepthTest, framebuffer::SimpleFrameBuffer, texture::{DepthStencilTexture2d, DepthTexture2d}, implement_vertex};
+use glium::{glutin::{ContextBuilder}, index::{NoIndices, PrimitiveType}, DepthTest, framebuffer::SimpleFrameBuffer, texture::{DepthStencilTexture2d, DepthTexture2d}, implement_vertex};
 use kbf::{load, Environment};
 use ke_units::{Vec2, radians};
 use lights::PointLight;
@@ -59,6 +59,7 @@ pub enum KERequest {
 
 lazy_static::lazy_static! {
     static ref PROPS: RwLock<HashMap<i32, Prop>> = RwLock::new(HashMap::new());
+    static ref LIGHTS: RwLock<Vec<PointLight>> = RwLock::new(Vec::new());
     //count is for scripts, so script item creation knows what id to give a new item
     pub static ref SHADER_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref MODEL_COUNT: RwLock<i32> = RwLock::new(0);
@@ -201,7 +202,7 @@ fn main(){
     //init physics system
     let mut phys_world = PhysWorld::init_phys_world();
 
-    let (world_emv, lightz, scripz) = {
+    let (world_emv, scripz) = {
 
         let map = load(&("./maps/".to_owned()+&keconf.default_map));
 
@@ -264,7 +265,15 @@ fn main(){
             partnp+=1;
         }
 
-        (map.environment, map.lights, map.scripts)
+        let mut lightz = LIGHTS.write().unwrap();
+        let mut partnp = lightz.len();
+
+        for nl in map.lights {
+            lightz.insert(partnp, nl);
+            partnp+=1;
+        }
+
+        (map.environment, map.scripts)
     };
 
     // {
@@ -639,6 +648,7 @@ fn main(){
         // womp this is where events from the window thingamabob does things
         // pretty much we are gonna quoue mouse and keyboards
         let mut propz = PROPS.try_write().unwrap();
+        let mut lightz = LIGHTS.try_write().unwrap();
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::Resized(_) => {

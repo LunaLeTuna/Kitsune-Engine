@@ -174,7 +174,7 @@ impl Character {
                 // let b = a - self.last_mouse_pos;
                 // self.last_mouse_pos = a;
 
-                let sensitivity = 0.6*delta_time; // change this value to your liking
+                let sensitivity = 0.6; // change this value to your liking
                 self.yaw += (mouse_delta.x*sensitivity)%360.0;
                 self.pitch -= mouse_delta.y*sensitivity;
 

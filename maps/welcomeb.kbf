@@ -15,8 +15,6 @@ Kitsune Engine V1
 >Texture_Reference 8 fience.png
 >Texture_Reference 9 fience_r.png
 >Texture_Reference 10 fience_n.png
->Texture_Reference 11 rocks/rock_boulder_dry_diff_1k.png
->Texture_Reference 12 rocks/rock_boulder_dry_disp_1k.png
 
 >Model_Reference 1 block.glb
 >Model_Reference 2 rocks/rock_1.obj
@@ -32,27 +30,19 @@ Kitsune Engine V1
 >Model_Reference 12 maps/start/lift_door.obj
 >Model_Reference 13 maps/start/lift_roof.obj
 >Model_Reference 14 maps/start/lift_wheel.obj
->Model_Reference 15 crystals/crystal.obj
->Model_Reference 16 rocks/rock_1.obj
 
 >Shader_Reference 1 depthtest
 
 Model_static 13 -1 46 2 2 2
-	+NAME crystal
-	+Model 15
-	+TRANS 0.9
-	+Shader 1
-Model_static 13 -1 46 2 2 2
-	+NAME rock
-	+Model 16
-	+TRANS 0.9
-	+Shader 1
-	+Texture 1 11
-	+Texture 2 12
-Model_static 13 -1 46 2 2 2
 	+NAME huge_room
 	+Model 5
 	+Texture 1 5
+Model_static 13 -1 46 2 2 2
+	+NAME huge_room_floor
+	+Model 6
+	+Texture 1 2
+	+Texture 2 3
+	+Texture 3 4
 Model_static 13 -1 46 2 2 2
 	+NAME elevator_shaft
 	+Model 7
@@ -61,32 +51,32 @@ Model_static 13 -1 46 2 2 2
 	+Texture 3 4
 Model_static 5.002059 4 96.9986 2 2 2
 	+NAME fenceies
-	+TRANS 0.9
 	+ROT 0 350 0
 	+Model 8
+	+TRANS 0.9
 	+Texture 1 8
 	+Texture 2 9
 	+Texture 3 10
 Model_static -15 4 97 2 2 2
 	+NAME fenceies
-	+TRANS 0.9
 	+ROT 0 5.000001 0
 	+Model 8
+	+TRANS 0.9
 	+Texture 1 8
 	+Texture 2 9
 	+Texture 3 10
 Model_static -5 4 96 2 2 2
 	+NAME fenceies
-	+TRANS 0.9
 	+Model 8
+	+TRANS 0.9
 	+Texture 1 8
 	+Texture 2 9
 	+Texture 3 10
 Model_static 15.00317 4 98.99804 2 2 2
 	+NAME fenceies
-	+TRANS 0.9
 	+ROT 0 345 0
 	+Model 8
+	+TRANS 0.9
 	+Texture 1 8
 	+Texture 2 9
 	+Texture 3 10
@@ -133,7 +123,7 @@ Model_static 7.5 1 35.375 2 2 2
 	+TRANS 0.9
 	+Model 2
 	+Shader 1
-Legacy_Brick 9.850001 0.5000001 39.22499 128.2001 1 125.25
+Legacy_Brick -3.5 0 27.875 114 1 134.75
 	+NAME New Brick
 	+COLOR 0.5 0.321075 0.245
 Spawn_Point 32.94653 315.063 36.86143 1.25 1.25 1.25
@@ -148,10 +138,10 @@ Script 3 7 2 5 5 5
 	+file cutscenes/intro.js
 	+fire start()
 Legacy_Brick 14.5 313.0498 38 26 1 41
-	+NAME top_roof
+	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
-Legacy_Brick 2 322.5498 24.5 1 18 14
-	+NAME top_wall
+Legacy_Brick 2 322.5498 39 1 18 39
+	+NAME New Brick
 	+COLOR 0.5 0.5 0.5
 Light 32 240 37 1 1 1
 	+NAME New Light
@@ -233,49 +223,3 @@ Model_static 31.13155 324.425 39.56451 0.4999999 0.4999999 0.4999999
 Trigger 32.5 318.5498 32 10 10 10
 	+NAME Enter_Drill
 	+fire enter
-Legacy_Brick -0.9249953 0.4999999 202.7251 45.75008 0.9999999 201.7499
-	+NAME New Brick
-	+COLOR 0.5 0.321075 0.245
-Legacy_Brick 27 324.5 49.75 1 22 17.5
-	+NAME tOp_wall
-	+COLOR 0.5 0.5 0.5
-Legacy_Brick 27 330.25 36.75 1 10.5 8.5
-	+NAME top_wall
-	+COLOR 0.5 0.5 0.5
-Legacy_Brick 27 324.5 25 1 22 15
-	+NAME Top_wall
-	+COLOR 0.5 0.5 0.5
-Legacy_Brick 2 322.5498 47.5 1 18 22
-	+NAME top_wall
-	+COLOR 0.5 0.5 0.5
-Legacy_Brick 2 327.0498 34 1 9 5
-	+NAME top_wall
-	+COLOR 0.5 0.5 0.5
-Legacy_Brick 2.75 318.0498 33.5 0.5 9 5
-	+NAME top_wall
-	+COLOR 0.5 0.306675 0.215
-	+ROT 0 25.00001 0
-Legacy_Brick -4 313 33.25 11 1 26.5
-	+NAME New Brick
-	+COLOR 0.5 0.5 0.5
-Legacy_Brick -10 322.5498 33 1 18 22
-	+NAME top_wall
-	+COLOR 0.5 0.5 0.5
-Legacy_Brick 14.5 322.5498 18 24 18 1
-	+NAME top_wall
-	+COLOR 0.5 0.5 0.5
-Legacy_Brick 14.5 322.5498 58 24 18 1
-	+NAME top_wall
-	+COLOR 0.5 0.5 0.5
-Legacy_Brick 14 332.0498 38 25 1 41
-	+NAME top_roof
-	+COLOR 0.3232185 0.3003 0.33
-Light 14 320 37 1 1 1
-	+NAME New Light
-	+COLOR 0.5 0.5 0.5
-Light 11 319 45 1 1 1
-	+NAME New Light
-	+COLOR 0.5 0.5 0.5
-Light 10 319 22 1 1 1
-	+NAME New Light
-	+COLOR 0.5 0.5 0.5
