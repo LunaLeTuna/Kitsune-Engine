@@ -360,7 +360,7 @@ Legacy_Brick 23.5 8 -42.5 66 17 80
 	+NAME island_mass
 	+COLOR 0.5 0.5 0.5
 	+TRANS 0
-Model_static 4.225002 3.5 -21.85 654.85 1 556.7
+Model_static 4.225002 -270 -21.85 654.85 1 556.7
 	+NAME water
 	+COLOR 0.215 0.249675 0.5
 	+ROT 0 114.0002 0
@@ -1628,3 +1628,7 @@ Legacy_Brick 26.29662 19.73931 -3.422501 0.6799992 0.6830013 0.16
 	+NAME New Brick
 	+COLOR 0.21 0.21 0.21
 	+ROT 0 0 70.00001
+Script 3 7 2 5 5 5
+	+NAME cubes
+	+file fly_cam.js
+	+fire start()

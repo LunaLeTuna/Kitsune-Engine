@@ -1,0 +1,59 @@
+console.log('cube test')
+
+var proxp = new Prop();
+var cameras = new Camera();
+
+SetMainCam(cameras)
+
+var playera = getByName("TheCharacterController");
+
+
+// function pressed(event){
+//     //awawawa("meowmeowmeowmeomwoemwomeowmo")
+//     console.log(event.which);
+// }
+
+// addEventListener("keypress",pressed)
+
+var awadwa = 0;
+//at some point this could be made to be hot loaded :3
+function loop(delta){
+    let asaf = playera.position;
+    proxp.position =  new Vector3(playera.position.x,playera.position.y,playera.position.z);
+
+    cameras.position = new Vector3(asaf.x+11,asaf.y+9,asaf.z);
+
+    cameras.lookat(new Vector3(asaf.x-cameras.position.x,asaf.y-cameras.position.y,asaf.z-cameras.position.z))
+
+    awadwa+=0.01*delta
+
+    var forword = 0;
+    var side = 0;
+
+    if(button["17"]) forword = -5;
+    else if(button["31"]) forword = 5;
+
+    if(button["30"]) side = 5;
+    else if(button["32"]) side = -5;
+
+    
+
+    if(button["57"]) playera.velocity = new Vector3(forword,1.0,side);
+    else playera.velocityOnlySideways(new Vector2(forword,side));
+
+    if(forword || side) {
+        proxp.rotation = new Vector3(0,playera.velocity.x,0);
+    }
+}
+
+addEventListener("tick",loop)
+
+
+var button = {};
+
+addEventListener("keypress", (keyevt) => {
+    if(keyevt.how == "pressed")
+        button[keyevt.which] = true
+    else
+        button[keyevt.which] = false
+})

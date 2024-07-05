@@ -54,12 +54,17 @@ pub enum KERequest {
     Create_Buffer(String),
     Create_Camera(String),
     Pin_Buffer_Camera(i32,i32),
+    Phys_Prop_Push(i32,Vector3<f32>),
+    Phys_Prop_Push_SideOnly(i32,Vector2<f32>),
     NULL,
 }
 
 lazy_static::lazy_static! {
     static ref PROPS: RwLock<HashMap<i32, Prop>> = RwLock::new(HashMap::new());
+    static ref CAMERAS: RwLock<HashMap<i32, Camera>> = RwLock::new(HashMap::new());
+    static ref MAIN_CAM: RwLock<i32> = RwLock::new(0);
     static ref LIGHTS: RwLock<Vec<PointLight>> = RwLock::new(Vec::new());
+    static ref SCREEN_SIZE: RwLock<Vec2> = RwLock::new(Vec2{x:250.0,y:250.0});
     //count is for scripts, so script item creation knows what id to give a new item
     pub static ref SHADER_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref MODEL_COUNT: RwLock<i32> = RwLock::new(0);
@@ -302,8 +307,7 @@ fn main(){
     let light = [1.4, 0.4, 0.7f32];
 
     // main cam is just id of the camera map
-    let mut _main_camera = 0;
-    let mut camera_map = HashMap::new();
+
 
     let mut _main_buffer = 0;
     
@@ -318,13 +322,18 @@ fn main(){
     //main_cam.set_rotation(Vector3::new(-0.5, 0.0, 0.3));
     main_cam.position = Vector3::new(0.0, -10.0, -90.0);
 
+    let mut _main_camerac = MAIN_CAM.write().unwrap();
+    let mut camera_mapc = CAMERAS.write().unwrap();
     main_cam.refresh();
-    camera_map.insert(0, main_cam);
+    camera_mapc.insert(0, main_cam);
 
     let mut real_char: Character;
 
-    real_char = Character::new(keconf.char_pov, &display, &mut propz, &modelz, &mut phys_world, &mut camera_map);
-    _main_camera = real_char.camera;
+    real_char = Character::new(keconf.char_pov, &display, &mut propz, &modelz, &mut phys_world, &mut camera_mapc);
+    *_main_camerac = real_char.camera;
+
+    drop(camera_mapc);
+    drop(_main_camerac);
 
     if world_emv.spawnpoints.len() != 0 {
         real_char.tp(&mut phys_world, &mut propz, world_emv.spawnpoints[0]);
@@ -332,9 +341,13 @@ fn main(){
 
     let mut loop_wawa: f32 = 0.0;
 
-    let (width, height) = display.get_framebuffer_dimensions();
-
     let mut screen_size = Vector2::new(width as f32, height as f32);
+    let mut a = SCREEN_SIZE.write().unwrap();
+    *a = Vec2 {
+        x: width as f32,
+        y: height as f32,
+    };
+    drop(a);
 
     drop(propz);
 
@@ -591,22 +604,6 @@ fn main(){
         //dbg!(delta_time, nanos, last_nanos);
         last_nanos = nanos;
 
-        let mut a = REQUESTS.write().unwrap();
-
-        for requ in &*a {
-            match requ {
-                KERequest::Create_Model(_) => todo!(),
-                KERequest::Create_Texture(_) => todo!(),
-                KERequest::Pin_Texture_Buffer(_, _) => todo!(),
-                KERequest::Create_Buffer(_) => todo!(),
-                KERequest::Create_Camera(_) => todo!(),
-                KERequest::Pin_Buffer_Camera(_, _) => todo!(),
-                KERequest::NULL => todo!(),
-            }
-        }
-
-        (*a).clear();
-
         if(keconf.is_server && keconf.has_multiplayer){
             js_world.job_server_runs(delta_time);
         }
@@ -649,9 +646,13 @@ fn main(){
         // pretty much we are gonna quoue mouse and keyboards
         let mut propz = PROPS.try_write().unwrap();
         let mut lightz = LIGHTS.try_write().unwrap();
+
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::Resized(_) => {
+                    let mut _main_camera = MAIN_CAM.write().unwrap();
+                    let mut camera_map = CAMERAS.write().unwrap();
+                    
                     let main_cam = camera_map.get_mut(&_main_camera).unwrap();
                     //update main_cam's projection with screen
                     let (width, height) = display.get_framebuffer_dimensions();
@@ -659,8 +660,15 @@ fn main(){
                     main_cam.reproject(screen_size);
                 }
                 WindowEvent::KeyboardInput { device_id, input, is_synthetic } => {
+                    let how = {
+                        match input.state {
+                            winit::event::ElementState::Pressed => "pressed",
+                            winit::event::ElementState::Released => "released",
+                        }
+                    };
                     js_world.triggerlis(&"keypress".to_string(), &json!(
                         {
+                            "how": how,
                             "which": input.scancode,
                             "is_synthetic": is_synthetic
                         }
@@ -681,6 +689,8 @@ fn main(){
                 match event {
                     DeviceEvent::MouseMotion { delta } => {
                         if(!keconf.headless){
+                            let mut _main_camera = MAIN_CAM.write().unwrap();
+                            let mut camera_map = CAMERAS.write().unwrap();
                             let (width, height) = display.get_framebuffer_dimensions();
                             let a = Vector2::new(delta.0 as f32, delta.1 as f32);
                             real_char.interp_mouse(&mut phys_world, &mut propz, &mut camera_map, a, screen_size, delta_time*keconf.mouse_sensitivity);
@@ -693,6 +703,28 @@ fn main(){
             }
             _ => (),
         }
+
+        let mut a = REQUESTS.write().unwrap();
+
+        for requ in &*a {
+            match requ {
+                KERequest::Create_Model(_) => todo!(),
+                KERequest::Create_Texture(_) => todo!(),
+                KERequest::Pin_Texture_Buffer(_, _) => todo!(),
+                KERequest::Create_Buffer(_) => todo!(),
+                KERequest::Create_Camera(_) => todo!(),
+                KERequest::Pin_Buffer_Camera(_, _) => todo!(),
+                KERequest::Phys_Prop_Push(propid, flyto) => {
+                    phys_world.apply_force(propz.get_mut(propid).unwrap(), *flyto);
+                },
+                KERequest::Phys_Prop_Push_SideOnly(propid, flyto) => {
+                    phys_world.apply_force_xz(propz.get_mut(propid).unwrap(), *flyto);
+                },
+                KERequest::NULL => todo!(),
+            }
+        }
+
+        (*a).clear();
 
         if(keconf.shader_hotswap){
             for x in 0..shaderz.len() as i32 {
@@ -746,10 +778,12 @@ fn main(){
             phys_world.step();
 
             //if cam prop parent moved, we move cam
+            let mut _main_camera = MAIN_CAM.write().unwrap();
+            let mut camera_map = CAMERAS.write().unwrap();
             let main_cam = camera_map.get_mut(&_main_camera).unwrap();
             if main_cam.parent_prop != -1 {
                 main_cam.position = propz.get(&main_cam.parent_prop).unwrap().position+main_cam.parent_offset;
-                //main_cam.look_at(Vector3::new(0.0, 0.0, 0.0)); funny testing
+                //main_cam.look_at(Vector3::new(0.0, 0.0, 0.0)); //funny testing
                 main_cam.refresh();
             }
 

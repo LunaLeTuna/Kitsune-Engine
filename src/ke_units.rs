@@ -3,8 +3,7 @@
 
 use std::f32::consts::PI;
 
-// #[derive(Deserialize, Default, Debug, Clone, Copy, Serialize)]
-// #[serde(rename_all = "camelCase")]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct Vec2 {
     pub x: f32,
     pub y: f32,

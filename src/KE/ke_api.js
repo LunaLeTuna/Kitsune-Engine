@@ -13,6 +13,11 @@ class Vector3 {
     }
 }
 
+Vector3.prototype["+"] = function( b )
+{
+  return new Vector3( this.x + b.x, this.y + b.y, this.z + b.z );
+}
+
 class Shader {
     constructor(url) {
         //this.ID = ops.create_shader(url);
@@ -66,7 +71,8 @@ class Prop {
     }
 
     get position() {
-        return get_prop_pos(this._KE_Prop);
+        let raw = get_prop_pos(this._KE_Prop);
+        return new Vector3(raw.x,raw.y,raw.z)
     }
 
     set rotation(vec3i) {
@@ -75,6 +81,18 @@ class Prop {
 
     get rotation() {
         return get_prop_rot(this._KE_Prop);
+    }
+
+    set velocity(vec3i) {
+        mod_prop_vel(this._KE_Prop, vec3i);
+    }
+
+    get velocity() {
+        return get_prop_vel(this._KE_Prop);
+    }
+
+    velocityOnlySideways(vec2i) {
+        mod_prop_vel_onlyside(this._KE_Prop, vec2i);
     }
 
     set scale(vec3i) {
@@ -149,28 +167,33 @@ function getByName(name){
 
 class Camera {
     set position(vec3i) {
-        //ops.mod_cam_pos(this._KE_Prop, vec3i);
+        mod_camera_pos(this._KE_Prop, vec3i);
     }
 
     get position() {
-        //return ops.get_cam_pos(this._KE_Prop);
+        let raw = get_camera_pos(this._KE_Prop);
+        return new Vector3(raw.x,raw.y,raw.z)
     }
 
     set rotation(vec3i) {
-        //ops.mod_cam_rot(this._KE_Prop, vec3i);
+        mod_cam_rot(this._KE_Prop, vec3i);
     }
 
     get rotation() {
-        //return ops.get_cam_rot(this._KE_Prop);
+        return get_cam_rot(this._KE_Prop);
+    }
+
+    lookat(vec3i){
+        lookat_camera(this._KE_Prop, vec3i)
     }
 
     constructor() {
-        //this._KE_Prop = ops.create_camera();
+        this._KE_Prop = create_camera();
     }
 }
 
 function SetMainCam(av) {
-    //ops.set_main_camera(av._KE_Prop);
+    set_main_camera(av._KE_Prop);
 }
 
 function print(a) {

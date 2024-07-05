@@ -110,7 +110,14 @@ impl Character {
     }
 
     pub fn step(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, delta_time: f32){
-        self.apply_force(phys_world, propz, pivot_point(Vector2::new(self.forword, self.sideways), Vector2::zeros(), radians(self.yaw))*self.speed*delta_time)
+        match self.character_type {
+            character_type::First => {self.apply_force(phys_world, propz, pivot_point(Vector2::new(self.forword, self.sideways), Vector2::zeros(), radians(self.yaw))*self.speed*delta_time)},
+            character_type::Scroller => todo!(),
+            character_type::NoClip => todo!(),
+            character_type::Scripted => {},
+            character_type::Disabled => {},
+        }
+        
     }
 
     pub fn interp_key(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, input: KeyboardInput, delta_time: f32){
@@ -154,7 +161,7 @@ impl Character {
             character_type::Scroller => todo!(),
             character_type::NoClip => todo!(),
             character_type::Scripted => todo!(),
-            character_type::Disabled => todo!(),
+            character_type::Disabled => {},
         }
     }
 
@@ -199,7 +206,7 @@ impl Character {
             character_type::Scroller => todo!(),
             character_type::NoClip => todo!(),
             character_type::Scripted => todo!(),
-            character_type::Disabled => todo!(),
+            character_type::Disabled => {},
         }
     }
 }

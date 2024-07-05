@@ -2,12 +2,12 @@ use std::{time::{Instant, Duration}, collections::HashMap, borrow::BorrowMut, sy
 
 use boa_engine::{Context, JsResult, JsValue, JsArgs, Source, property::{Attribute, PropertyKey}, NativeFunction, value::TryFromJs, JsNativeError, builtins::{function, string, error, json}, JsString};
 use boa_runtime::Console;
-use nalgebra::Vector3;
+use nalgebra::{Vector2, Vector3};
 use serde_json::{json, Value};
 use rust_socketio::{ClientBuilder, Payload, RawClient, client::Client};
 use smol::future::FutureExt;
 
-use crate::{fs_system::grab, props::Prop, PointLight, LIGHTS, PROPS};
+use crate::{cameras::Camera, fs_system::grab, props::Prop, PointLight, CAMERAS, LIGHTS, MAIN_CAM, PROPS, REQUESTS, SCREEN_SIZE};
 
 pub struct ScriptSpace<'a> {
     pub world: i16,
@@ -176,6 +176,55 @@ fn get_prop_rot(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> 
 
 }
 
+fn mod_prop_vel(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = REQUESTS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
+    let stx = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let sty = st.get("y").unwrap().as_f64().unwrap() as f32;
+    let stz = st.get("z").unwrap().as_f64().unwrap() as f32;
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    propz.push(crate::KERequest::Phys_Prop_Push(propid, Vector3::new(stx, sty, stz)));
+    drop(propz);
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_prop_vel(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+
+    let json = json!({
+        "x": w.velocity.x,
+        "y": w.velocity.y,
+        "z": w.velocity.z
+    });
+
+    let fvalue = JsValue::from_json(&json, _ctx).unwrap();
+    
+    Ok(fvalue)
+
+}
+
+fn mod_prop_vel_onlyside(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = REQUESTS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
+    let stx = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let sty = st.get("y").unwrap().as_f64().unwrap() as f32;
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    propz.push(crate::KERequest::Phys_Prop_Push_SideOnly(propid, Vector2::new(stx, sty)));
+    drop(propz);
+    
+    Ok(JsValue::Undefined)
+
+}
+
 fn create_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut womp = Prop::new("nya :3".to_owned());
     womp.model = 0;
@@ -207,6 +256,126 @@ fn get_existing_prop_by_name(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Con
     }
     
     Ok(JsValue::Integer(-1))
+
+}
+
+//
+// cameras
+//
+
+fn create_camera(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut camera_map = CAMERAS.write().unwrap();
+    let mut screen = SCREEN_SIZE.read().unwrap();
+
+    let mut womp = Camera::craft(*screen);
+    womp.position=Vector3::zeros();
+    womp.refresh();
+    let i = camera_map.len() as i32;
+    camera_map.insert(i, womp);
+    
+    Ok(JsValue::Integer(i))
+}
+
+fn mod_camera_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut camera_map = CAMERAS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
+    let stx = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let sty = st.get("y").unwrap().as_f64().unwrap() as f32;
+    let stz = st.get("z").unwrap().as_f64().unwrap() as f32;
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let mut w = camera_map.get_mut(&propid).unwrap();
+
+    w.position = Vector3::new(stx, sty, stz);
+    w.refresh();
+
+    drop(camera_map);
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_camera_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut camera_map = CAMERAS.write().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = camera_map.get(&propid).unwrap();
+
+    let json = json!({
+        "x": w.position.x,
+        "y": w.position.y,
+        "z": w.position.z
+    });
+
+    let fvalue = JsValue::from_json(&json, _ctx).unwrap();
+    
+    Ok(fvalue)
+
+}
+
+fn mod_camera_rot(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = CAMERAS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
+    let stx = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let sty = st.get("y").unwrap().as_f64().unwrap() as f32;
+    let stz = st.get("z").unwrap().as_f64().unwrap() as f32;
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.set_rotation(Vector3::new(stx, sty, stz));
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_camera_rot(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = CAMERAS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+
+    let json = json!({
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+    });
+
+    let fvalue = JsValue::from_json(&json, _ctx).unwrap();
+    
+    Ok(fvalue)
+
+}
+
+fn lookat_camera(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = CAMERAS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
+    let stx = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let sty = st.get("y").unwrap().as_f64().unwrap() as f32;
+    let stz = st.get("z").unwrap().as_f64().unwrap() as f32;
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.look_at(Vector3::new(stx, sty, stz));
+    w.refresh();
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn set_main_camera(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = CAMERAS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let mut nya = MAIN_CAM.write().unwrap();
+
+    *nya = propid;
+    
+    Ok(JsValue::Undefined)
 
 }
 
@@ -308,6 +477,17 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("get_prop_scale", 1, NativeFunction::from_fn_ptr(get_prop_scale));
         self.context.register_global_builtin_callable("mod_prop_rot", 1, NativeFunction::from_fn_ptr(mod_prop_rot));
         self.context.register_global_builtin_callable("get_prop_rot", 1, NativeFunction::from_fn_ptr(get_prop_rot));
+        self.context.register_global_builtin_callable("mod_prop_vel", 1, NativeFunction::from_fn_ptr(mod_prop_vel));
+        self.context.register_global_builtin_callable("get_prop_vel", 1, NativeFunction::from_fn_ptr(get_prop_vel));
+        self.context.register_global_builtin_callable("mod_prop_vel_onlyside", 1, NativeFunction::from_fn_ptr(mod_prop_vel_onlyside));
+
+        self.context.register_global_builtin_callable("create_camera", 1, NativeFunction::from_fn_ptr(create_camera));
+        self.context.register_global_builtin_callable("mod_camera_pos", 1, NativeFunction::from_fn_ptr(mod_camera_pos));
+        self.context.register_global_builtin_callable("get_camera_pos", 1, NativeFunction::from_fn_ptr(get_camera_pos));
+        self.context.register_global_builtin_callable("mod_camera_rot", 1, NativeFunction::from_fn_ptr(mod_camera_rot));
+        self.context.register_global_builtin_callable("get_camera_rot", 1, NativeFunction::from_fn_ptr(get_camera_rot));
+        self.context.register_global_builtin_callable("lookat_camera", 1, NativeFunction::from_fn_ptr(lookat_camera));
+        self.context.register_global_builtin_callable("set_main_camera", 1, NativeFunction::from_fn_ptr(set_main_camera));
 
         self.context.register_global_builtin_callable("create_light", 1, NativeFunction::from_fn_ptr(create_light));
         self.context.register_global_builtin_callable("mod_light_pos", 1, NativeFunction::from_fn_ptr(mod_light_pos));

@@ -18,7 +18,7 @@ impl keconfig {
     pub fn parse(location: String) -> keconfig{
         let mut conf = keconfig{
             default_map: "".to_string(),
-            char_pov: character_type::First,
+            char_pov: character_type::Disabled,
             run_script: "index.js".to_string(),
             hotswap: false,
             debug: false,
@@ -51,6 +51,9 @@ impl keconfig {
                         }
                         "side" => {
                             conf.char_pov = character_type::Scroller
+                        }
+                        "disable" => {
+                            conf.char_pov = character_type::Disabled
                         }
                         _ => {}
                     }

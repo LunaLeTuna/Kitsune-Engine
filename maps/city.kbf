@@ -1,0 +1,29 @@
+Kitsune Engine V1
+
+>AmbientColor 0 0 0
+>SkyColor 0.4862745 0.6980392 0.8980392
+>SunIntensity 300
+>Baseplate 50 0.2 0.509804 0.137255 1
+
+>Texture_Reference 1 protogen.png
+
+>Model_Reference 1 block.glb
+
+>Shader_Reference 1 depthtest
+
+Model_static 13 -1 46 2 2 2
+	+NAME crystal
+	+TRANS 0.9
+	+Shader 1
+Model_static 13 -1 46 2 2 2
+	+NAME rock
+	+TRANS 0.9
+	+Shader 1
+Model_static 13 -1 46 2 2 2
+	+NAME huge_room
+Brush 0 -4 0 30 2 30
+	+NAME elevator_shaft
+Script 3 7 2 5 5 5
+	+NAME cubes
+	+file fly_cam.js
+	+fire start()

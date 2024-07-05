@@ -48,6 +48,8 @@ pub struct Prop {
     pub rotation: Vector3<f32>,
     pub scale: Vector3<f32>,
 
+    pub velocity: Vector3<f32>,
+
     pub render: bool, //if to render
 
     pub phys_type: phytype, //if rigid, or collision
@@ -77,7 +79,8 @@ impl Prop {
             phys_id: -1,
 
             shader_non_defalt: false,
-            face_cam: false
+            face_cam: false,
+            velocity: Vector3::zeros(),
         }
     }
 

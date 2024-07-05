@@ -4,6 +4,7 @@ use nalgebra::{Matrix4, Perspective3, Rotation3, Vector3, Vector2};
 
 use crate::ke_units::Vec2;
 
+#[derive(Clone)]
 pub struct Camera {
     pub name: String,
     pub projection: Perspective3<f32>,

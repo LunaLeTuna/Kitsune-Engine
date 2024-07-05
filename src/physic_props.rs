@@ -9,6 +9,7 @@ pub enum CopyWhat {
     All,
     OnlyRotation,
     OnlyPosition,
+    OnlyVelocity
 }
 
 pub struct PhysWorld {
@@ -254,6 +255,9 @@ impl PhysWorld {
             }
             CopyWhat::OnlyPosition => {
                 rb.set_position(prop.position.into(), false);
+            },
+            CopyWhat::OnlyVelocity => {
+                rb.set_linvel(prop.velocity.into(), false);
             }
         }
     }
@@ -272,6 +276,7 @@ impl PhysWorld {
                 prop.position = *rb.translation();
                 let vecpog = rb.rotation().euler_angles();
                 prop.set_rotation(Vector3::new(vecpog.0, vecpog.1, vecpog.2));
+                prop.velocity = *rb.linvel();
             }
             CopyWhat::OnlyRotation => {
                 let vecpog = rb.rotation().euler_angles();
@@ -280,6 +285,9 @@ impl PhysWorld {
             CopyWhat::OnlyPosition => {
                 prop.position = *rb.translation();
             }
+            CopyWhat::OnlyVelocity => {
+                prop.velocity = *rb.linvel();
+            },
         }
     }
 
