@@ -154,6 +154,9 @@ pub fn load(location: &str) -> World{
                         ["+DYNAMICCOLLISION"] => {
                             current_brick.phys_type = phytype::Dynamic;
                         }
+                        ["+roundCOLLISION"] => {
+                            current_brick.phys_shape = physhape::Ball;
+                        }
                         ["+DYNAMICCOLIDERCOLLISION"] => { //I know this is a big stupid attribute, but could have been "DOESNOTOBEYTOYOURDUMBPHYSICSHAHA"; I for one think it's funny
                             current_brick.phys_type = phytype::DynamicCollider;
                         }

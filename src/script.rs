@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use rust_socketio::{ClientBuilder, Payload, RawClient, client::Client};
 use smol::future::FutureExt;
 
-use crate::{cameras::Camera, fs_system::grab, props::Prop, PointLight, CAMERAS, LIGHTS, MAIN_CAM, PROPS, REQUESTS, SCREEN_SIZE};
+use crate::{cameras::Camera, fs_system::grab, props::Prop, PointLight, CAMERAS, LIGHTS, MAIN_CAM, PROPS, REQUESTS, SCREEN_SIZE, TEXTURE_COUNT};
 
 pub struct ScriptSpace<'a> {
     pub world: i16,
@@ -176,6 +176,106 @@ fn get_prop_rot(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> 
 
 }
 
+fn mod_prop_shader(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.shader = st;
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_prop_shader(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+    let st = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+
+    
+    
+    Ok(JsValue::new(w.shader))
+
+}
+
+
+fn mod_prop_model(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.model = st;
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_prop_model(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+    let st = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+
+    
+    
+    Ok(JsValue::new(w.model))
+
+}
+
+fn mod_prop_texture(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
+    let plat = _nargs.get_or_undefined(2).to_i32(_ctx).unwrap();
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.textures[st as usize] = plat;
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_prop_texture(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+    let st = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+
+    
+    
+    Ok(JsValue::new(w.textures[st as usize]))
+
+}
+
+fn lookat_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
+    let stx = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let sty = st.get("y").unwrap().as_f64().unwrap() as f32;
+    let stz = st.get("z").unwrap().as_f64().unwrap() as f32;
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.look_at(Vector3::new(stx, sty, stz));
+    
+    Ok(JsValue::Undefined)
+
+}
+
 fn mod_prop_vel(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut propz = REQUESTS.write().unwrap();
     let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
@@ -228,6 +328,7 @@ fn mod_prop_vel_onlyside(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context
 fn create_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut womp = Prop::new("nya :3".to_owned());
     womp.model = 0;
+    womp.shader = 1;
     womp.textures = vec![0,0];
     let mut propz = PROPS.write().unwrap();
     let i = propz.len() as i32;
@@ -337,15 +438,67 @@ fn get_camera_rot(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -
 
     let w = propz.get(&propid).unwrap();
 
+
+    let gewru = w.rotation.euler_angles();
+    
+
     let json = json!({
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0
+        "x": gewru.0,
+        "y": gewru.1,
+        "z": gewru.2
     });
 
     let fvalue = JsValue::from_json(&json, _ctx).unwrap();
     
     Ok(fvalue)
+
+}
+
+fn mod_camera_dis(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = CAMERAS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_boolean();
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.disabled=st;
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_camera_dis(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = CAMERAS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+    
+    Ok(JsValue::Boolean(w.disabled))
+
+}
+
+fn mod_camera_bw2(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = CAMERAS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.draw_buffer_to=st;
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_camera_bw2(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = CAMERAS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+    
+    Ok(JsValue::Integer(w.draw_buffer_to))
 
 }
 
@@ -376,6 +529,52 @@ fn set_main_camera(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) 
     *nya = propid;
     
     Ok(JsValue::Undefined)
+
+}
+
+//gets cam by name
+fn get_existing_cam_by_name(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let sat = _nargs.get_or_undefined(0).as_string().unwrap().as_ref();
+
+    let propname = match std::string::String::from_utf16(sat) {
+        Ok(x) => x,
+        Err(_) => "".to_owned()
+    };
+
+    let propz = CAMERAS.read().unwrap();
+    let w = propz.clone().into_iter();
+
+    for (i, prop) in w{
+        if(prop.name == propname){
+            return Ok(JsValue::Integer(i))
+        }
+    }
+    
+    Ok(JsValue::Integer(-1))
+
+}
+
+//
+// texture
+//
+
+fn create_texture(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut texturecount = *TEXTURE_COUNT.write().unwrap();
+    let mut propz = REQUESTS.write().unwrap();
+    
+    let sat = _nargs.get_or_undefined(0).as_string().unwrap().as_ref();
+
+    let locat = match std::string::String::from_utf16(sat) {
+        Ok(x) => x,
+        Err(_) => "".to_owned()
+    };
+
+    propz.push(crate::KERequest::Create_Texture(texturecount, locat));
+    drop(propz);
+
+    texturecount = texturecount + 1;
+    
+    Ok(JsValue::Integer(texturecount))
 
 }
 
@@ -431,6 +630,19 @@ fn get_light_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) ->
 
 }
 
+fn tepter(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = REQUESTS.write().unwrap();
+
+    let textureid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+    let newbufferid = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
+
+    propz.push(crate::KERequest::Pin_Texture_Buffer(textureid, newbufferid));
+    drop(propz);
+    
+    Ok(JsValue::Undefined)
+
+}
+
 impl ScriptSpace<'_> {
 
     pub fn new() -> ScriptSpace<'static>{
@@ -475,23 +687,40 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("get_prop_pos", 1, NativeFunction::from_fn_ptr(get_prop_pos));
         self.context.register_global_builtin_callable("mod_prop_scale", 1, NativeFunction::from_fn_ptr(mod_prop_scale));
         self.context.register_global_builtin_callable("get_prop_scale", 1, NativeFunction::from_fn_ptr(get_prop_scale));
+        self.context.register_global_builtin_callable("mod_prop_shader", 1, NativeFunction::from_fn_ptr(mod_prop_shader));
+        self.context.register_global_builtin_callable("get_prop_shader", 1, NativeFunction::from_fn_ptr(get_prop_shader));
+        self.context.register_global_builtin_callable("mod_prop_model", 1, NativeFunction::from_fn_ptr(mod_prop_model));
+        self.context.register_global_builtin_callable("get_prop_model", 1, NativeFunction::from_fn_ptr(get_prop_model));
+        self.context.register_global_builtin_callable("mod_prop_texture", 1, NativeFunction::from_fn_ptr(mod_prop_texture));
+        self.context.register_global_builtin_callable("get_prop_texture", 1, NativeFunction::from_fn_ptr(get_prop_texture));
         self.context.register_global_builtin_callable("mod_prop_rot", 1, NativeFunction::from_fn_ptr(mod_prop_rot));
         self.context.register_global_builtin_callable("get_prop_rot", 1, NativeFunction::from_fn_ptr(get_prop_rot));
+        self.context.register_global_builtin_callable("lookat_prop", 1, NativeFunction::from_fn_ptr(lookat_prop));
         self.context.register_global_builtin_callable("mod_prop_vel", 1, NativeFunction::from_fn_ptr(mod_prop_vel));
         self.context.register_global_builtin_callable("get_prop_vel", 1, NativeFunction::from_fn_ptr(get_prop_vel));
         self.context.register_global_builtin_callable("mod_prop_vel_onlyside", 1, NativeFunction::from_fn_ptr(mod_prop_vel_onlyside));
 
+        self.context.register_global_builtin_callable("get_existing_cam_by_name", 1, NativeFunction::from_fn_ptr(get_existing_cam_by_name));
+        
         self.context.register_global_builtin_callable("create_camera", 1, NativeFunction::from_fn_ptr(create_camera));
         self.context.register_global_builtin_callable("mod_camera_pos", 1, NativeFunction::from_fn_ptr(mod_camera_pos));
         self.context.register_global_builtin_callable("get_camera_pos", 1, NativeFunction::from_fn_ptr(get_camera_pos));
         self.context.register_global_builtin_callable("mod_camera_rot", 1, NativeFunction::from_fn_ptr(mod_camera_rot));
         self.context.register_global_builtin_callable("get_camera_rot", 1, NativeFunction::from_fn_ptr(get_camera_rot));
+        self.context.register_global_builtin_callable("mod_camera_dis", 1, NativeFunction::from_fn_ptr(mod_camera_dis));
+        self.context.register_global_builtin_callable("get_camera_dis", 1, NativeFunction::from_fn_ptr(get_camera_dis));
+        self.context.register_global_builtin_callable("mod_camera_bw2", 1, NativeFunction::from_fn_ptr(mod_camera_bw2));
+        self.context.register_global_builtin_callable("get_camera_bw2", 1, NativeFunction::from_fn_ptr(get_camera_bw2));
         self.context.register_global_builtin_callable("lookat_camera", 1, NativeFunction::from_fn_ptr(lookat_camera));
         self.context.register_global_builtin_callable("set_main_camera", 1, NativeFunction::from_fn_ptr(set_main_camera));
 
         self.context.register_global_builtin_callable("create_light", 1, NativeFunction::from_fn_ptr(create_light));
         self.context.register_global_builtin_callable("mod_light_pos", 1, NativeFunction::from_fn_ptr(mod_light_pos));
         self.context.register_global_builtin_callable("get_light_pos", 1, NativeFunction::from_fn_ptr(get_light_pos));
+
+        self.context.register_global_builtin_callable("create_texture", 1, NativeFunction::from_fn_ptr(create_texture));
+
+        self.context.register_global_builtin_callable("tepter", 1, NativeFunction::from_fn_ptr(tepter));
         
         
     }

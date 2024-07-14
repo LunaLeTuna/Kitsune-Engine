@@ -47,7 +47,7 @@ class Model {
 
 class Texture {
     constructor(url) {
-        //this.ID = ops.create_texture(url);
+        this.ID = create_texture(url);
     }
 }
 
@@ -81,6 +81,10 @@ class Prop {
 
     get rotation() {
         return get_prop_rot(this._KE_Prop);
+    }
+
+    lookat(vec3i) {
+        lookat_prop(this._KE_Prop, vec3i)
     }
 
     set velocity(vec3i) {
@@ -136,11 +140,11 @@ class Prop {
     }
 
     set texture(modeli) {
-        //ops.mod_prop_texture(this._KE_Prop, 0, modeli.ID);
+        mod_prop_texture(this._KE_Prop, 0, modeli.ID);
     }
 
     get texture() {
-        //return ops.get_prop_texture(this._KE_Prop, 0);
+        get_prop_texture(this._KE_Prop, 0);
     }
 
     set texture2(modeli) {
@@ -165,6 +169,16 @@ function getByName(name){
     return new Prop(idd);
 }
 
+
+function getCamByName(name){
+    var idd = get_existing_cam_by_name(name);
+    if(idd == -1) {
+        console.log(`Error: can't fine camera "${name}"`)
+        return null;
+    }
+    return new Camera(idd);
+}
+
 class Camera {
     set position(vec3i) {
         mod_camera_pos(this._KE_Prop, vec3i);
@@ -176,19 +190,37 @@ class Camera {
     }
 
     set rotation(vec3i) {
-        mod_cam_rot(this._KE_Prop, vec3i);
+        mod_camera_rot(this._KE_Prop, vec3i);
+        this._WORKAROUND_ROtato = vec3i;
     }
 
     get rotation() {
-        return get_cam_rot(this._KE_Prop);
+        let raw =  get_camera_rot(this._KE_Prop);
+        return new Vector3(raw.x,raw.y,raw.z)
+    }
+
+    set disabled(vec3i) {
+        mod_camera_dis(this._KE_Prop, vec3i);
+    }
+
+    get disabled() {
+        return get_camera_dis(this._KE_Prop);
+    }
+
+    set buffer_write2(vec1i) {
+        mod_camera_bw2(this._KE_Prop, vec1i);
+    }
+
+    get buffer_write2() {
+        return get_camera_bw2(this._KE_Prop);
     }
 
     lookat(vec3i){
         lookat_camera(this._KE_Prop, vec3i)
     }
 
-    constructor() {
-        this._KE_Prop = create_camera();
+    constructor(l) {
+        this._KE_Prop = l ?? create_camera();
     }
 }
 

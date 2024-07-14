@@ -13,7 +13,9 @@ pub struct Camera {
     pub rotation: Rotation3<f32>,
     pub up: Vector3<f32>,
 
-    pub draw_buffer_to: i16,
+    pub disabled: bool,
+
+    pub draw_buffer_to: i32,
 
     pub parent_prop: i32, // prop id
     pub parent_offset: Vector3<f32>,
@@ -46,6 +48,7 @@ impl Camera {
             view: Matrix4::new_scaling(1.0),
             parent_prop: -1,
             parent_offset: Vector3::zeros(),
+            disabled: false
         }
     }
 

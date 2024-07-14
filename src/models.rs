@@ -2,7 +2,6 @@ use std::{fs::File, io::BufReader};
 
 use glium::{vertex::VertexBuffer, implement_vertex};
 
-use fbxcel_dom::any::AnyDocument;
 use gltf::Gltf;
 
 use crate::{fs_system::grab, ke_units::{parsef, parse}};
@@ -28,12 +27,14 @@ pub fn convert_ke_to_gl(ver: &[Vertex], display: &glium::Display) -> VertexBuffe
     VertexBuffer::new(display, ver).unwrap()
 }
 
-pub struct Model<'a> {
-    pub name: &'a str,
+pub struct Model {
+    pub name: String,
     pub verts: VertexBuffer<Vertex>,
+    pub phys_model: i32,
+    pub raw_data: (Vec<[f32; 3]>, Vec<usize>)
 }
 
-pub fn load_obj<'a>(location: &str, display: &'a glium::Display) -> Model<'a> {
+pub fn load_obj<'a>(location: &str, display: &'a glium::Display) -> Model {
     let file = grab(location);
 
     let mut pos = vec![];
@@ -93,38 +94,30 @@ pub fn load_obj<'a>(location: &str, display: &'a glium::Display) -> Model<'a> {
     //dbg!(location,pos.len(),nor.len(),tex.len());
 
     Model {
-        name: "nya",
+        name: "nya".to_owned(),
         verts: convert_ke_to_gl(&final_v, display),
+        phys_model: -1,
+        raw_data: (pos,vf)
     }
 }
 
-pub fn load_fbx<'a>(location: &str, display: &'a glium::Display) -> Model<'a> {
+pub fn load_fbx<'a>(location: &str, display: &'a glium::Display) -> Model {
     let file = File::open(location).expect("Failed to open file");
     let reader = BufReader::new(file);
 
-    match AnyDocument::from_seekable_reader(reader).expect("Failed to load document") {
-        AnyDocument::V7400(ver, doc) => {
-            println!("Loaded FBX DOM successfully: FBX version = {:?}", ver);
-            for scene in doc.scenes() {
-                println!("Scene object: object_id={:?}", scene.object_id());
-                let root_id = scene
-                    .root_object_id()
-                    .expect("Failed to get root object ID");
-                println!("\tRoot object ID: {:?}", root_id);
-            }
-        }
-        _ => panic!("FBX version unsupported by this example"),
-    }
+    
 
     let mut final_v: Vec<Vertex> = Vec::new();
 
     Model {
-        name: "nya",
+        name: "nya".to_owned(),
         verts: convert_ke_to_gl(&final_v, display),
+        phys_model: -1,
+        raw_data: (vec![],vec![])
     }
 }
 
-pub fn load_gltf<'a>(location: &str, display: &'a glium::Display) -> Model<'a> {
+pub fn load_gltf<'a>(location: &str, display: &'a glium::Display) -> Model {
     //get it to work with buffer stuff later
     // let file = File::open(location).expect("Failed to open file");
     // let reader = BufReader::new(file);
@@ -210,7 +203,9 @@ pub fn load_gltf<'a>(location: &str, display: &'a glium::Display) -> Model<'a> {
     }
 
     Model {
-        name: "nya",
+        name: "nya".to_owned(),
         verts: convert_ke_to_gl(&final_v, display),
+        phys_model: -1,
+        raw_data: (vec![],vec![]),
     }
 }

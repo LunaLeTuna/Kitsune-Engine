@@ -62,10 +62,16 @@ function server_loop(delta){
 addEventListener("server_tick",server_loop)
 
 
+let first_ignore = false;
 
 //at some point this could be made to be hot loaded :3
 function client_update(delta){
     if(delta.type == "join"){ //serverside, when player joins
+
+        if(!first_ignore){
+            first_ignore = true;
+            return
+        }
 
         var newBody = new Prop();
 
@@ -125,7 +131,7 @@ function client_update(delta){
 
 addEventListener("client_update",client_update)
 
-var client_tick_send_rate = 500;
+var client_tick_send_rate = 10;
 var client_tick_now = 0;
 
 //at some point this could be made to be hot loaded :3
@@ -136,7 +142,7 @@ function loop(delta){
         emit({"type": "player pos update", "data":{"newpos":myBody.position}})
         client_tick_now=0;
     }else{
-        client_tick_now++;
+        client_tick_now+=delta;
     }
 
     // console.log(JSON.stringify({pos:awa.position}))

@@ -20,7 +20,7 @@ use serde_json::{json, Value};
 use shaders::{ShadvType, Shader};
 use smol::{lock::{RwLockReadGuard, futures}, future::FutureExt};
 use textures::Texture;
-use winit::{event_loop::{EventLoop, ControlFlow}, window::{WindowBuilder, CursorGrabMode}, event::{StartCause, Event, WindowEvent, DeviceEvent}, dpi::LogicalPosition};
+use winit::{dpi::LogicalPosition, event::{DeviceEvent, Event, StartCause, WindowEvent}, event_loop::{ControlFlow, EventLoop}, window::{CursorGrabMode, Fullscreen, WindowBuilder}};
 use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use glium::texture::SrgbTexture2d;
 use axum::{routing::get, http::Request};
@@ -49,17 +49,22 @@ pub mod multiplayer;
 
 pub enum KERequest {
     Create_Model(String),
-    Create_Texture(String),
+    Create_Model_From_Magic(i32,Vec<Vertex>),
+    Create_Texture(i32, String),
     Pin_Texture_Buffer(i32,i32),
+    Delete_Prop(i32),
     Create_Buffer(String),
     Create_Camera(String),
     Pin_Buffer_Camera(i32,i32),
     Phys_Prop_Push(i32,Vector3<f32>),
     Phys_Prop_Push_SideOnly(i32,Vector2<f32>),
+    load_map(String),
     NULL,
 }
 
 lazy_static::lazy_static! {
+    // the Vec<i32> is refrences to the prop hashmap, maybe at some point move worlds in to PROPS with HASHMAP<i32,HASHMAP<i32,Prop>>... maybe thats stupid :P
+    static ref WORLDS: RwLock<HashMap<i32, (Environment,Vec<i32>)>> = RwLock::new(HashMap::new());
     static ref PROPS: RwLock<HashMap<i32, Prop>> = RwLock::new(HashMap::new());
     static ref CAMERAS: RwLock<HashMap<i32, Camera>> = RwLock::new(HashMap::new());
     static ref MAIN_CAM: RwLock<i32> = RwLock::new(0);
@@ -71,6 +76,7 @@ lazy_static::lazy_static! {
     pub static ref TEXTURE_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref CAMERA_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref BUFFER_COUNT: RwLock<i32> = RwLock::new(0);
+    pub static ref PW: RwLock<PhysWorld> = RwLock::new(PhysWorld::init_phys_world());
     pub static ref REQUESTS: RwLock<Vec<KERequest>> = RwLock::new(Vec::new());
     pub static ref FIRST: Arc<RwLock<String>> = Arc::new(RwLock::new(format!("")));
 }
@@ -159,12 +165,11 @@ fn main(){
     let mut propz = PROPS.write().unwrap();
     let mut modelz: HashMap<i32, Model> = HashMap::new();
     let mut texturez: HashMap<i32, Texture> = HashMap::new();
-    let mut bufferz: HashMap<i32, Buffer> = HashMap::new();
+    let mut texturez2: Vec<SrgbTexture2d> = Vec::new();
     let mut shaderz: HashMap<i32, Shader> = HashMap::new();
     let mut shader_vars: HashMap<String, ShadvType> = HashMap::new();
     let mut bufferz: HashMap<i32, SimpleFrameBuffer> = HashMap::new();
-
-    let mut trans_props: Vec<i32> = Vec::new();
+    bufferz.reserve(4);
 
 
     // this sets up engine default assets
@@ -191,6 +196,7 @@ fn main(){
 
         *MODEL_COUNT.write().expect("RwLock poisoned") += 2;
 
+        
         let pig_skin = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.png";
         texturez.insert(0, Texture::craft(&pig_skin, &display));
         *TEXTURE_COUNT.write().expect("RwLock poisoned") += 1;
@@ -205,12 +211,13 @@ fn main(){
     }
 
     //init physics system
-    let mut phys_world = PhysWorld::init_phys_world();
+    let mut phys_world = PW.write().unwrap();
 
-    let (world_emv, scripz) = {
+    let mut loadmap = |map:String, propz: &mut std::sync::RwLockWriteGuard<HashMap<i32, Prop>>, texturez: &mut HashMap<i32, Texture>, modelz: &mut HashMap<i32, Model>, phys_world: &mut std::sync::RwLockWriteGuard<PhysWorld>| {
 
-        let map = load(&("./maps/".to_owned()+&keconf.default_map));
+        let map = load(&("./maps/".to_owned()+&map));
 
+        
         let txCount = (texturez.len() as i32)-1;
 
         for tx in map.textures {
@@ -244,7 +251,7 @@ fn main(){
 
         for np in map.props {
             let mut np = np;
-            phys_world.create_phy(&mut np, &modelz);
+            phys_world.create_phy(&mut np, modelz);
 
             let mut current_new_texture = 0 as usize;
             let textsize = np.textures.len()-1;
@@ -262,9 +269,9 @@ fn main(){
                 np.shader = np.shader+shCount;
             }
 
-            if(np.transparency != 1.0){
-                trans_props.push(partnp);
-            }
+            // if(np.transparency != 1.0){
+            //     trans_props.push(partnp);
+            // }
 
             propz.insert(partnp, np);
             partnp+=1;
@@ -280,6 +287,8 @@ fn main(){
 
         (map.environment, map.scripts)
     };
+
+    let (world_emv, scripz) = loadmap(keconf.default_map, &mut propz, &mut texturez, &mut modelz, &mut phys_world);
 
     // {
     //     let mut womp = Prop::new("nya :3".to_owned());
@@ -329,7 +338,7 @@ fn main(){
 
     let mut real_char: Character;
 
-    real_char = Character::new(keconf.char_pov, &display, &mut propz, &modelz, &mut phys_world, &mut camera_mapc);
+    real_char = Character::new(keconf.char_pov, &display, &mut propz, &mut modelz, &mut phys_world, &mut camera_mapc);
     *_main_camerac = real_char.camera;
 
     drop(camera_mapc);
@@ -370,7 +379,8 @@ fn main(){
     // ";w; oh nyoooooo networkin is sow haarrrdua"
     // not anymore, shut up; I did it for you righ here :3
 
-    //yeah soooo.... 
+    //yeah soooo.... this is crap
+    //need to re do it some day
 
     if(keconf.is_server && keconf.has_multiplayer){
         std::thread::spawn(move || {
@@ -382,6 +392,11 @@ fn main(){
                     println!("Socket connected on / namespace with id: {}", socket.id);
 
                     socket.join(socket.id.to_string());
+
+                    socket.emit("update", json!({
+                        "type":"server_your_ticket",
+                        "id":socket.id,
+                    }));
 
                     let binding = FIRST.clone();
                     let firs = binding.read().unwrap().to_string();
@@ -593,7 +608,23 @@ fn main(){
     let mut last_nanos = nanos;
     let mut start = nanos;
 
-    event_loop.borrow_mut().run_return(|event, _, control_flow| {
+    {
+        //let projecto = texturez.get_mut(&0).unwrap();
+        //projecto.bebufpointer = true;
+        //projecto.bebufto = 0;
+        //let nam = texturez.len() as i32;
+        let awsa = glium::texture::SrgbTexture2d::empty(&display, width, height).unwrap();
+        texturez2.push(awsa);
+        //*TEXTURE_COUNT.write().expect("RwLock poisoned") += 1;
+        //let screen_texture = texturez.get(&0).unwrap();
+
+        let awsa = &texturez2[0];
+
+         
+        bufferz.insert(1, glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, awsa, &screen_depth_texture).unwrap());
+    };
+    
+    event_loop.run_return(|event, _, control_flow| {
 
         let mut nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -706,25 +737,52 @@ fn main(){
 
         let mut a = REQUESTS.write().unwrap();
 
+        
+
         for requ in &*a {
             match requ {
                 KERequest::Create_Model(_) => todo!(),
-                KERequest::Create_Texture(_) => todo!(),
-                KERequest::Pin_Texture_Buffer(_, _) => todo!(),
+                KERequest::Create_Model_From_Magic(modelID, mesh) => {
+                    let modael = modelz.get_mut(&modelID).unwrap();
+                    modael.verts.write(&mesh);
+                },
+                KERequest::Create_Texture(ida, local) => {
+                    
+                        
+                    if local == "" {
+                        HashMap::insert(&mut texturez, *ida, Texture::craft_lorp(width, height, &display)); //later when not lazy, make width and high customizable
+                    }else{
+                        HashMap::insert(&mut texturez, *ida, Texture::craft(&local, &display));
+                    }
+                },
+                KERequest::Pin_Texture_Buffer(wheret, placed) => {
+                    let projecto = texturez.get_mut(&wheret).unwrap();
+                    projecto.bebufpointer = true;
+                    projecto.bebufto = *placed as usize;
+                    
+                },
+                KERequest::Delete_Prop(propid) => {
+                    let w = propz.get_mut(&propid).unwrap();
+                    todo!();
+                    //phys_world;
+                },
                 KERequest::Create_Buffer(_) => todo!(),
                 KERequest::Create_Camera(_) => todo!(),
                 KERequest::Pin_Buffer_Camera(_, _) => todo!(),
                 KERequest::Phys_Prop_Push(propid, flyto) => {
-                    phys_world.apply_force(propz.get_mut(propid).unwrap(), *flyto);
+                    phys_world.apply_force(propz.get_mut(&propid).unwrap(), *flyto);
                 },
                 KERequest::Phys_Prop_Push_SideOnly(propid, flyto) => {
-                    phys_world.apply_force_xz(propz.get_mut(propid).unwrap(), *flyto);
+                    phys_world.apply_force_xz(propz.get_mut(&propid).unwrap(), *flyto);
+                },
+                KERequest::load_map(locala) => {
+                   //loadmap(locala.to_string(), &mut propz, &mut texturez, &mut modelz, &mut phys_world);
                 },
                 KERequest::NULL => todo!(),
             }
-        }
+        };
 
-        (*a).clear();
+        (a).clear();
 
         if(keconf.shader_hotswap){
             for x in 0..shaderz.len() as i32 {
@@ -761,37 +819,59 @@ fn main(){
                 phys_world._sync_prop(prop, CopyWhat::All);
             };
         }
-
-        //loop through screenbuffers later by cameras
-        let mut screenbuffer = bufferz.get_mut(&_main_buffer).unwrap();
+        
 
         if(!keconf.headless){
-
-            // start drawing frame
-            let mut target = display.draw();
-            target.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
-            screenbuffer.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
 
             real_char.step(&mut phys_world, &mut propz, delta_time);
 
             //step physics world
             phys_world.step();
 
-            //if cam prop parent moved, we move cam
-            let mut _main_camera = MAIN_CAM.write().unwrap();
+
+            // start drawing frame
+            let mut target = display.draw();
+            target.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
+
             let mut camera_map = CAMERAS.write().unwrap();
-            let main_cam = camera_map.get_mut(&_main_camera).unwrap();
+
+            for camz in 0..camera_map.len() {
+
+                let mut _main_camera = MAIN_CAM.write().unwrap();
+            
+                let main_cam = camera_map.get_mut(&(camz as i32)).unwrap();
+
+                main_cam.refresh();
+
+            let mut screenbuffer = bufferz.get_mut(&main_cam.draw_buffer_to).unwrap();
+            screenbuffer.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
+
+            //if cam prop parent moved, we move cam
             if main_cam.parent_prop != -1 {
                 main_cam.position = propz.get(&main_cam.parent_prop).unwrap().position+main_cam.parent_offset;
                 //main_cam.look_at(Vector3::new(0.0, 0.0, 0.0)); //funny testing
                 main_cam.refresh();
             }
 
+            if main_cam.disabled {continue};
+
+
+            
+
+            let mut trans_props: Vec<i32> = Vec::new();
+
             // now in theory one could get all the closest props and push refrences of those props in to a list
             // then replace propz here to that list to implement some sorta calling
             // i'ma do that later
-            for po in propz.iter_mut() {
-                let prop = po.1;
+            for po in 0..propz.len() {
+                let pid = (po) as i32;
+
+                let prop = propz.get_mut(&pid).unwrap();
+
+                if prop.parent_prop != -1 {
+                    prop.position = PROPS.read().unwrap().get(&prop.parent_prop).unwrap().position+prop.parent_offset;
+                    //main_cam.look_at(Vector3::new(0.0, 0.0, 0.0)); //funny testing
+                }
                 
                 //sync physics prop to visual prop or vis versa
                 if prop.phys_type == phytype::DynamicCollider {
@@ -808,9 +888,13 @@ fn main(){
                         prop.look_at(prop.position-main_cam.position);
                     }
                 }
-                if prop.transparency != 1.0 {continue;}
+                if prop.transparency != 1.0 {
+                    trans_props.push(pid); //put it in a list to retry in the transparency pass
+                    continue;
+                }
+                
 
-                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &mut target, &modelz, &shaderz, &params);
+                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
 
                 // if prop.position.y < -2.0 {
                 //     to_remove.push(*po.0);
@@ -826,15 +910,16 @@ fn main(){
 
                 if !prop.render {continue;}
 
-                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &mut target, &modelz, &shaderz, &params);
+                
+                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
             };
-
-            let mut screenbuffer = bufferz.get_mut(&_main_buffer).unwrap();
+        }
+            let mut screenbuffer: &mut SimpleFrameBuffer = bufferz.get_mut(&_main_buffer).unwrap();
 
             screen_compile(loop_wawa, &screen_vertex, &3, &shader_vars, &screen_texture, &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
 
             //target.blit_buffers_from_simple_framebuffer(&screenbuffer, &glium::Rect { left: 0, bottom: 0, width: width, height: height }, &glium::BlitTarget { left: 0, bottom: 0, width: width as i32, height: height as i32 }, glium::uniforms::MagnifySamplerFilter::Nearest, glium::BlitMask { color: true, depth: true, stencil: false });
-
+            
             // finish frame and put on window probably
             target.finish().unwrap();
         }
@@ -908,7 +993,7 @@ fn screen_compile(loop_wawa: f32, screen_model: &VertexBuffer<Vertex2D>, screen_
 
 }
 
-fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_vars: &HashMap<String, ShadvType>, world_emv: &Environment, lightz: &Vec<PointLight>, screen_texture: &SrgbTexture2d, screenbuffer: &mut  SimpleFrameBuffer, texturez: &HashMap<i32, Texture>, target: &mut glium::Frame, modelz: &HashMap<i32, Model<'_>>, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>) {
+fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_vars: &HashMap<String, ShadvType>, world_emv: &Environment, lightz: &Vec<PointLight>, screen_texture: &SrgbTexture2d, screenbuffer: &mut  SimpleFrameBuffer, texturez: &HashMap<i32, Texture>, texturez2: &Vec<SrgbTexture2d>, target: &mut glium::Frame, modelz: &HashMap<i32, Model>, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>) {
     //this is where all the shader values get pushed so we can send them to gpu
     let mut uniform = dynamic_uniform::DynamicUniforms::new();
 
@@ -1015,11 +1100,11 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
 
     uniform.add("trans".to_string(), &prop.transparency);
 
-    uniform.add("diffuse_tex".to_string(), get_texture(texturez, prop, 0));
-    uniform.add("normal_tex".to_string(), get_texture(texturez, prop, 1));
+    uniform.add("diffuse_tex".to_string(), get_texture(texturez, prop, 0, texturez2));
+    uniform.add("normal_tex".to_string(), &1.0);
 
-    uniform.add("material.diffuse".to_owned(), get_texture(texturez, prop, 0));
-    uniform.add("material.specular".to_owned(), get_texture(texturez, prop, 1));
+    uniform.add("material.diffuse".to_owned(), get_texture(texturez, prop, 0, texturez2));
+    uniform.add("material.specular".to_owned(), &0.0);
     uniform.add("material.shininess".to_owned(), &0.5);
 
     // let sb = &glium::uniforms::Sampler::new(&screen_texture)
@@ -1036,7 +1121,7 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
 
     let mut currrent_text = 0;
     for text in &prop.textures {
-        uniform.add("texture".to_string()+&(currrent_text+1).to_string(), get_texture(texturez, prop, currrent_text));
+        uniform.add("texture".to_string()+&(currrent_text+1).to_string(), get_texture(texturez, prop, currrent_text, texturez2));
         currrent_text+=1;
     }
 
@@ -1071,9 +1156,15 @@ fn get_model<'a>(modelz: &'a HashMap<i32, Model>, prop: &Prop) -> &'a VertexBuff
     }
 }
 
-fn get_texture<'a>(texturez: &'a HashMap<i32, Texture>, prop: &Prop, texture: usize) -> &'a SrgbTexture2d {
+fn get_texture<'a>(texturez: &'a HashMap<i32, Texture>, prop: &Prop, texture: usize, texturez2: &'a Vec<SrgbTexture2d>) -> &'a SrgbTexture2d {
+    //dbg!(prop.textures[texture]);
     match texturez.get(&prop.textures[texture]) {
-        Some(texture) => &texture.texture,
+        Some(texture) => {
+            if texture.bebufpointer {
+                return texturez2.get(texture.bebufto).unwrap();
+            }
+            &texture.texture
+        },
         None => &texturez.get(&0).unwrap().texture,
     }
 }

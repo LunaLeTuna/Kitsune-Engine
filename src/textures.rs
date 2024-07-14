@@ -5,7 +5,9 @@ use crate::TEXTURE_COUNT;
 
 pub struct Texture {
     pub name: String,
-    pub texture: SrgbTexture2d
+    pub texture: SrgbTexture2d,
+    pub bebufpointer: bool,
+    pub bebufto: usize
 }
 
 impl Texture {
@@ -20,6 +22,17 @@ impl Texture {
         Self {
             name: "nya".into(),
             texture: map,
+            bebufpointer: false,
+            bebufto: 0
+        }
+    }
+
+    pub fn craft_lorp(width: u32, height: u32, display: &Display) -> Self {
+        Self {
+            name: "nya".into(),
+            texture: glium::texture::SrgbTexture2d::empty(display, width, height).unwrap(),
+            bebufpointer: false,
+            bebufto: 0
         }
     }
 }

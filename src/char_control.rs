@@ -3,7 +3,7 @@ use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use nalgebra::{Vector3, Vector2};
 use winit::{event::{VirtualKeyCode, KeyboardInput}, dpi::Position};
 
-use crate::{props::{Prop, phytype, physhape}, cameras::Camera, ke_units::{Vec2, radians}, physic_props::{PhysWorld, CopyWhat}, models::Model};
+use crate::{cameras::Camera, ke_units::{radians, Vec2}, main, models::Model, physic_props::{CopyWhat, PhysWorld}, props::{physhape, phytype, Prop}};
 
 #[derive(Clone, PartialEq)]
 pub enum character_type {
@@ -46,7 +46,7 @@ fn pivot_point(place: Vector2<f32>, center: Vector2<f32>, rot:f32) -> Vector2<f3
 } 
 
 impl Character {
-    pub fn new(character_type:character_type, display: &Display, propz: &mut HashMap<i32, Prop>, modelz: &HashMap<i32, Model>, phys_world: &mut PhysWorld, camera_map: &mut HashMap<i32, Camera> ) -> Character {
+    pub fn new(character_type:character_type, display: &Display, propz: &mut HashMap<i32, Prop>, modelz: &mut HashMap<i32, Model>, phys_world: &mut PhysWorld, camera_map: &mut HashMap<i32, Camera> ) -> Character {
         
         let mut womp = Prop::new("TheCharacterController".to_owned());
         womp.model = 0;
@@ -70,6 +70,7 @@ impl Character {
         });
     
         //main_cam.set_rotation(Vector3::new(-0.5, 0.0, 0.3));
+        main_cam.name = "TheCharacterCamera".to_string();
         main_cam.position = Vector3::zeros();
         main_cam.parent_prop = new_id_prop;
         main_cam.parent_offset = Vector3::new(0.0, 0.5, 0.0);

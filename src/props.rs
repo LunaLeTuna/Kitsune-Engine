@@ -50,6 +50,9 @@ pub struct Prop {
 
     pub velocity: Vector3<f32>,
 
+    pub parent_prop: i32,
+    pub parent_offset: Vector3<f32>,
+
     pub render: bool, //if to render
 
     pub phys_type: phytype, //if rigid, or collision
@@ -81,6 +84,9 @@ impl Prop {
             shader_non_defalt: false,
             face_cam: false,
             velocity: Vector3::zeros(),
+
+            parent_prop: -1,
+            parent_offset: Vector3::zeros(),
         }
     }
 
