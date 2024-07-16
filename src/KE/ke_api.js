@@ -41,7 +41,7 @@ class Shader {
 
 class Model {
     constructor(url) {
-        //this.ID = ops.create_model(url);
+        this.ID = create_model(url);
     }
 }
 
@@ -133,6 +133,7 @@ class Prop {
 
     set model(modeli) {
         //ops.mod_prop_model(this._KE_Prop, modeli.ID);
+        mod_prop_model(this._KE_Prop, modeli.ID)
     }
 
     get model() {

@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use rust_socketio::{ClientBuilder, Payload, RawClient, client::Client};
 use smol::future::FutureExt;
 
-use crate::{cameras::Camera, fs_system::grab, props::Prop, PointLight, CAMERAS, LIGHTS, MAIN_CAM, PROPS, REQUESTS, SCREEN_SIZE, TEXTURE_COUNT};
+use crate::{cameras::Camera, fs_system::grab, props::Prop, PointLight, CAMERAS, LIGHTS, MAIN_CAM, MODEL_COUNT, PROPS, REQUESTS, SCREEN_SIZE, TEXTURE_COUNT};
 
 pub struct ScriptSpace<'a> {
     pub world: i16,
@@ -559,7 +559,7 @@ fn get_existing_cam_by_name(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Cont
 //
 
 fn create_texture(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
-    let mut texturecount = *TEXTURE_COUNT.write().unwrap();
+    let mut texturecount = TEXTURE_COUNT.write().unwrap();
     let mut propz = REQUESTS.write().unwrap();
     
     let sat = _nargs.get_or_undefined(0).as_string().unwrap().as_ref();
@@ -569,12 +569,36 @@ fn create_texture(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -
         Err(_) => "".to_owned()
     };
 
-    propz.push(crate::KERequest::Create_Texture(texturecount, locat));
+    propz.push(crate::KERequest::Create_Texture(*texturecount, locat, 0,0));
     drop(propz);
 
-    texturecount = texturecount + 1;
+    *texturecount = *texturecount + 1;
     
-    Ok(JsValue::Integer(texturecount))
+    Ok(JsValue::Integer(*texturecount-1))
+
+}
+
+//
+// model
+//
+
+fn create_model(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut modelcount = MODEL_COUNT.write().unwrap();
+    let mut propz = REQUESTS.write().unwrap();
+    
+    let sat = _nargs.get_or_undefined(0).as_string().unwrap().as_ref();
+
+    let locat = match std::string::String::from_utf16(sat) {
+        Ok(x) => x,
+        Err(_) => "".to_owned()
+    };
+
+    propz.push(crate::KERequest::Create_Model(*modelcount, locat));
+    drop(propz);
+
+    *modelcount = *modelcount + 1;
+    
+    Ok(JsValue::Integer(*modelcount-1))
 
 }
 
@@ -719,6 +743,8 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("get_light_pos", 1, NativeFunction::from_fn_ptr(get_light_pos));
 
         self.context.register_global_builtin_callable("create_texture", 1, NativeFunction::from_fn_ptr(create_texture));
+
+        self.context.register_global_builtin_callable("create_model", 1, NativeFunction::from_fn_ptr(create_model));
 
         self.context.register_global_builtin_callable("tepter", 1, NativeFunction::from_fn_ptr(tepter));
         

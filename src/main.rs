@@ -48,9 +48,9 @@ pub mod script;
 pub mod multiplayer;
 
 pub enum KERequest {
-    Create_Model(String),
+    Create_Model(i32, String),
     Create_Model_From_Magic(i32,Vec<Vertex>),
-    Create_Texture(i32, String),
+    Create_Texture(i32, String, u32, u32),
     Pin_Texture_Buffer(i32,i32),
     Delete_Prop(i32),
     Create_Buffer(String),
@@ -741,16 +741,24 @@ fn main(){
 
         for requ in &*a {
             match requ {
-                KERequest::Create_Model(_) => todo!(),
+                KERequest::Create_Model(ida, location) => {
+                    if location == "" {
+                        //modelz.insert(*ida, models); do somethin
+                    }else{
+                        modelz.insert(*ida, models::load_obj(&format!("./models/{location}"), &display));
+                    }
+                    
+                    //*MODEL_COUNT.write().expect("RwLock poisoned") += 1;
+                },
                 KERequest::Create_Model_From_Magic(modelID, mesh) => {
                     let modael = modelz.get_mut(&modelID).unwrap();
                     modael.verts.write(&mesh);
                 },
-                KERequest::Create_Texture(ida, local) => {
+                KERequest::Create_Texture(ida, local, width, height) => {
                     
                         
                     if local == "" {
-                        HashMap::insert(&mut texturez, *ida, Texture::craft_lorp(width, height, &display)); //later when not lazy, make width and high customizable
+                        HashMap::insert(&mut texturez, *ida, Texture::craft_lorp(*width, *height, &display)); //later when not lazy, make width and high customizable
                     }else{
                         HashMap::insert(&mut texturez, *ida, Texture::craft(&local, &display));
                     }

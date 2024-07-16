@@ -28,7 +28,7 @@ pub struct ShaderVar {
 
 impl Shader {
     pub fn craft(location: &str, display: &glium::Display) -> Shader {
-        dbg!(location);
+        //dbg!(location);
         let vert_sause = fs::read_to_string(format!("{location}.vert")).unwrap();
 
         let frag_sause = fs::read_to_string(format!("{location}.frag")).unwrap();
