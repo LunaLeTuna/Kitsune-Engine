@@ -1,4 +1,4 @@
-use boa_engine::{value, builtins::string};
+use boa_engine::{builtins::{json, string}, value};
 use buffer::Buffer;
 use cameras::Camera;
 use char_control::{Character, character_type};
@@ -59,6 +59,7 @@ pub enum KERequest {
     Phys_Prop_Push(i32,Vector3<f32>),
     Phys_Prop_Push_SideOnly(i32,Vector2<f32>),
     load_map(String),
+    js_push(String, String),
     NULL,
 }
 
@@ -608,7 +609,7 @@ fn main(){
     let mut last_nanos = nanos;
     let mut start = nanos;
 
-    {
+    for _amewoemwa in 0..keconf.buffers{
         //let projecto = texturez.get_mut(&0).unwrap();
         //projecto.bebufpointer = true;
         //projecto.bebufto = 0;
@@ -617,12 +618,14 @@ fn main(){
         texturez2.push(awsa);
         //*TEXTURE_COUNT.write().expect("RwLock poisoned") += 1;
         //let screen_texture = texturez.get(&0).unwrap();
-
-        let awsa = &texturez2[0];
+    }
+    for _amewoemwa in 0..keconf.buffers{
+        let awsa = &texturez2[_amewoemwa as usize];
 
          
-        bufferz.insert(1, glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, awsa, &screen_depth_texture).unwrap());
+        bufferz.insert(1+(_amewoemwa as i32), glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, awsa, &screen_depth_texture).unwrap());
     };
+
     
     event_loop.run_return(|event, _, control_flow| {
 
@@ -675,7 +678,6 @@ fn main(){
 
         // womp this is where events from the window thingamabob does things
         // pretty much we are gonna quoue mouse and keyboards
-        let mut propz = PROPS.try_write().unwrap();
         let mut lightz = LIGHTS.try_write().unwrap();
 
         match event {
@@ -691,19 +693,22 @@ fn main(){
                     main_cam.reproject(screen_size);
                 }
                 WindowEvent::KeyboardInput { device_id, input, is_synthetic } => {
+                    let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
                     let how = {
                         match input.state {
                             winit::event::ElementState::Pressed => "pressed",
                             winit::event::ElementState::Released => "released",
                         }
                     };
-                    js_world.triggerlis(&"keypress".to_string(), &json!(
+                    let mut rqs = REQUESTS.write().unwrap();
+                    rqs.push(crate::KERequest::js_push("keypress".to_string(), json!(
                         {
                             "how": how,
                             "which": input.scancode,
                             "is_synthetic": is_synthetic
                         }
-                    ).to_string());
+                    ).to_string()));
+                    drop(rqs);
                     real_char.interp_key(&mut phys_world, &mut propz, input, delta_time);
                 }
                 WindowEvent::CloseRequested { .. } => {
@@ -720,6 +725,7 @@ fn main(){
                 match event {
                     DeviceEvent::MouseMotion { delta } => {
                         if(!keconf.headless){
+                            let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
                             let mut _main_camera = MAIN_CAM.write().unwrap();
                             let mut camera_map = CAMERAS.write().unwrap();
                             let (width, height) = display.get_framebuffer_dimensions();
@@ -770,6 +776,7 @@ fn main(){
                     
                 },
                 KERequest::Delete_Prop(propid) => {
+                    let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
                     let w = propz.get_mut(&propid).unwrap();
                     todo!();
                     //phys_world;
@@ -778,13 +785,18 @@ fn main(){
                 KERequest::Create_Camera(_) => todo!(),
                 KERequest::Pin_Buffer_Camera(_, _) => todo!(),
                 KERequest::Phys_Prop_Push(propid, flyto) => {
+                    let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
                     phys_world.apply_force(propz.get_mut(&propid).unwrap(), *flyto);
                 },
                 KERequest::Phys_Prop_Push_SideOnly(propid, flyto) => {
+                    let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
                     phys_world.apply_force_xz(propz.get_mut(&propid).unwrap(), *flyto);
                 },
                 KERequest::load_map(locala) => {
                    //loadmap(locala.to_string(), &mut propz, &mut texturez, &mut modelz, &mut phys_world);
+                },
+                KERequest::js_push(namre, dattaa) => {
+                    js_world.triggerlis(&namre, &dattaa);
                 },
                 KERequest::NULL => todo!(),
             }
@@ -819,6 +831,7 @@ fn main(){
         loop_wawa += 1.0;
 
         if(keconf.headless){
+            let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
             //step physics world
             phys_world.step();
 
@@ -830,6 +843,7 @@ fn main(){
         
 
         if(!keconf.headless){
+            let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
 
             real_char.step(&mut phys_world, &mut propz, delta_time);
 

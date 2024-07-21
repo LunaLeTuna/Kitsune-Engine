@@ -1,4 +1,4 @@
-use crate::{fs_system::grab, char_control::character_type, ke_units::parsef};
+use crate::{char_control::character_type, fs_system::grab, ke_units::{parsef, parsei}};
 
 pub struct keconfig {
     pub default_map: String,
@@ -11,7 +11,8 @@ pub struct keconfig {
     pub is_server: bool,
     pub has_multiplayer: bool,
     pub mouse_sensitivity: f32,
-    pub char_speed: f32
+    pub char_speed: f32,
+    pub buffers: u8
 }
 
 impl keconfig {
@@ -27,7 +28,8 @@ impl keconfig {
             shader_hotswap: false,
             has_multiplayer: false,
             mouse_sensitivity: 4.0,
-            char_speed: 0.0
+            char_speed: 0.0,
+            buffers: 0
         };
 
         let file = grab(&location);
@@ -65,6 +67,10 @@ impl keconfig {
                 },
                 ["mouse_sensitivity", stm] => {
                     conf.mouse_sensitivity = parsef(stm);
+                    continue;
+                },
+                ["buffers", stm] => {
+                    conf.buffers = parsei(stm) as u8;
                     continue;
                 },
                 ["shader_hotswap"] => {

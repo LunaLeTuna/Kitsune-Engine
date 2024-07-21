@@ -9,3 +9,4 @@ char_pov scripted
 --has_multiplayer
 mouse_sensitivity 4.0
 colonthree
+buffers 1

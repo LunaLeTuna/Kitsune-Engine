@@ -89,20 +89,24 @@ fn mod_prop_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> 
 }
 
 fn get_prop_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
-    let mut propz = PROPS.read().unwrap();
-    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+    match PROPS.try_read() {
+        Ok(propz)=>{
+            let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
 
-    let w = propz.get(&propid).unwrap();
+            let w = propz.get(&propid).unwrap();
 
-    let json = json!({
-        "x": w.position.x,
-        "y": w.position.y,
-        "z": w.position.z
-    });
+            let json = json!({
+                "x": w.position.x,
+                "y": w.position.y,
+                "z": w.position.z
+            });
 
-    let fvalue = JsValue::from_json(&json, _ctx).unwrap();
-    
-    Ok(fvalue)
+            let fvalue = JsValue::from_json(&json, _ctx).unwrap();
+            
+            return Ok(fvalue);
+        }
+        Err(_) => todo!(),
+    }
 
 }
 

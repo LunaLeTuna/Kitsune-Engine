@@ -255,23 +255,23 @@ function emit(data){
 }
 
 
-
+var _KE_CURRENT_MAP = "NYA!"; //this will more then likely be map file path; this is known so when maps are unloaded, functions are unloaded
 
 var _KE_EVENT_LIST = {};
 
-function addEventListener(name, fn) {
+function addEventListener(name, fn, options) {
     if (_KE_EVENT_LIST.hasOwnProperty(name)) {
-        _KE_EVENT_LIST[name].push(fn);
+        _KE_EVENT_LIST[name].push({fn,_KE_CURRENT_MAP,options});
     } else {
         _KE_EVENT_LIST[name] = [];
-        _KE_EVENT_LIST[name].push(fn);
+        _KE_EVENT_LIST[name].push({fn,_KE_CURRENT_MAP,options});
     }
 }
 
 function dispatchEvent(name, data) {
     if (!_KE_EVENT_LIST.hasOwnProperty(name)) return;
     _KE_EVENT_LIST[name].forEach(element => {
-        element(data);
+        element.fn(data);
     });
 }
 
