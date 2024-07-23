@@ -129,6 +129,8 @@ void main() {
 
     vec4 tecx = texture(screenbuffer, (gl_FragCoord.xy/framebufferSize.xy)*aawaw).rgba;
 
-    color = vec4(result, 1.0)*vec4(tecx.r, tecx.g*aawaw.x, tecx.b, tecx.a)*vec4(0.3,0.6,1.0,1.0);
+    float depth = (vec4((texture(screenbufferdepth, (gl_FragCoord.xy/framebufferSize.xy)*aawaw).rrr/5*2.3)-0.452,1.0)*70).r;
+
+    color = vec4(result, 1.0)*(tecx+depth)*vec4(0.3,0.6,1.0,1.0);
     
 }

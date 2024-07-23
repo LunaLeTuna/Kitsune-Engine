@@ -905,6 +905,11 @@ fn main(){
             // now in theory one could get all the closest props and push refrences of those props in to a list
             // then replace propz here to that list to implement some sorta calling
             // i'ma do that later
+            let lastdepthtext = glium::uniforms::Sampler::new(&lastscreen_depth_texture)
+            .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+            .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
+            .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual));
+        
             for po in 0..propz.len() {
                 let pid = (po) as i32;
 
@@ -936,7 +941,7 @@ fn main(){
                 }
                 
 
-                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
+                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &lastdepthtext, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
 
                 // if prop.position.y < -2.0 {
                 //     to_remove.push(*po.0);
@@ -944,7 +949,6 @@ fn main(){
             };
 
             lastscreenbuffer.blit_buffers_from_simple_framebuffer(&screenbuffer, &glium::Rect { left: 0, bottom: 0, width: width, height: height }, &glium::BlitTarget { left: 0, bottom: 0, width: width as i32, height: height as i32 }, glium::uniforms::MagnifySamplerFilter::Nearest, glium::BlitMask { color: true, depth: true, stencil: false });
-
         
             for po in &trans_props {
                 let prop = propz.get_mut(&po).unwrap();
@@ -953,7 +957,7 @@ fn main(){
                 if !prop.render {continue;}
 
                 
-                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
+                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &lastdepthtext, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
             };
         }
             let mut screenbuffer: &mut SimpleFrameBuffer = bufferz.get_mut(&_main_buffer).unwrap();
@@ -1051,7 +1055,7 @@ fn screen_compile(loop_wawa: f32, screen_model: &VertexBuffer<Vertex2D>, screen_
 
 }
 
-fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_vars: &HashMap<String, ShadvType>, world_emv: &Environment, lightz: &Vec<PointLight>, screen_texture: &SrgbTexture2d, screenbuffer: &mut  SimpleFrameBuffer, texturez: &HashMap<i32, Texture>, texturez2: &Vec<SrgbTexture2d>, target: &mut glium::Frame, modelz: &HashMap<i32, Model>, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>) {
+fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_vars: &HashMap<String, ShadvType>, world_emv: &Environment, lightz: &Vec<PointLight>, screen_texture: &SrgbTexture2d, screendep_texture: &glium::uniforms::Sampler<DepthTexture2d>,  screenbuffer: &mut  SimpleFrameBuffer, texturez: &HashMap<i32, Texture>, texturez2: &Vec<SrgbTexture2d>, target: &mut glium::Frame, modelz: &HashMap<i32, Model>, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>) {
     //this is where all the shader values get pushed so we can send them to gpu
     let mut uniform = dynamic_uniform::DynamicUniforms::new();
 
@@ -1170,6 +1174,7 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
     // .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest);
 
     uniform.add("screenbuffer".to_owned(), screen_texture);
+    uniform.add("screenbufferdepth".to_owned(), screendep_texture);
 
     let (width, height) = screenbuffer.get_dimensions();
     let binding = [width as f32,height as f32];
