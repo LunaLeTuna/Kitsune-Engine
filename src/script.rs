@@ -329,6 +329,18 @@ fn mod_prop_vel_onlyside(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context
 
 }
 
+fn mod_prop_copy_phys(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = REQUESTS.write().unwrap();
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    propz.push(crate::KERequest::copy_prop_phys_pose(propid));
+    drop(propz);
+    
+    Ok(JsValue::Undefined)
+
+}
+
 fn create_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut womp = Prop::new("nya :3".to_owned());
     womp.model = 0;
@@ -727,6 +739,7 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("mod_prop_vel", 1, NativeFunction::from_fn_ptr(mod_prop_vel));
         self.context.register_global_builtin_callable("get_prop_vel", 1, NativeFunction::from_fn_ptr(get_prop_vel));
         self.context.register_global_builtin_callable("mod_prop_vel_onlyside", 1, NativeFunction::from_fn_ptr(mod_prop_vel_onlyside));
+        self.context.register_global_builtin_callable("mod_prop_copy_phys", 1, NativeFunction::from_fn_ptr(mod_prop_copy_phys));
 
         self.context.register_global_builtin_callable("get_existing_cam_by_name", 1, NativeFunction::from_fn_ptr(get_existing_cam_by_name));
         

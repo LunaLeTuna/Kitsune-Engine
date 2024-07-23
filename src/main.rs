@@ -3,6 +3,7 @@ use buffer::Buffer;
 use cameras::Camera;
 use char_control::{Character, character_type};
 use config::keconfig;
+use menu_system::{menuimage, KEmenuTypes};
 use glium::{glutin::{ContextBuilder}, index::{NoIndices, PrimitiveType}, DepthTest, framebuffer::SimpleFrameBuffer, texture::{DepthStencilTexture2d, DepthTexture2d}, implement_vertex};
 use kbf::{load, Environment};
 use ke_units::{Vec2, radians};
@@ -38,6 +39,7 @@ pub mod ke_units;
 pub mod lights;
 pub mod models;
 pub mod props;
+pub mod menu_system;
 pub mod shaders;
 pub mod textures;
 pub mod buffer;
@@ -60,6 +62,7 @@ pub enum KERequest {
     Phys_Prop_Push_SideOnly(i32,Vector2<f32>),
     load_map(String),
     js_push(String, String),
+    copy_prop_phys_pose(i32),
     NULL,
 }
 
@@ -67,6 +70,7 @@ lazy_static::lazy_static! {
     // the Vec<i32> is refrences to the prop hashmap, maybe at some point move worlds in to PROPS with HASHMAP<i32,HASHMAP<i32,Prop>>... maybe thats stupid :P
     static ref WORLDS: RwLock<HashMap<i32, (Environment,Vec<i32>)>> = RwLock::new(HashMap::new());
     static ref PROPS: RwLock<HashMap<i32, Prop>> = RwLock::new(HashMap::new());
+    static ref MENUS: RwLock<HashMap<i32, KEmenuTypes>> = RwLock::new(HashMap::new());
     static ref CAMERAS: RwLock<HashMap<i32, Camera>> = RwLock::new(HashMap::new());
     static ref MAIN_CAM: RwLock<i32> = RwLock::new(0);
     static ref LIGHTS: RwLock<Vec<PointLight>> = RwLock::new(Vec::new());
@@ -626,6 +630,17 @@ fn main(){
         bufferz.insert(1+(_amewoemwa as i32), glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, awsa, &screen_depth_texture).unwrap());
     };
 
+    // { menu item test
+    //     let mut meowww = MENUS.write().unwrap();
+
+    //     meowww.insert(0, KEmenuTypes::image(menuimage{
+    //         position: Vector2::new(0.0, 0.0),
+    //         size: Vector2::new(1.0, 1.0),
+    //         texture: 1,
+    //         uv: Vector2::new(0.0, 0.0),
+    //     }));
+    // }
+
     
     event_loop.run_return(|event, _, control_flow| {
 
@@ -693,22 +708,23 @@ fn main(){
                     main_cam.reproject(screen_size);
                 }
                 WindowEvent::KeyboardInput { device_id, input, is_synthetic } => {
-                    let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
+                    
                     let how = {
                         match input.state {
                             winit::event::ElementState::Pressed => "pressed",
                             winit::event::ElementState::Released => "released",
                         }
                     };
-                    let mut rqs = REQUESTS.write().unwrap();
-                    rqs.push(crate::KERequest::js_push("keypress".to_string(), json!(
+                    //let mut rqs = REQUESTS.write().unwrap();
+                    js_world.triggerlis(&"keypress".to_string(), &json!(
                         {
                             "how": how,
                             "which": input.scancode,
                             "is_synthetic": is_synthetic
                         }
-                    ).to_string()));
-                    drop(rqs);
+                    ).to_string());
+                    //drop(rqs);
+                    let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
                     real_char.interp_key(&mut phys_world, &mut propz, input, delta_time);
                 }
                 WindowEvent::CloseRequested { .. } => {
@@ -741,7 +757,7 @@ fn main(){
             _ => (),
         }
 
-        let mut a = REQUESTS.write().unwrap();
+        {let mut a = REQUESTS.write().unwrap();
 
         
 
@@ -798,11 +814,15 @@ fn main(){
                 KERequest::js_push(namre, dattaa) => {
                     js_world.triggerlis(&namre, &dattaa);
                 },
+                KERequest::copy_prop_phys_pose(propid) => {
+                    let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
+                    phys_world._sync_phys_prop(propz.get_mut(&propid).unwrap(), CopyWhat::All);
+                },
                 KERequest::NULL => todo!(),
             }
         };
 
-        (a).clear();
+        (a).clear();}
 
         if(keconf.shader_hotswap){
             for x in 0..shaderz.len() as i32 {
@@ -938,7 +958,23 @@ fn main(){
         }
             let mut screenbuffer: &mut SimpleFrameBuffer = bufferz.get_mut(&_main_buffer).unwrap();
 
+            let mut menuz: std::sync::RwLockWriteGuard<HashMap<i32, KEmenuTypes>> = MENUS.try_write().unwrap();
+            for po in 0..(menuz.len() as i32) {
+                let menuitem = menuz.get_mut(&po).unwrap();
+
+                match menuitem {
+                    KEmenuTypes::image(imelm) => {
+                        render_menu(loop_wawa, imelm.position, imelm.size, imelm.uv, &screen_vertex, &3, &shader_vars, &get_texture_raw(&texturez, imelm.texture, &texturez2), &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
+                    },
+                    KEmenuTypes::text(_) => todo!(),
+                }
+
+                
+                //render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
+            };
+
             screen_compile(loop_wawa, &screen_vertex, &3, &shader_vars, &screen_texture, &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
+
 
             //target.blit_buffers_from_simple_framebuffer(&screenbuffer, &glium::Rect { left: 0, bottom: 0, width: width, height: height }, &glium::BlitTarget { left: 0, bottom: 0, width: width as i32, height: height as i32 }, glium::uniforms::MagnifySamplerFilter::Nearest, glium::BlitMask { color: true, depth: true, stencil: false });
             
@@ -1159,6 +1195,69 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
         .unwrap();
 }
 
+fn render_menu(loop_wawa: f32, pos: Vector2<f32>, scal: Vector2<f32>, uv: Vector2<f32>, screen_model: &VertexBuffer<Vertex2D>, screen_shader: &i32, shader_vars: &HashMap<String, ShadvType>, screen_texture: &SrgbTexture2d, screen_depth_texture: &DepthTexture2d, screenbuffer: &mut  SimpleFrameBuffer, target: &mut glium::Frame, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>){
+    let mut uniform = dynamic_uniform::DynamicUniforms::new();
+    
+    // shader globle vars
+    for (name, value) in shader_vars {
+        let name = name.to_string();
+        match value {
+            ShadvType::Bool(value) => {
+                uniform.add(name, value);
+            }
+            ShadvType::Integer(value) => {
+                uniform.add(name, value);
+            }
+            ShadvType::Float(value) => {
+                uniform.add(name, value);
+            }
+            ShadvType::Vec2(value) => {
+                uniform.add(name, value.as_ref());
+            }
+            ShadvType::Vec3(value) => {
+                uniform.add(name, value.as_ref());
+            }
+        }
+    }
+
+    uniform.add("time".to_owned(), &loop_wawa);
+
+
+    //-(((loop_wawa*0.01) as f64) as f32)*0.2
+
+    let binding = [
+        [scal.x, 0.0, 0.0, 0.0],
+        [0.0, scal.y, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [pos.x, pos.y, 0.0, 1.0f32]
+    ];
+    uniform.add("matrix".to_owned(), &binding);
+
+    uniform.add("screenbuffer".to_owned(), screen_texture);
+    
+    let binding = glium::uniforms::Sampler::new(screen_depth_texture)
+    .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+    .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
+    .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual));
+    uniform.add("screenbufferdepth".to_owned(), &binding);
+
+    let (width, height) = screenbuffer.get_dimensions();
+    let binding = [width as f32,height as f32];
+    uniform.add("framebufferSize".to_owned(), &binding);
+
+    // here we draw the prop on the frame
+    target
+        .draw(
+            screen_model,
+            NoIndices(PrimitiveType::TriangleStrip),
+            &shaderz.get(screen_shader).unwrap().program.as_ref().unwrap(),
+            &uniform,
+            params,
+        )
+        .unwrap();
+
+}
+
 fn get_shader<'a>(shadersz: &'a HashMap<i32, Shader>, prop: &Prop) -> &'a Program {
     match shadersz.get(&prop.shader) {
         Some(shader) => {
@@ -1181,6 +1280,19 @@ fn get_model<'a>(modelz: &'a HashMap<i32, Model>, prop: &Prop) -> &'a VertexBuff
 fn get_texture<'a>(texturez: &'a HashMap<i32, Texture>, prop: &Prop, texture: usize, texturez2: &'a Vec<SrgbTexture2d>) -> &'a SrgbTexture2d {
     //dbg!(prop.textures[texture]);
     match texturez.get(&prop.textures[texture]) {
+        Some(texture) => {
+            if texture.bebufpointer {
+                return texturez2.get(texture.bebufto).unwrap();
+            }
+            &texture.texture
+        },
+        None => &texturez.get(&0).unwrap().texture,
+    }
+}
+
+fn get_texture_raw<'a>(texturez: &'a HashMap<i32, Texture>, ida: i32, texturez2: &'a Vec<SrgbTexture2d>) -> &'a SrgbTexture2d {
+    //dbg!(prop.textures[texture]);
+    match texturez.get(&ida) {
         Some(texture) => {
             if texture.bebufpointer {
                 return texturez2.get(texture.bebufto).unwrap();

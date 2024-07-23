@@ -44,14 +44,41 @@ function loop(delta){
 addEventListener("tick",loop)
 
 
+var cam_pan_speed = 0.04
+var cam_pan_done = false;
+
+
 addEventListener("keypress", (keyevt) => {
     if(keyevt.which == 18 && keyevt.how == "released"){
         var pa1 = mainchar.position;
         var pa2 = portal_geo.position;
         let distenc = Math.sqrt((Math.abs(pa1.x-pa2.x)+Math.abs(pa1.y-pa2.y)+Math.abs(pa1.z-pa2.z)))
         console.log(distenc);
-        if(distenc < 2.75){
+        if(distenc < 3.5){
             console.log("open sesamee");
+            LOCK_MOVEMENT=true
+            playera.velocityOnlySideways(new Vector2(-3.5,0));
+            var bloop = 0;
+            cam_pan_done = false;
+            addEventListener("tick",(delta)=> {
+                bloop+=0.5*delta
+                if(bloop > 100 && cam_pan_done) {
+                    kill_current_listener()
+                    playera.position = meowmedaodiskdas.position
+                    mod_prop_copy_phys(playera._KE_Prop)
+                    LOCK_MOVEMENT=false;
+                    console.log("awawawa!"+bloop);
+                }else{
+                    if(camverticalpan>0.4){
+                        camverticalpan-=cam_pan_speed*(camverticalpan/2)*delta
+                    }else if(camverticalpan<-0.4){
+                        camverticalpan+=cam_pan_speed*delta
+                    }else{
+                        cam_pan_done = true
+                    }
+                }
+            })
+            
         }
     }
 })

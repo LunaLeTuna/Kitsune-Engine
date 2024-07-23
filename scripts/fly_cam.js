@@ -12,6 +12,10 @@ maincamera.disabled = true;
 mod_prop_texture(proxp._KE_Prop, 0, 0)
 
 
+
+var LOCK_MOVEMENT = false;
+
+
 // function pressed(event){
 //     //awawawa("meowmeowmeowmeomwoemwomeowmo")
 //     console.log(event.which);
@@ -37,22 +41,26 @@ function loop(delta){
     var side = 0;
     
 
-    if(button["17"]) forword = -5;
-    else if(button["31"]) forword = 5;
+    if(!LOCK_MOVEMENT){
+        if(button["17"]) forword = -5;
+        else if(button["31"]) forword = 5;
 
-    if(button["30"]) side = 5;
-    else if(button["32"]) side = -5;
-    
-    if(button["103"]) camverticalpan += 0.01;
-    else if(button["108"]) camverticalpan += -0.01;
+        if(button["30"]) side = 5;
+        else if(button["32"]) side = -5;
+        
+        if(button["103"]) camverticalpan += 0.01;
+        else if(button["108"]) camverticalpan += -0.01;
+    }
 
     forword*=delta;
     side*=delta;
 
     
 
-    if(button["57"]) playera.velocity = new Vector3(forword,1.0,side);
-    else playera.velocityOnlySideways(new Vector2(forword,side));
+    if(!LOCK_MOVEMENT){
+        if(button["57"]) playera.velocity = new Vector3(forword,1.0,side);
+        else playera.velocityOnlySideways(new Vector2(forword,side));
+    }
 
     if(forword || side) {
         if(side >= -0.1)

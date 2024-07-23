@@ -13,6 +13,8 @@ class Vector3 {
     }
 }
 
+Vector3.prototype["Zero"] = new Vector3(0,0,0)
+
 Vector3.prototype["+"] = function( b )
 {
   return new Vector3( this.x + b.x, this.y + b.y, this.z + b.z );
@@ -268,10 +270,21 @@ function addEventListener(name, fn, options) {
     }
 }
 
+var _KE_CURRENT_RAN = {"has_marked_for_death": false}
+
+function kill_current_listener() {
+    _KE_CURRENT_RAN["has_marked_for_death"] = true;
+}
+
 function dispatchEvent(name, data) {
+    var defaultKECR = {"has_marked_for_death": false};
     if (!_KE_EVENT_LIST.hasOwnProperty(name)) return;
-    _KE_EVENT_LIST[name].forEach(element => {
+    _KE_EVENT_LIST[name].forEach((element, index, objels) => {
         element.fn(data);
+        if(_KE_CURRENT_RAN.has_marked_for_death) {
+            objels.splice(index, 1);
+            _KE_CURRENT_RAN = defaultKECR
+        }
     });
 }
 

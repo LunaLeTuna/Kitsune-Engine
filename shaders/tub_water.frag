@@ -56,8 +56,12 @@ uniform sampler2D texture4;
 uniform sampler2D texture5;
 uniform sampler2D texture6;
 uniform sampler2D texture7;
+uniform sampler2D screenbuffer;
+uniform sampler2D screenbufferdepth;
 uniform vec3 Color;
 uniform vec3 view;
+uniform vec2 framebufferSize;
+uniform float time;
 
 const vec3 specular_color = vec3(1.0, 1.0, 1.0);
 
@@ -121,14 +125,10 @@ void main() {
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
       result += CalcPointLight(pointLights[i], norm, v_position, viewDir);
 
-    // if(local.y >= 0.8)
-    // color = vec4(result, 1.0);
-    // else if(local.x >= 0.8)
-    // color = vec4(result*vec3(1.0,0.0,0.0), 1.0);
-    // else v_normal
+    vec2 aawaw = vec2(1.0+(sin((gl_FragCoord.y*0.02)+time/200)*0.01),1.0);
 
-    vec4 tecx = texture(texture1, v_tex_coords).rgba;
+    vec4 tecx = texture(screenbuffer, (gl_FragCoord.xy/framebufferSize.xy)*aawaw).rgba;
 
-    color = vec4(result*tecx.rgb, tecx.a);
+    color = vec4(result, 1.0)*vec4(tecx.r, tecx.g*aawaw.x, tecx.b, tecx.a)*vec4(0.3,0.6,1.0,1.0);
     
 }

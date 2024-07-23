@@ -247,7 +247,6 @@ Light 3 11 2 1 1 1
 Brush -14.66574 2.48798 62.04361 0.194 0.194 0.03299999
 	+NAME jellyfish
 	+COLOR 0.5 0.5 0.5
-	+TRANS 0.9
 	+Shader 5
 	+face_cam
 	+Texture 1 3
@@ -259,7 +258,6 @@ Brush -14.66574 2.48798 62.04361 0.194 0.194 0.03299999
 Brush -13.29574 3.277981 62.52762 0.194 0.194 0.029
 	+NAME jellyfish
 	+COLOR 0.5 0.5 0.5
-	+TRANS 0.9
 	+Shader 5
 	+face_cam
 	+Texture 1 3
@@ -271,7 +269,6 @@ Brush -13.29574 3.277981 62.52762 0.194 0.194 0.029
 Brush -14.00973 2.846991 61.33711 0.122 0.122 0.02599995
 	+NAME jellyfish
 	+COLOR 0.5 0.5 0.5
-	+TRANS 0.9
 	+Shader 5
 	+face_cam
 	+Texture 1 3
@@ -283,7 +280,6 @@ Brush -14.00973 2.846991 61.33711 0.122 0.122 0.02599995
 Model_static -14.17474 2.48798 62.11811 1.33 1.33 1.33
 	+NAME case
 	+COLOR 0.5 0.5 0.5
-	+TRANS 0.9
 	+ROT 0 199.9999 0
 	+NOCOLLISION
 	+Model 3
@@ -296,7 +292,6 @@ Model_static -14.17474 2.48798 62.11811 1.33 1.33 1.33
 Model_static -14.17474 2.48798 62.11811 1.33 1.33 1.33
 	+NAME plant
 	+COLOR 0.5 0.5 0.5
-	+TRANS 0.9
 	+ROT 0 199.9999 0
 	+NOCOLLISION
 	+Model 4
