@@ -50,6 +50,7 @@ var cam_pan_done = false;
 
 
 addEventListener("keypress", (keyevt) => {
+    if(LOCK_MOVEMENT)return
     if(keyevt.which == 18 && keyevt.how == "released"){
         var pa1 = mainchar.position;
         var pa2 = portal_geo.position;

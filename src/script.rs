@@ -896,6 +896,16 @@ fn mod_menu_render(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) 
 
 }
 
+fn engineexit(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = REQUESTS.write().unwrap();
+
+    propz.push(crate::KERequest::exit);
+    drop(propz);
+    
+    Ok(JsValue::Undefined)
+
+}
+
 fn tepter(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut propz = REQUESTS.write().unwrap();
 
@@ -1014,6 +1024,8 @@ impl ScriptSpace<'_> {
 
         self.context.register_global_builtin_callable("create_model", 1, NativeFunction::from_fn_ptr(create_model));
 
+        self.context.register_global_builtin_callable("exit", 1, NativeFunction::from_fn_ptr(engineexit));
+        //self.context.register_global_builtin_callable("quit", 1, NativeFunction::from_fn_ptr(engineexit));
         self.context.register_global_builtin_callable("tepter", 1, NativeFunction::from_fn_ptr(tepter));
         self.context.register_global_builtin_callable("window_cursor_lock", 1, NativeFunction::from_fn_ptr(window_cursor_lock));
         

@@ -66,6 +66,7 @@ pub enum KERequest {
     js_push(String, String),
     copy_prop_phys_pose(i32),
     window_cursor_lock(bool),
+    exit,
     NULL,
 }
 
@@ -883,6 +884,9 @@ fn main(){
                         v.set_cursor_visible(true);
                     }
                 },
+                KERequest::exit => {
+                    control_flow.set_exit()
+                },
                 KERequest::NULL => todo!(),
             }
         };
@@ -1051,7 +1055,7 @@ fn main(){
                 match menuitem {
                     KEmenuTypes::image(imelm) => {
                         if !imelm.render { continue };
-                        render_menu(loop_wawa, imelm.position, imelm.size, Vector4::zeros(), &screen_vertex, &imelm.shader, &shader_vars, &get_texture_raw(&texturez, imelm.texture, &texturez2), &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
+                        render_menu(loop_wawa, imelm.position, imelm.size, Vector4::zeros(), &screen_vertex, &imelm.shader, &shader_vars, &get_texture_raw(&texturez, imelm.texture, &texturez2), &screen_texture, &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
                     },
                     KEmenuTypes::text(imelm) => {
                         if !imelm.render { continue };
@@ -1098,7 +1102,7 @@ fn main(){
                             
 
                             
-                            render_menu(loop_wawa, pos, size, Vector4::new(fontchar.pos.x as f32, fontchar.pos.y as f32, fontchar.size.x as f32, fontchar.size.y as f32), &screen_vertex, &imelm.shader, &shader_vars, &get_texture_raw(&texturez, fonta.texture, &texturez2), &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
+                            render_menu(loop_wawa, pos, size, Vector4::new(fontchar.pos.x as f32, fontchar.pos.y as f32, fontchar.size.x as f32, fontchar.size.y as f32), &screen_vertex, &imelm.shader, &shader_vars, &get_texture_raw(&texturez, fonta.texture, &texturez2), &screen_texture, &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
                         }
                         
                     },
@@ -1159,6 +1163,7 @@ fn screen_compile(loop_wawa: f32, screen_model: &VertexBuffer<Vertex2D>, screen_
     ]);
 
     uniform.add("screenbuffer".to_owned(), screen_texture);
+    uniform.add("texturez".to_owned(), screen_texture);
     
     let binding = glium::uniforms::Sampler::new(screen_depth_texture)
     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
@@ -1328,7 +1333,7 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
         .unwrap();
 }
 
-fn render_menu(loop_wawa: f32, pos: Vector2<f32>, scal: Vector2<f32>, uv: Vector4<f32>, screen_model: &VertexBuffer<Vertex2D>, screen_shader: &i32, shader_vars: &HashMap<String, ShadvType>, screen_texture: &SrgbTexture2d, screen_depth_texture: &DepthTexture2d, screenbuffer: &mut  SimpleFrameBuffer, target: &mut glium::Frame, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>){
+fn render_menu(loop_wawa: f32, pos: Vector2<f32>, scal: Vector2<f32>, uv: Vector4<f32>, screen_model: &VertexBuffer<Vertex2D>, screen_shader: &i32, shader_vars: &HashMap<String, ShadvType>, texturea: &SrgbTexture2d, screen_texture: &SrgbTexture2d, screen_depth_texture: &DepthTexture2d, screenbuffer: &mut  SimpleFrameBuffer, target: &mut glium::Frame, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>){
     let mut uniform = dynamic_uniform::DynamicUniforms::new();
     
     // shader globle vars
@@ -1368,8 +1373,10 @@ fn render_menu(loop_wawa: f32, pos: Vector2<f32>, scal: Vector2<f32>, uv: Vector
 
     uniform.add("screenbuffer".to_owned(), screen_texture);
 
-    let uva = uv.xz()/screen_texture.get_width() as f32;
-    let uvb = Vector2::new(uv.y, uv.w)/screen_texture.get_height().unwrap() as f32;
+    uniform.add("texturez".to_owned(), texturea);
+
+    let uva = uv.xz()/texturea.get_width() as f32;
+    let uvb = Vector2::new(uv.y, uv.w)/texturea.get_height().unwrap() as f32;
 
     let binding = [uva.x, uvb.x, uva.y, uvb.y];
     uniform.add("uv".to_owned(), &binding);

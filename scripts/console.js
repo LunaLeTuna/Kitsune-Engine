@@ -18,6 +18,7 @@ function rp(x,y){
 var console_text = create_menu_text()
 mod_menu_text_text(console_text, ``)
 mod_menu_pos(console_text, new Vector2(-0.99, 0.93))
+mod_menu_scale(console_text, new Vector2(0.3, 0.5))
 mod_menu_render(console_text, false)
 
 var console_input = create_menu_text()
@@ -32,10 +33,19 @@ var shiftdown = false;
 var cshistory = [];
 var cshwhere = 0;
 
+const reallog = console.log;
+
+console.log = function(...value){
+    log+=`${value}\n`
+    mod_menu_text_text(console_text, `${log}`)
+    reallog(value)
+    return "";
+}
+
 function clear(){
     log=""
     currentcommand=""
-    mod_menu_text_text(console_text, `${log}\n${currentcommand}`)
+    mod_menu_text_text(console_text, `${log}`)
     return ""
 }
 
