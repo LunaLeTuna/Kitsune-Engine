@@ -25,3 +25,4 @@ rust_socketio = { version = "0.4.3", features = ["async"] }
 socketioxide = "0.6.0"
 axum = "0.6.20"
 ufbx = "0.6.1"
+keyboard-keynames = "0.2.0"

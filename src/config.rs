@@ -1,8 +1,10 @@
+use std::{borrow::Borrow, os::raw};
+
 use crate::{char_control::character_type, fs_system::grab, ke_units::{parsef, parsei}};
 
 pub struct keconfig {
     pub default_map: String,
-    pub run_script: String,
+    pub run_script: Vec<String>,
     pub char_pov: character_type, //character controller type
     pub hotswap: bool, //to update assets in realtime by modifying their file
     pub shader_hotswap: bool,
@@ -20,7 +22,7 @@ impl keconfig {
         let mut conf = keconfig{
             default_map: "".to_string(),
             char_pov: character_type::Disabled,
-            run_script: "index.js".to_string(),
+            run_script: Vec::new(),
             hotswap: false,
             debug: false,
             headless: false,
@@ -62,7 +64,10 @@ impl keconfig {
                     continue;
                 }
                 ["runtime_script", stm] => {
-                    conf.run_script = stm.to_string();
+                    let rawlist = stm.to_string();
+                    let rawlist: Vec<&str> = rawlist.split(";").collect();
+                    let rawlist: Vec<String> = rawlist.iter().map(|&s|s.into()).collect();
+                    conf.run_script = rawlist;
                     continue;
                 },
                 ["mouse_sensitivity", stm] => {

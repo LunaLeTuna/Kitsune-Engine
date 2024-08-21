@@ -22,7 +22,7 @@ Vector3.prototype["+"] = function( b )
 
 class Shader {
     constructor(url) {
-        //this.ID = ops.create_shader(url);
+        this.ID = create_shader(url);
     }
     shader_int(name, data) {
         //ops.mod_shader_var_int(this.ID, name, data);
@@ -38,6 +38,35 @@ class Shader {
 
     shader_vec3(name, data) {
         //ops.mod_shader_var_vec3(this.ID, name, data);
+    }
+}
+
+class TextElement {
+    constructor() {
+        this._KE_Prop = create_menu_text();
+    }
+
+    set text(textz) {
+        mod_menu_text_text(this._KE_Prop, textz);
+    }
+
+    get text() {
+        return get_menu_text_text(this._KE_Prop);
+    }
+
+    set position(vec2i) {
+        mod_menu_pos(this._KE_Prop, vec2i);
+    }
+
+    get position() {
+        let raw = get_menu_pos(this._KE_Prop);
+        return new Vector2(raw.x,raw.y)
+    }
+}
+
+class ImageElement {
+    constructor(url) {
+        this.ID = create_text_element(url);
     }
 }
 

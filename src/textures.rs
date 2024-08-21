@@ -12,7 +12,13 @@ pub struct Texture {
 
 impl Texture {
     pub fn craft(location: &str, display: &Display) -> Self {
-        let image = image::open(location).ok().unwrap();
+        let image = match image::open(location) {
+            Ok(a) => a,
+            Err(_) => {
+                dbg!("can't load", location);
+                image::DynamicImage::new_rgb8(5, 5)
+            },
+        };
         let img = image.into_rgba16();
 
         let image_dimensions = img.dimensions();

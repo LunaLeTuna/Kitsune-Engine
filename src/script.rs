@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use rust_socketio::{ClientBuilder, Payload, RawClient, client::Client};
 use smol::future::FutureExt;
 
-use crate::{cameras::Camera, fs_system::grab, props::Prop, PointLight, CAMERAS, LIGHTS, MAIN_CAM, MODEL_COUNT, PROPS, REQUESTS, SCREEN_SIZE, TEXTURE_COUNT};
+use crate::{cameras::Camera, fs_system::grab, menu_system::{menuimage, menutext, KEmenuTypes}, props::Prop, PointLight, CAMERAS, LIGHTS, MAIN_CAM, MENUS, MODEL_COUNT, PROPS, REQUESTS, SCREEN_SIZE, SHADER_COUNT, TEXTURE_COUNT};
 
 pub struct ScriptSpace<'a> {
     pub world: i16,
@@ -595,6 +595,30 @@ fn create_texture(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -
 }
 
 //
+// shader
+//
+
+fn create_shader(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut modelcount = SHADER_COUNT.write().unwrap();
+    let mut propz = REQUESTS.write().unwrap();
+    
+    let sat = _nargs.get_or_undefined(0).as_string().unwrap().as_ref();
+
+    let locat = match std::string::String::from_utf16(sat) {
+        Ok(x) => x,
+        Err(_) => "".to_owned()
+    };
+
+    propz.push(crate::KERequest::Create_Shader(*modelcount, locat));
+    drop(propz);
+
+    *modelcount = *modelcount + 1;
+    
+    Ok(JsValue::Integer(*modelcount-1))
+
+}
+
+//
 // model
 //
 
@@ -670,6 +694,208 @@ fn get_light_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) ->
 
 }
 
+//
+//  menu image
+//
+
+fn create_menu_image(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+
+    //maybe position
+
+    let mut menuz = MENUS.try_write().unwrap();
+
+    let i = menuz.len() as i32;
+
+    menuz.insert(i, KEmenuTypes::image(menuimage{
+        position: Vector2::new(0.0, 0.0),
+        size: Vector2::new(0.1, 0.1),
+        shader: 3,
+        texture: 1,
+        uv: Vector2::new(0.0,0.0),
+        render: true,
+    }));
+    
+    Ok(JsValue::Integer(i as i32))
+
+}
+
+fn mod_menu_texture(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut menuz = MENUS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = menuz.get_mut(&propid).unwrap();
+
+    match w {
+        KEmenuTypes::image(awa) => {
+            awa.texture = st;
+        },
+        _ => ()
+    }
+    
+    Ok(JsValue::Undefined)
+
+}
+
+//
+//  menu text
+//
+
+fn create_menu_text(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+
+    //maybe position
+
+    let mut menuz = MENUS.try_write().unwrap();
+
+    let i = menuz.len() as i32;
+
+    menuz.insert(i, KEmenuTypes::text(menutext{
+        position: Vector2::new(-0.5, 0.5),
+        size: Vector2::new(0.2, 0.2),
+        shader: 4,
+        font: 0,
+        text: "awawawa".to_string(),
+        render: true,
+    }));
+    
+    Ok(JsValue::Integer(i as i32))
+
+}
+
+fn mod_menu_text_text(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+    let sat = _nargs.get_or_undefined(1).as_string().unwrap().as_ref();
+
+    let rawtext = match std::string::String::from_utf16(sat) {
+        Ok(x) => x,
+        Err(_) => "".to_owned()
+    };
+
+    let mut menuz = MENUS.write().unwrap();
+    let w = menuz.get_mut(&propid).unwrap();
+
+    match w {
+        KEmenuTypes::text(awa) => {
+            awa.text = rawtext
+        },
+        _ => ()
+    }
+    
+    Ok(JsValue::Integer(-1))
+
+}
+
+fn get_menu_text_text(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let mut menuz = MENUS.read().unwrap();
+    let w = menuz.get(&propid).unwrap();
+
+    let finalz = match w {
+        KEmenuTypes::text(awa) => {
+            &awa.text
+        },
+        _ => ""
+    };
+    
+    Ok(JsValue::String(finalz.into()))
+
+}
+
+//  TODO: fix typo
+//
+//  genaric menu functions
+//
+
+fn mod_menu_pos(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut menuz = MENUS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
+    let stx = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let sty = st.get("y").unwrap().as_f64().unwrap() as f32;
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = menuz.get_mut(&propid).unwrap();
+
+    match w {
+        KEmenuTypes::text(awa) => {
+            awa.position = Vector2::new(stx, sty);
+        },
+        KEmenuTypes::image(awa) => {
+            awa.position = Vector2::new(stx, sty);
+        },
+    }
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn mod_menu_scale(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut menuz = MENUS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
+    let stx = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let sty = st.get("y").unwrap().as_f64().unwrap() as f32;
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = menuz.get_mut(&propid).unwrap();
+
+    match w {
+        KEmenuTypes::text(awa) => {
+            awa.size = Vector2::new(stx, sty);
+        },
+        KEmenuTypes::image(awa) => {
+            awa.size = Vector2::new(stx, sty);
+        },
+    }
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn mod_menu_shader(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut menuz = MENUS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = menuz.get_mut(&propid).unwrap();
+
+    match w {
+        KEmenuTypes::text(awa) => {
+            awa.shader = st;
+        },
+        KEmenuTypes::image(awa) => {
+            awa.shader = st;
+        },
+    }
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn mod_menu_render(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut menuz = MENUS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_boolean();
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = menuz.get_mut(&propid).unwrap();
+
+    match w {
+        KEmenuTypes::text(awa) => {
+            awa.render = st;
+        },
+        KEmenuTypes::image(awa) => {
+            awa.render = st;
+        },
+    }
+    
+    Ok(JsValue::Undefined)
+
+}
+
 fn tepter(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut propz = REQUESTS.write().unwrap();
 
@@ -681,6 +907,16 @@ fn tepter(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResu
     
     Ok(JsValue::Undefined)
 
+}
+
+fn window_cursor_lock(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = REQUESTS.write().unwrap();
+    let st = _nargs.get_or_undefined(0).to_boolean();
+
+    propz.push(crate::KERequest::window_cursor_lock(st));
+    drop(propz);
+    
+    Ok(JsValue::Undefined)
 }
 
 impl ScriptSpace<'_> {
@@ -759,11 +995,27 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("mod_light_pos", 1, NativeFunction::from_fn_ptr(mod_light_pos));
         self.context.register_global_builtin_callable("get_light_pos", 1, NativeFunction::from_fn_ptr(get_light_pos));
 
+        self.context.register_global_builtin_callable("create_menu_image", 1, NativeFunction::from_fn_ptr(create_menu_image));
+        self.context.register_global_builtin_callable("create_menu_image_texture", 1, NativeFunction::from_fn_ptr(mod_menu_texture));
+
+        self.context.register_global_builtin_callable("create_menu_text", 1, NativeFunction::from_fn_ptr(create_menu_text));
+        self.context.register_global_builtin_callable("mod_menu_text_text", 1, NativeFunction::from_fn_ptr(mod_menu_text_text));
+        self.context.register_global_builtin_callable("get_menu_text_text", 1, NativeFunction::from_fn_ptr(get_menu_text_text));
+
+        //TODO: make gets
+        self.context.register_global_builtin_callable("mod_menu_pos", 1, NativeFunction::from_fn_ptr(mod_menu_pos));
+        self.context.register_global_builtin_callable("mod_menu_scale", 1, NativeFunction::from_fn_ptr(mod_menu_scale));
+        self.context.register_global_builtin_callable("mod_menu_shader", 1, NativeFunction::from_fn_ptr(mod_menu_shader));
+        self.context.register_global_builtin_callable("mod_menu_render", 1, NativeFunction::from_fn_ptr(mod_menu_render));
+
         self.context.register_global_builtin_callable("create_texture", 1, NativeFunction::from_fn_ptr(create_texture));
+
+        self.context.register_global_builtin_callable("create_shader", 1, NativeFunction::from_fn_ptr(create_shader));
 
         self.context.register_global_builtin_callable("create_model", 1, NativeFunction::from_fn_ptr(create_model));
 
         self.context.register_global_builtin_callable("tepter", 1, NativeFunction::from_fn_ptr(tepter));
+        self.context.register_global_builtin_callable("window_cursor_lock", 1, NativeFunction::from_fn_ptr(window_cursor_lock));
         
         
     }

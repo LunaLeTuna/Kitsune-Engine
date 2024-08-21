@@ -3,14 +3,15 @@ use buffer::Buffer;
 use cameras::Camera;
 use char_control::{Character, character_type};
 use config::keconfig;
-use menu_system::{menuimage, KEmenuTypes};
+use keyboard_keynames::key_layout::KeyLayout;
+use menu_system::{menuimage, menutext, KEchar, KEfont, KEmenuTypes};
 use glium::{glutin::{ContextBuilder}, index::{NoIndices, PrimitiveType}, DepthTest, framebuffer::SimpleFrameBuffer, texture::{DepthStencilTexture2d, DepthTexture2d}, implement_vertex};
 use kbf::{load, Environment};
 use ke_units::{Vec2, radians};
 use lights::PointLight;
 use models::{Model, Vertex, Vertex2D};
 use multiplayer::Sockreq;
-use nalgebra::{Vector3, Vector2, Matrix3, Matrix4, Rotation, Rotation3, Unit};
+use nalgebra::{Matrix3, Matrix4, Rotation, Rotation3, Unit, Vector2, Vector3, Vector4};
 use physic_props::*;
 use props::{Prop, phytype, physhape, proptype};
 use rapier3d::crossbeam::channel::{Receiver, Sender};
@@ -27,7 +28,7 @@ use glium::texture::SrgbTexture2d;
 use axum::{routing::get, http::Request};
 use axum::Server;
 
-use std::{borrow::BorrowMut, time::{SystemTime, UNIX_EPOCH, Duration}, ops::Mul, f32::consts::PI, collections::VecDeque, fs, sync::{RwLock, Mutex, Arc, mpsc::channel}, path, thread::sleep, hash::Hash};
+use std::{borrow::BorrowMut, collections::VecDeque, f32::consts::PI, fmt::Debug, fs, hash::Hash, ops::Mul, path, sync::{mpsc::channel, Arc, Mutex, RwLock}, thread::sleep, time::{Duration, SystemTime, UNIX_EPOCH}};
 use std::collections::HashMap;
 use winit::platform::run_return::EventLoopExtRunReturn;
 
@@ -50,6 +51,7 @@ pub mod script;
 pub mod multiplayer;
 
 pub enum KERequest {
+    Create_Shader(i32, String),
     Create_Model(i32, String),
     Create_Model_From_Magic(i32,Vec<Vertex>),
     Create_Texture(i32, String, u32, u32),
@@ -63,6 +65,7 @@ pub enum KERequest {
     load_map(String),
     js_push(String, String),
     copy_prop_phys_pose(i32),
+    window_cursor_lock(bool),
     NULL,
 }
 
@@ -70,6 +73,7 @@ lazy_static::lazy_static! {
     // the Vec<i32> is refrences to the prop hashmap, maybe at some point move worlds in to PROPS with HASHMAP<i32,HASHMAP<i32,Prop>>... maybe thats stupid :P
     static ref WORLDS: RwLock<HashMap<i32, (Environment,Vec<i32>)>> = RwLock::new(HashMap::new());
     static ref PROPS: RwLock<HashMap<i32, Prop>> = RwLock::new(HashMap::new());
+    static ref FONTS: RwLock<HashMap<i32, KEfont>> = RwLock::new(HashMap::new());
     static ref MENUS: RwLock<HashMap<i32, KEmenuTypes>> = RwLock::new(HashMap::new());
     static ref CAMERAS: RwLock<HashMap<i32, Camera>> = RwLock::new(HashMap::new());
     static ref MAIN_CAM: RwLock<i32> = RwLock::new(0);
@@ -77,6 +81,7 @@ lazy_static::lazy_static! {
     static ref SCREEN_SIZE: RwLock<Vec2> = RwLock::new(Vec2{x:250.0,y:250.0});
     //count is for scripts, so script item creation knows what id to give a new item
     pub static ref SHADER_COUNT: RwLock<i32> = RwLock::new(0);
+    pub static ref MENU_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref MODEL_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref TEXTURE_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref CAMERA_COUNT: RwLock<i32> = RwLock::new(0);
@@ -144,7 +149,7 @@ fn main(){
     let screenparams = DrawParameters {
         depth: Depth {
             test: DepthTest::IfLess,
-            write: true,
+            write: false,
             ..Default::default()
         },
         blend: glium::Blend {
@@ -177,6 +182,9 @@ fn main(){
     bufferz.reserve(4);
 
 
+    let thekeylayout = KeyLayout::new().unwrap();
+
+
     // this sets up engine default assets
     {
         let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/base";
@@ -191,7 +199,13 @@ fn main(){
         let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/screen/direct";
         shaderz.insert(3, Shader::craft(&de_shader, &display));
 
-        *SHADER_COUNT.write().expect("RwLock poisoned") += 4;
+        let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/screen/text";
+        shaderz.insert(4, Shader::craft(&de_shader, &display));
+
+        let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/missing";
+        shaderz.insert(5, Shader::craft(&de_shader, &display));
+
+        *SHADER_COUNT.write().expect("RwLock poisoned") += 6;
 
         let pig_model = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.obj";
         modelz.insert(0, models::load_obj(&pig_model, &display));
@@ -199,12 +213,19 @@ fn main(){
         let box_model = _KE_MAIN_DEPENDENTS.to_owned()+"/model/brush.obj";
         modelz.insert(1, models::load_obj(&box_model, &display));
 
-        *MODEL_COUNT.write().expect("RwLock poisoned") += 2;
+        let missing_model = _KE_MAIN_DEPENDENTS.to_owned()+"/missing.obj";
+        modelz.insert(2, models::load_obj(&missing_model, &display));
+
+        *MODEL_COUNT.write().expect("RwLock poisoned") += 3;
 
         
         let pig_skin = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.png";
         texturez.insert(0, Texture::craft(&pig_skin, &display));
-        *TEXTURE_COUNT.write().expect("RwLock poisoned") += 1;
+
+        let missing_texture = _KE_MAIN_DEPENDENTS.to_owned()+"/missing.png";
+        texturez.insert(1, Texture::craft(&missing_texture, &display));
+
+        *TEXTURE_COUNT.write().expect("RwLock poisoned") += 2;
 
         // propz.insert(0, Prop::new("nya".into()));
 
@@ -367,7 +388,11 @@ fn main(){
 
     let mut js_world = ScriptSpace::new();
     js_world.pinpropz(); //adds functions to js to minipulate props
-    js_world.add_script("./scripts/".to_owned()+&keconf.run_script);
+
+    keconf.run_script.iter().for_each(|scrpt| {
+        js_world.add_script("./scripts/".to_owned()+&scrpt);
+    });
+    
 
     for scr in scripz {
         dbg!("awa!", scr.clone());
@@ -630,17 +655,35 @@ fn main(){
         bufferz.insert(1+(_amewoemwa as i32), glium::framebuffer::SimpleFrameBuffer::with_depth_buffer(&display, awsa, &screen_depth_texture).unwrap());
     };
 
-    // { menu item test
+    {
+        let mut meowww = FONTS.write().unwrap();
+
+        meowww.insert(0, KEfont::new("fonts/text".to_string(), &mut texturez, &display));
+    }
+
+    // { //menu item test
     //     let mut meowww = MENUS.write().unwrap();
 
     //     meowww.insert(0, KEmenuTypes::image(menuimage{
     //         position: Vector2::new(0.0, 0.0),
-    //         size: Vector2::new(1.0, 1.0),
+    //         size: Vector2::new(0.2, 0.2),
     //         texture: 1,
+    //         shader: 3,
     //         uv: Vector2::new(0.0, 0.0),
     //     }));
     // }
 
+    // { //menu item test
+    //     let mut meowww = MENUS.write().unwrap();
+
+    //     meowww.insert(0, KEmenuTypes::text(menutext{
+    //         position: Vector2::new(-0.5, 0.5),
+    //         size: Vector2::new(0.2, 0.2),
+    //         shader: 4,
+    //         font: 0,
+    //         text: "nnnyaaa meowmeowmeowmoew".to_string(),
+    //     }));
+    // }
     
     event_loop.run_return(|event, _, control_flow| {
 
@@ -715,11 +758,15 @@ fn main(){
                             winit::event::ElementState::Released => "released",
                         }
                     };
+
+                    
+                    let nemweiw  = KeyLayout::get_key_as_string(&thekeylayout, input.scancode);
                     //let mut rqs = REQUESTS.write().unwrap();
                     js_world.triggerlis(&"keypress".to_string(), &json!(
                         {
                             "how": how,
                             "which": input.scancode,
+                            "code": nemweiw,
                             "is_synthetic": is_synthetic
                         }
                     ).to_string());
@@ -763,6 +810,15 @@ fn main(){
 
         for requ in &*a {
             match requ {
+                KERequest::Create_Shader(ida, location) => {
+                    if location == "" {
+                        //modelz.insert(*ida, models); do somethin
+                    }else{
+                        shaderz.insert(*ida, Shader::craft(&format!("./shaders/{location}"), &display));
+                    }
+                    
+                    //*MODEL_COUNT.write().expect("RwLock poisoned") += 1;
+                },
                 KERequest::Create_Model(ida, location) => {
                     if location == "" {
                         //modelz.insert(*ida, models); do somethin
@@ -782,7 +838,7 @@ fn main(){
                     if local == "" {
                         HashMap::insert(&mut texturez, *ida, Texture::craft_lorp(*width, *height, &display)); //later when not lazy, make width and high customizable
                     }else{
-                        HashMap::insert(&mut texturez, *ida, Texture::craft(&local, &display));
+                        HashMap::insert(&mut texturez, *ida, Texture::craft(&format!("./textures/{local}"), &display));
                     }
                 },
                 KERequest::Pin_Texture_Buffer(wheret, placed) => {
@@ -818,6 +874,15 @@ fn main(){
                     let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
                     phys_world._sync_phys_prop(propz.get_mut(&propid).unwrap(), CopyWhat::All);
                 },
+                KERequest::window_cursor_lock(is) => {
+                    if *is {
+                        v.set_cursor_grab(CursorGrabMode::Locked);
+                        v.set_cursor_visible(false);
+                    } else {
+                        v.set_cursor_grab(CursorGrabMode::None);
+                        v.set_cursor_visible(true);
+                    }
+                },
                 KERequest::NULL => todo!(),
             }
         };
@@ -835,6 +900,21 @@ fn main(){
                     sh.time_changed_f = metadataF.modified().unwrap();
                     sh.time_changed_v = metadataV.modified().unwrap();
                     *sh = Shader::craft(&name, &display);
+                    println!("{} has been updated", name);
+                }
+            }
+        }
+
+        if(keconf.shader_hotswap){
+            let mut Faona = FONTS.write().unwrap();
+            for x in 0..Faona.len() as i32 {
+                let mut sh = Faona.get_mut(&x).unwrap();
+                let name = sh.location.clone();
+                let metadata = fs::metadata(format!("{name}.json")).expect("failed to check shader file");
+
+                if(metadata.modified().unwrap() != sh.time_changed) {
+                    sh.time_changed = metadata.modified().unwrap();
+                    *sh = KEfont::new(name.to_string(), &mut texturez, &display);
                     println!("{} has been updated", name);
                 }
             }
@@ -962,23 +1042,71 @@ fn main(){
         }
             let mut screenbuffer: &mut SimpleFrameBuffer = bufferz.get_mut(&_main_buffer).unwrap();
 
+            screen_compile(loop_wawa, &screen_vertex, &3, &shader_vars, &screen_texture, &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
+
             let mut menuz: std::sync::RwLockWriteGuard<HashMap<i32, KEmenuTypes>> = MENUS.try_write().unwrap();
             for po in 0..(menuz.len() as i32) {
                 let menuitem = menuz.get_mut(&po).unwrap();
 
                 match menuitem {
                     KEmenuTypes::image(imelm) => {
-                        render_menu(loop_wawa, imelm.position, imelm.size, imelm.uv, &screen_vertex, &3, &shader_vars, &get_texture_raw(&texturez, imelm.texture, &texturez2), &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
+                        if !imelm.render { continue };
+                        render_menu(loop_wawa, imelm.position, imelm.size, Vector4::zeros(), &screen_vertex, &imelm.shader, &shader_vars, &get_texture_raw(&texturez, imelm.texture, &texturez2), &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
                     },
-                    KEmenuTypes::text(_) => todo!(),
+                    KEmenuTypes::text(imelm) => {
+                        if !imelm.render { continue };
+
+                        let Faona = FONTS.write().unwrap();
+                        let fonta = {
+                            Faona.get(&imelm.font).unwrap()
+                        };
+
+                        let mut currentwidth: f32 = 0.0;
+                        let mut currentheight: f32 = 0.0;
+                        for charas in imelm.text.chars() {
+
+                            let width = width as f32;
+                            let height = height as f32;
+
+                            if(charas == '\n'){//TODO: fix this
+                                currentwidth=0.0;
+                                currentheight=(currentheight)-(fonta.default_line_height as f32);
+                                continue;
+                            }
+
+                            let fontchar = match fonta.chars.get(&charas) {
+                                Some(a) => {a},
+                                None => {
+                                    dbg!("!!!! couldn't fine char in font !!!!");
+                                    fonta.chars.get(&'?').unwrap()
+                                },
+                            };
+
+                            let uv = Vector2::new(fontchar.pos.x as f32,fontchar.pos.y as f32);
+
+                            
+                            let x = 0.003*width;
+                            let y = 0.01*height;
+                            let size = Vector2::new(x/width,y/height);
+
+                            currentwidth += ((x/width)*10.0)*width;
+
+                            let x = (0.0*width)+(currentwidth);
+                            let y = (0.0*height)+(currentheight);
+                            let pos = Vector2::new(x/width, y/height)+imelm.position;
+                            
+                            
+
+                            
+                            render_menu(loop_wawa, pos, size, Vector4::new(fontchar.pos.x as f32, fontchar.pos.y as f32, fontchar.size.x as f32, fontchar.size.y as f32), &screen_vertex, &imelm.shader, &shader_vars, &get_texture_raw(&texturez, fonta.texture, &texturez2), &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
+                        }
+                        
+                    },
                 }
 
                 
                 //render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
             };
-
-            screen_compile(loop_wawa, &screen_vertex, &3, &shader_vars, &screen_texture, &lastscreen_depth_texture, &mut screenbuffer, &mut target, &shaderz, &screenparams);
-
 
             //target.blit_buffers_from_simple_framebuffer(&screenbuffer, &glium::Rect { left: 0, bottom: 0, width: width, height: height }, &glium::BlitTarget { left: 0, bottom: 0, width: width as i32, height: height as i32 }, glium::uniforms::MagnifySamplerFilter::Nearest, glium::BlitMask { color: true, depth: true, stencil: false });
             
@@ -1200,7 +1328,7 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
         .unwrap();
 }
 
-fn render_menu(loop_wawa: f32, pos: Vector2<f32>, scal: Vector2<f32>, uv: Vector2<f32>, screen_model: &VertexBuffer<Vertex2D>, screen_shader: &i32, shader_vars: &HashMap<String, ShadvType>, screen_texture: &SrgbTexture2d, screen_depth_texture: &DepthTexture2d, screenbuffer: &mut  SimpleFrameBuffer, target: &mut glium::Frame, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>){
+fn render_menu(loop_wawa: f32, pos: Vector2<f32>, scal: Vector2<f32>, uv: Vector4<f32>, screen_model: &VertexBuffer<Vertex2D>, screen_shader: &i32, shader_vars: &HashMap<String, ShadvType>, screen_texture: &SrgbTexture2d, screen_depth_texture: &DepthTexture2d, screenbuffer: &mut  SimpleFrameBuffer, target: &mut glium::Frame, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>){
     let mut uniform = dynamic_uniform::DynamicUniforms::new();
     
     // shader globle vars
@@ -1239,6 +1367,12 @@ fn render_menu(loop_wawa: f32, pos: Vector2<f32>, scal: Vector2<f32>, uv: Vector
     uniform.add("matrix".to_owned(), &binding);
 
     uniform.add("screenbuffer".to_owned(), screen_texture);
+
+    let uva = uv.xz()/screen_texture.get_width() as f32;
+    let uvb = Vector2::new(uv.y, uv.w)/screen_texture.get_height().unwrap() as f32;
+
+    let binding = [uva.x, uvb.x, uva.y, uvb.y];
+    uniform.add("uv".to_owned(), &binding);
     
     let binding = glium::uniforms::Sampler::new(screen_depth_texture)
     .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
@@ -1268,17 +1402,17 @@ fn get_shader<'a>(shadersz: &'a HashMap<i32, Shader>, prop: &Prop) -> &'a Progra
         Some(shader) => {
             match &shader.program {
                 Some(real) => &real,
-                None => &shadersz.get(&0).unwrap().program.as_ref().unwrap(),
+                None => &shadersz.get(&5).unwrap().program.as_ref().unwrap(),
             }
         },
-        None => &shadersz.get(&0).unwrap().program.as_ref().unwrap(),
+        None => &shadersz.get(&5).unwrap().program.as_ref().unwrap(),
     }
 }
 
 fn get_model<'a>(modelz: &'a HashMap<i32, Model>, prop: &Prop) -> &'a VertexBuffer<models::Vertex> {
     match modelz.get(&prop.model) {
         Some(model) => &model.verts,
-        None => &modelz.get(&0).unwrap().verts,
+        None => &modelz.get(&2).unwrap().verts,
     }
 }
 
@@ -1291,7 +1425,7 @@ fn get_texture<'a>(texturez: &'a HashMap<i32, Texture>, prop: &Prop, texture: us
             }
             &texture.texture
         },
-        None => &texturez.get(&0).unwrap().texture,
+        None => &texturez.get(&1).unwrap().texture,
     }
 }
 
@@ -1304,6 +1438,6 @@ fn get_texture_raw<'a>(texturez: &'a HashMap<i32, Texture>, ida: i32, texturez2:
             }
             &texture.texture
         },
-        None => &texturez.get(&0).unwrap().texture,
+        None => &texturez.get(&1).unwrap().texture,
     }
 }

@@ -1,8 +1,9 @@
 --default_map burgor.kbf
 default_map burgor.kbf
 --default_map welcome.kbf
-runtime_script index.js
+runtime_script index.js;console.js
 shader_hotswap
+font_hotswap
 char_pov scripted
 --headless
 --is_server

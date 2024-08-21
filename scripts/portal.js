@@ -8,6 +8,7 @@ var portal_cam = new Camera();
 
 var meowmedaodiskdas = new Prop();
 mod_prop_texture(meowmedaodiskdas._KE_Prop, 0, 0)
+mod_prop_shader(meowmedaodiskdas._KE_Prop, 2)
 
 
 var house = new Prop();
@@ -23,7 +24,7 @@ portal_cam.buffer_write2 = 1;
 
 //portal_geo.scale = new Vector3(0.2,4,3)
 portal_geo.position = new Vector3(0,0.501,0)
-mod_prop_shader(portal_geo._KE_Prop, 4)
+mod_prop_shader(portal_geo._KE_Prop, 6)
 mod_prop_model(portal_geo._KE_Prop, portal_mes.ID)
 mod_prop_texture(portal_geo._KE_Prop, 0, portal_tex.ID)
 
@@ -69,9 +70,9 @@ addEventListener("keypress", (keyevt) => {
                     LOCK_MOVEMENT=false;
                     console.log("awawawa!"+bloop);
                 }else{
-                    if(camverticalpan>0.4){
-                        camverticalpan-=cam_pan_speed*(camverticalpan/2)*delta
-                    }else if(camverticalpan<-0.4){
+                    if(camverticalpan>2.7){
+                        camverticalpan-=cam_pan_speed*(camverticalpan/3)*delta
+                    }else if(camverticalpan<2){
                         camverticalpan+=cam_pan_speed*delta
                     }else{
                         cam_pan_done = true
