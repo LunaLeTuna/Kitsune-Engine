@@ -77,19 +77,10 @@ addEventListener("tick",loop)
 
 var button = {};
 var cursorlocked = false;
-window_cursor_lock(false)
 
 
 addEventListener("keypress", (keyevt) => {
     //console.log(JSON.stringify(keyevt));
-
-    if((keyevt.which == 1&&keyevt.how=="pressed")&&cursorlocked){
-        cursorlocked=false
-        window_cursor_lock(false)
-    }else{
-        cursorlocked=true
-        window_cursor_lock(true)
-    }
 
     if(keyevt.how == "pressed")
         button[keyevt.which] = true

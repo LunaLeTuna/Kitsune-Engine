@@ -685,6 +685,8 @@ fn main(){
     //         text: "nnnyaaa meowmeowmeowmoew".to_string(),
     //     }));
     // }
+
+    let mut cursor_locked = true;
     
     event_loop.run_return(|event, _, control_flow| {
 
@@ -795,8 +797,10 @@ fn main(){
                             let (width, height) = display.get_framebuffer_dimensions();
                             let a = Vector2::new(delta.0 as f32, delta.1 as f32);
                             real_char.interp_mouse(&mut phys_world, &mut propz, &mut camera_map, a, screen_size, delta_time*keconf.mouse_sensitivity);
-                        
-                            v.set_cursor_position(LogicalPosition::new(width/2, height/2));
+                            
+                            if cursor_locked {
+                                v.set_cursor_position(LogicalPosition::new(width/2, height/2));
+                            }
                         }
                     }
                     _ => {}
@@ -879,9 +883,11 @@ fn main(){
                     if *is {
                         v.set_cursor_grab(CursorGrabMode::Locked);
                         v.set_cursor_visible(false);
+                        cursor_locked = true;
                     } else {
                         v.set_cursor_grab(CursorGrabMode::None);
                         v.set_cursor_visible(true);
+                        cursor_locked = false;
                     }
                 },
                 KERequest::exit => {
