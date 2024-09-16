@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, os::raw};
+use std::{borrow::Borrow, collections::HashMap, os::raw};
 
 use crate::{char_control::character_type, fs_system::grab, ke_units::{parsef, parsei}};
 
@@ -12,9 +12,23 @@ pub struct keconfig {
     pub headless: bool,
     pub is_server: bool,
     pub has_multiplayer: bool,
+    pub override_shader: Vec<String>,
     pub mouse_sensitivity: f32,
     pub char_speed: f32,
     pub buffers: u8
+}
+
+#[repr(u8)]
+#[derive(Debug)]
+pub enum kect { //keconftypes
+    bool(bool),
+    float(f32),
+    int(i32),
+    u8(u8),
+    string(String),
+    vecstring(Vec<String>),
+    chartype(character_type),
+    null,
 }
 
 impl keconfig {
@@ -29,10 +43,25 @@ impl keconfig {
             is_server: false,
             shader_hotswap: false,
             has_multiplayer: false,
+            override_shader: Vec::new(),
             mouse_sensitivity: 4.0,
             char_speed: 0.0,
             buffers: 0
         };
+
+        // let mut keconf: HashMap<&str, kect> = HashMap::new();
+
+        // keconf.insert("default_map", kect::string("".to_owned()));
+        // keconf.insert("char_pov", kect::chartype(character_type::Disabled));
+        // keconf.insert("run_script", kect::vecstring(Vec::new()));
+        // keconf.insert("shader_hotswap", kect::bool(false));
+        // keconf.insert("font_hotswap", kect::bool(false));
+        // keconf.insert("debug", kect::bool(false));
+        // keconf.insert("debug", kect::bool(false));
+        // keconf.insert("debug", kect::bool(false));
+        // keconf.insert("debug", kect::bool(false));
+        // keconf.insert("debug", kect::bool(false));
+
 
         let file = grab(&location);
         for line in file.lines() {
@@ -96,6 +125,13 @@ impl keconfig {
                 }
                 ["is_server"] => {
                     conf.is_server = true;
+                    continue;
+                }
+                ["override_shader", stm] => {
+                    let rawlist = stm.to_string();
+                    let rawlist: Vec<&str> = rawlist.split(";").collect();
+                    let rawlist: Vec<String> = rawlist.iter().map(|&s|s.into()).collect();
+                    conf.override_shader = rawlist;
                     continue;
                 }
                 _ => {}

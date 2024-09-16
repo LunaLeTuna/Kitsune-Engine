@@ -31,7 +31,8 @@ var log = "";
 var currentcommand = "";
 var shiftdown = false;
 var cshistory = [];
-var cshwhere = 0;
+var cshwhere = -1;
+var cursorplaced = 0;
 
 const reallog = console.log;
 
@@ -49,10 +50,14 @@ function clear(){
     return ""
 }
 
-addEventListener("keypress", (keyevt) => {
-    //console.log(JSON.stringify(keyevt));
+var output_buttonpress = false
 
-    if(keyevt.code == "Shift_L" || keyevt.code == "Shift_R"){ //ecscape
+addEventListener("keypress", (keyevt) => {
+    if (output_buttonpress)
+    console.log(JSON.stringify(keyevt));
+
+
+    if((keyevt.code == "Shift_L" || keyevt.code == "Shift_R") || (keyevt.code == "Shift" || keyevt.code == "Right Shift")){ //capitalize
         if(keyevt.how=="pressed")
         shiftdown=true;
         else
@@ -76,9 +81,9 @@ addEventListener("keypress", (keyevt) => {
 
     if(!isconsoleopen) return;
 
-    if(keyevt.code == "space") keyevt.code = " "
+    if(keyevt.code == "space" || keyevt.code == "Space") keyevt.code = " "
 
-    if(keyevt.code == "Escape"){ //ecscape
+    if(keyevt.code == "Escape" || keyevt.code == "Esc"){ //ecscape
         mod_menu_render(console_background, false)
         mod_menu_render(console_text, false)
         mod_menu_render(console_input, false)
@@ -87,17 +92,37 @@ addEventListener("keypress", (keyevt) => {
         isconsoleopen=false;
         return;
     }
-    if(keyevt.code == "BackSpace"){
+    if(keyevt.code == "BackSpace" || keyevt.code == "Backspace"){
         currentcommand = currentcommand.slice(0,currentcommand.length-1)
         mod_menu_text_text(console_text, `${log}`)
         mod_menu_text_text(console_input, `${currentcommand}`)
         return;
     }
-    if(keyevt.code == "Return"){ //enter
+    if(keyevt.code == "Up"){
+        cshwhere++;
+        if(cshwhere>cshistory.length-1) cshwhere=cshistory.length-1
+        currentcommand = cshistory[cshwhere]
+        mod_menu_text_text(console_input, `${currentcommand}`)
+    }
+    if(keyevt.code == "Down"){
+        cshwhere--;
+        if(cshwhere>cshistory.length-1) cshwhere=cshistory.length-1
+        if(cshwhere<0) {
+            cshwhere=-1
+            currentcommand = ""
+            mod_menu_text_text(console_input, `${currentcommand}`)
+            return;
+        }
+        currentcommand = cshistory[cshwhere]
+        mod_menu_text_text(console_input, `${currentcommand}`)
+    }
+    if(keyevt.code == "Return" || keyevt.code == "Enter"){ //enter
         //log+=`${currentcommand}\n`
         try {
             let outputy = (eval(currentcommand)) || "";
             log+=`${outputy}\n`
+            cshistory.unshift(currentcommand)
+            cshwhere=-1
             currentcommand=""
             mod_menu_text_text(console_text, `${log}`)
             mod_menu_text_text(console_input, `${currentcommand}`)
@@ -125,10 +150,11 @@ addEventListener("keypress", (keyevt) => {
 
         if(shiftdown && " 0123456789=-[]\\,./;'\"`".includes(keyevt.code)){
             let ind = " 0123456789=-[]\\,./;'\"`".indexOf(keyevt.code)
-            finalputdown = " )!@#$%^&*(+_{}|<>?:\"~".charAt(ind) 
+            finalputdown = " )!@#$%^&*(+_{}|<>?:\"~".charAt(ind)
         }
 
         currentcommand += finalputdown
+        cursorplaced++;
 
         mod_menu_text_text(console_input, `${currentcommand}`)
         return;
@@ -136,3 +162,4 @@ addEventListener("keypress", (keyevt) => {
     
 })
 
+console.log(`type "exit()" to close game!`);

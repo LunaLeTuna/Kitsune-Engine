@@ -29,6 +29,11 @@ pub struct PhysWorld {
     custom_collider_mesh: HashMap<i32,ColliderBuilder>
 }
 
+pub struct RaycastResult {
+    hit: bool,
+    point: Vector3<f32>,
+}
+
 impl PhysWorld {
     pub fn init_phys_world() -> PhysWorld {
 
@@ -355,7 +360,7 @@ impl PhysWorld {
 
     // for copying position & rotation of phys prop to it's counter part
     pub fn _sync_prop(&mut self, prop: &mut Prop, ctype: CopyWhat) {
-        if prop.phys_id == -1 {
+        if prop.phys_id == -1 || self.phys_handles.len() == 0 {
             return;
         };
 
@@ -410,5 +415,9 @@ impl PhysWorld {
         let rb_id = self.phys_handles.get(&prop.phys_id).unwrap();
         let rb = self.ridgid_world.get_mut(*rb_id).unwrap();
         rb.set_linvel(Vector3::new(push.x, rb.linvel().y, push.y).into(), true);
+    }
+
+    pub fn raycast(){
+        
     }
 }

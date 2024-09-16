@@ -20,6 +20,7 @@ pub enum ShadvType {
     Float(f32),
     Vec2(Vector2<f32>),
     Vec3(Vector3<f32>),
+    Texture(i32) //ID to texture
 }
 
 pub struct ShaderVar {
@@ -53,7 +54,7 @@ impl Shader {
             },
             Err(wtf) => {
 
-                print!("SHADER ERR: {}", wtf);
+                print!("SHADER ERR: {}  |  {}", wtf, location);
     
                 Shader {
                     name: "nya".into(),

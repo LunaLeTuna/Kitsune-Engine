@@ -964,6 +964,8 @@ impl ScriptSpace<'_> {
         }
     }
 
+
+    //note to self, do some magic with macros to make this nightmare less nightmareish
     pub fn pinpropz(&mut self){
 
         self.context.register_global_builtin_callable("get_existing_prop_by_name", 1, NativeFunction::from_fn_ptr(get_existing_prop_by_name));

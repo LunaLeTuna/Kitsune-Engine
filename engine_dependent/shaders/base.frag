@@ -43,14 +43,22 @@ uniform int NR_POINT_LIGHTS;
 uniform PointLight pointLights[64];
 
 uniform Material material;
-uniform float trans;
 
 
 uniform vec3 u_light;
 uniform sampler2D diffuse_tex;
 uniform sampler2D normal_tex;
+uniform sampler2D texture0;
+uniform sampler2D texture1;
+uniform sampler2D texture2;
+uniform sampler2D texture3;
+uniform sampler2D texture4;
+uniform sampler2D texture5;
+uniform sampler2D texture6;
+uniform sampler2D texture7;
 uniform vec3 Color;
-uniform vec3 view;
+uniform mat4 view;
+uniform float trans;
 
 const vec3 specular_color = vec3(1.0, 1.0, 1.0);
 
@@ -107,9 +115,9 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 
 void main() {
     vec3 norm = normalize(v_normal);
-    vec3 viewDir = normalize(view - v_position);
+    vec3 viewDir = normalize(vec3(mat3(view) * v_position));
 
-    vec3 result = LeDirLight.diffuse*0.1;
+    vec3 result = vec3(0,0,0);
 
     for(int i = 0; i < NR_POINT_LIGHTS; i++)
       result += CalcPointLight(pointLights[i], norm, v_position, viewDir);

@@ -31,6 +31,6 @@ struct Material {
 
 void main() {
 
-    color = vec4(texture(texture1,v_tex_coords).rgb, trans);
+    color = vec4(Color+normalize(v_normal)-0.4, trans);
     
 }

@@ -190,7 +190,7 @@ uniform sampler2D texture6;
 uniform sampler2D texture7;
 uniform vec2 framebufferSize;
 uniform vec3 Color;
-uniform vec3 view;
+uniform mat4 view;
 
 const vec3 specular_color = vec3(1.0, 1.0, 1.0);
 
@@ -246,8 +246,8 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 }
 
 void main() {
-    vec3 norm = normalize(v_normal);
-    vec3 viewDir = normalize(view - v_position);
+    //vec3 norm = normalize(v_normal);
+    //vec3 viewDir = normalize(view - v_position);
 
     // if(local.y >= 0.8)
     // color = vec4(result, 1.0);

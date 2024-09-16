@@ -11,7 +11,7 @@ function texture_viewer(){
     mod_menu_text_text(textureinfo, `texture: 0`)
     mod_menu_pos(textureinfo, new Vector2(-0.99, -0.77))
 
-    var tvhowto = create_menu_text()
+    //var tvhowto = create_menu_text()
     mod_menu_text_text(tvhowto, `use "[" and "]" to navigate`)
     mod_menu_pos(tvhowto, new Vector2(-0.99, -0.87))
 

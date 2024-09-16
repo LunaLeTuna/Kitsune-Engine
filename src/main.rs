@@ -27,6 +27,10 @@ use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use glium::texture::SrgbTexture2d;
 use axum::{routing::get, http::Request};
 use axum::Server;
+use steamworks::AppId;
+use steamworks::Client;
+use steamworks::FriendFlags;
+use steamworks::PersonaStateChange;
 
 use std::{borrow::BorrowMut, collections::VecDeque, f32::consts::PI, fmt::Debug, fs, hash::Hash, ops::Mul, path, sync::{mpsc::channel, Arc, Mutex, RwLock}, thread::sleep, time::{Duration, SystemTime, UNIX_EPOCH}};
 use std::collections::HashMap;
@@ -45,6 +49,7 @@ pub mod shaders;
 pub mod textures;
 pub mod buffer;
 pub mod kbf;
+pub mod vmf;
 pub mod physic_props;
 pub mod char_control;
 pub mod script;
@@ -95,6 +100,27 @@ lazy_static::lazy_static! {
 
 fn main(){
 
+
+    let (client, single) = Client::init().unwrap();
+
+    let _cb = client.register_callback(|p: PersonaStateChange| {
+        println!("Got callback: {:?}", p);
+    });
+
+    let utils = client.utils();
+    println!("Utils:");
+    println!("AppId: {:?}", utils.app_id());
+    println!("UI Language: {}", utils.ui_language());
+
+    let apps = client.apps();
+    println!("Apps");
+    println!("IsInstalled(480): {}", apps.is_app_installed(AppId(3202780)));
+    println!("InstallDir(480): {}", apps.app_install_dir(AppId(3202780)));
+    println!("BuildId: {}", apps.app_build_id());
+    println!("AppOwner: {:?}", apps.app_owner());
+    println!("Langs: {:?}", apps.available_game_languages());
+    println!("Lang: {}", apps.current_game_language());
+    println!("Beta: {:?}", apps.current_beta_name());
 
     let keconf = keconfig::parse("./KE_config".to_string());
 
@@ -188,25 +214,35 @@ fn main(){
 
     // this sets up engine default assets
     {
-        let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/base";
-        shaderz.insert(0, Shader::craft(&de_shader, &display));
+        if keconf.override_shader.len()==0 {
+            let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/base";
+            shaderz.insert(0, Shader::craft(&de_shader, &display));
 
-        let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/brush";
-        shaderz.insert(1, Shader::craft(&de_shader, &display));
+            let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/brush";
+            shaderz.insert(1, Shader::craft(&de_shader, &display));
 
-        let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/model";
-        shaderz.insert(2, Shader::craft(&de_shader, &display));
+            let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/model";
+            shaderz.insert(2, Shader::craft(&de_shader, &display));
 
-        let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/screen/direct";
-        shaderz.insert(3, Shader::craft(&de_shader, &display));
+            let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/screen/direct";
+            shaderz.insert(3, Shader::craft(&de_shader, &display));
 
-        let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/screen/text";
-        shaderz.insert(4, Shader::craft(&de_shader, &display));
+            let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/shaders/screen/text";
+            shaderz.insert(4, Shader::craft(&de_shader, &display));
 
-        let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/missing";
-        shaderz.insert(5, Shader::craft(&de_shader, &display));
+            let de_shader = _KE_MAIN_DEPENDENTS.to_owned()+"/missing";
+            shaderz.insert(5, Shader::craft(&de_shader, &display));
 
-        *SHADER_COUNT.write().expect("RwLock poisoned") += 6;
+            *SHADER_COUNT.write().expect("RwLock poisoned") += 6;
+        }else{
+            for oss in keconf.override_shader {
+                let mut shader_zcount = SHADER_COUNT.write().expect("RwLock poisoned");
+                let de_shader = oss;
+                shaderz.insert(*shader_zcount, Shader::craft(&de_shader, &display));
+
+                *shader_zcount += 1;
+            }
+        }
 
         let pig_model = _KE_MAIN_DEPENDENTS.to_owned()+"/ellie_def/pig.obj";
         modelz.insert(0, models::load_obj(&pig_model, &display));
@@ -747,6 +783,10 @@ fn main(){
                     let mut _main_camera = MAIN_CAM.write().unwrap();
                     let mut camera_map = CAMERAS.write().unwrap();
                     
+                    for ele in &bufferz {
+                        
+                    }
+                    
                     let main_cam = camera_map.get_mut(&_main_camera).unwrap();
                     //update main_cam's projection with screen
                     let (width, height) = display.get_framebuffer_dimensions();
@@ -1156,6 +1196,7 @@ fn screen_compile(loop_wawa: f32, screen_model: &VertexBuffer<Vertex2D>, screen_
             ShadvType::Vec3(value) => {
                 uniform.add(name, value.as_ref());
             }
+            ShadvType::Texture(_) => () //this feature is probably not going to be used all too much, so why bother
         }
     }
 
@@ -1249,6 +1290,9 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
             ShadvType::Vec3(value) => {
                 uniform.add(name, value.as_ref());
             }
+            ShadvType::Texture(value) => {
+                uniform.add(name, get_texture_raw(texturez, *value, texturez2));
+            },
         }
     }
 
@@ -1271,6 +1315,9 @@ fn render_prop(loop_wawa: f32, prop: &mut Prop, main_cam: &mut Camera, shader_va
             ShadvType::Vec3(value) => {
                 uniform.add(name, value.as_ref());
             }
+            ShadvType::Texture(value) => {
+                uniform.add(name, get_texture_raw(texturez, *value, texturez2));
+            },
         }
     }
 
@@ -1361,6 +1408,7 @@ fn render_menu(loop_wawa: f32, pos: Vector2<f32>, scal: Vector2<f32>, uv: Vector
             ShadvType::Vec3(value) => {
                 uniform.add(name, value.as_ref());
             }
+            ShadvType::Texture(_) => (),
         }
     }
 

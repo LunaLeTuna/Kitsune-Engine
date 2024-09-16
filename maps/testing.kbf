@@ -1,0 +1,272 @@
+Kitsune Engine V1
+
+>AmbientColor 0 0 0
+>SkyColor 0.4862745 0.6980392 0.8980392
+>SunIntensity 300
+>Baseplate 100 0.2 0.509804 0.137255 1
+
+>Texture_Reference 1 protogen.png
+>Texture_Reference 2 sprites/mikubit.png
+>Texture_Reference 3 jellyfish.png
+>Texture_Reference 4 tubs/case.png
+>Texture_Reference 5 tubs/plant.png
+>Texture_Reference 6 tubs/water.png
+>Texture_Reference 7 sprites/mikubit.png
+>Texture_Reference 8 turtle.png
+
+>Model_Reference 1 block.glb
+>Model_Reference 2 rocks/rock_1.obj
+>Model_Reference 3 tubs/case.obj
+>Model_Reference 4 tubs/plant.obj
+>Model_Reference 5 tubs/water.obj
+>Model_Reference 6 materialsphere.obj
+
+>Shader_Reference 1 poratlawa
+>Shader_Reference 2 depthtest
+>Shader_Reference 3 water
+>Shader_Reference 4 tub_water
+>Shader_Reference 5 plantt
+>Shader_Reference 6 pbr_test
+
+Legacy_Brick -3.892953 0 56.11433 289.5 1 112
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+Legacy_Brick -17.39293 2.75 53.36433 45.5 4.5 1
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+Legacy_Brick -17.39293 12.5 53.36433 45.5 15 1
+	+NAME New Brick
+	+COLOR 0.2739 0.817951 0.83
+	+TRANS 0.1960784
+	+ROT 0 270 0
+	+Shader 4
+Legacy_Brick -27.39293 2.75 31.11433 1 4.5 19
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+Legacy_Brick -27.39293 12.5 31.11433 1 15 19
+	+NAME New Brick
+	+COLOR 0.2739 0.817951 0.83
+	+TRANS 0.1960784
+	+ROT 0 270 0
+	+Shader 4
+Spawn_Point 7.107071 1.5 27.11433 1 1 1
+	+NAME New Spawn
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+Legacy_Brick -17.39293 11.25 31.11433 3 21.5 3
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+Legacy_Brick -17.39294 11.25 76.61431 3 21.5 3
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+Legacy_Brick -27.39293 12.5 76.61433 1 15 19
+	+NAME New Brick
+	+COLOR 0.2739 0.817951 0.83
+	+TRANS 0.1960784
+	+ROT 0 270 0
+	+Shader 4
+Legacy_Brick -27.39293 2.75 76.61433 1 4.5 19
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+Model_static -2.330311 1.375 -38.21306 4 4 4
+	+NAME material_test1
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 289.0001 0
+	+NOCOLLISION
+	+Model 6
+	+Shader 6
+	+Texture 1 1
+Model_static -3.017693 1.375 -24.54122 4 4 4
+	+NAME material_test4
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 289.0001 0
+	+NOCOLLISION
+	+Model 6
+	+Shader 6
+	+Texture 1 1
+Model_static -4.063564 1.375 -12.58688 4 4 4
+	+NAME material_test3
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 289.0001 0
+	+NOCOLLISION
+	+Model 6
+	+Shader 6
+	+Texture 1 1
+Brush -12.93654 2.48798 35.94858 0.194 0.194 0.03299999
+	+NAME jellyfish
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+	+Shader 5
+	+face_cam
+	+Texture 1 3
+	+Texture 2 3
+	+Texture 3 3
+	+Texture 4 3
+	+Texture 5 3
+	+Texture 6 3
+Brush -13.42056 3.277981 37.31859 0.194 0.194 0.029
+	+NAME jellyfish
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+	+Shader 5
+	+face_cam
+	+Texture 1 3
+	+Texture 2 3
+	+Texture 3 3
+	+Texture 4 3
+	+Texture 5 3
+	+Texture 6 3
+Brush -12.23004 2.846991 36.6046 0.122 0.122 0.02599995
+	+NAME jellyfish
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 270 0
+	+Shader 5
+	+face_cam
+	+Texture 1 3
+	+Texture 2 3
+	+Texture 3 3
+	+Texture 4 3
+	+Texture 5 3
+	+Texture 6 3
+Model_static -13.01105 2.48798 36.43959 1.33 1.33 1.33
+	+NAME case
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 109.9998 0
+	+NOCOLLISION
+	+Model 3
+	+Texture 1 4
+	+Texture 2 4
+	+Texture 3 4
+	+Texture 4 4
+	+Texture 5 4
+	+Texture 6 4
+Model_static -13.01105 2.48798 36.43959 1.33 1.33 1.33
+	+NAME plant
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 109.9998 0
+	+NOCOLLISION
+	+Model 4
+	+Shader 5
+	+Texture 1 5
+	+Texture 2 5
+	+Texture 3 5
+	+Texture 4 5
+	+Texture 5 5
+	+Texture 6 5
+Model_static -13.01027 2.521481 36.40366 1.397 1.397 1.438
+	+NAME water
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+ROT 0 109.9998 0
+	+NOCOLLISION
+	+Model 5
+	+Shader 4
+	+Texture 1 6
+	+Texture 2 6
+	+Texture 3 6
+	+Texture 4 6
+	+Texture 5 6
+	+Texture 6 6
+Brush -12.643 3.29995 59.3643 3.699999 5.599997 0.4999999
+	+NAME friend
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+ROT 0 270 0
+	+face_cam
+	+DYNAMICCOLIDERCOLLISION
+	+Texture 1 8
+	+Texture 2 8
+	+Texture 3 8
+	+Texture 4 8
+	+Texture 5 8
+	+Texture 6 8
+Brush -12.49294 1.200001 41.91432 1 1 1
+	+NAME miku
+	+COLOR 0.5 0.5 0.5
+	+TRANS 0.9
+	+ROT 0 270 0
+	+face_cam
+	+Texture 1 7
+	+Texture 2 7
+	+Texture 3 7
+	+Texture 4 7
+	+Texture 5 7
+	+Texture 6 7
+Model_static -25.26395 3.73798 42.33746 3.83 3.83 3.83
+	+NAME plant1
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 89.99984 0
+	+NOCOLLISION
+	+Model 4
+	+Shader 5
+	+Texture 1 5
+	+Texture 2 5
+	+Texture 3 5
+	+Texture 4 5
+	+Texture 5 5
+	+Texture 6 5
+Model_static -23.60607 3.73798 70.59322 3.83 3.83 3.83
+	+NAME plant3
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 59.99984 0
+	+NOCOLLISION
+	+Model 4
+	+Shader 5
+	+Texture 1 5
+	+Texture 2 5
+	+Texture 3 5
+	+Texture 4 5
+	+Texture 5 5
+	+Texture 6 5
+Model_static -32.16333 2.98798 64.08339 5.33 5.33 5.33
+	+NAME plant5
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 214.9998 0
+	+NOCOLLISION
+	+Model 4
+	+Shader 5
+	+Texture 1 5
+	+Texture 2 5
+	+Texture 3 5
+	+Texture 4 5
+	+Texture 5 5
+	+Texture 6 5
+Model_static -31.01685 4.98798 49.73532 6.33 6.33 6.33
+	+NAME plant2
+	+COLOR 0.5 0.5 0.5
+	+ROT 0 109.9998 0
+	+NOCOLLISION
+	+Model 4
+	+Shader 5
+	+Texture 1 5
+	+Texture 2 5
+	+Texture 3 5
+	+Texture 4 5
+	+Texture 5 5
+	+Texture 6 5
+Script 2.107067 7 34.61434 5 5 5
+	+NAME cubes
+	+ROT 0 270 0
+	+file fly_cam.js
+	+fire start()
+Script 2.107067 7 34.61434 5 5 5
+	+NAME cubes
+	+ROT 0 270 0
+	+file portal.js
+	+fire start()
+Light 5.5 7 -21.5 1 1 1
+	+NAME New Light
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 
+Light 6 6 35 1 1 1
+	+NAME New Light
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 

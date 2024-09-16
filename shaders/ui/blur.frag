@@ -38,7 +38,7 @@ void main() {
 
     vec4 tecx = texture(screenbuffer, (gl_FragCoord.xy/framebufferSize.xy)*aawaw).rgba;
 
-    FragColor = Color;
+    FragColor = Color-0.2;
     // FragColor = vec4(FragColor.g*0.0001,FragColor.r*0.6,FragColor.b,1.0);
     
 }

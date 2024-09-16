@@ -1,4 +1,5 @@
 --default_map burgor.kbf
+default_map testing.kbf
 default_map burgor.kbf
 --default_map welcome.kbf
 runtime_script index.js;dev_functions.js;console.js

@@ -2,6 +2,7 @@
 name = "kitsune-engine"
 version = "1.0.0"
 edition = "2021"
+build = "build.rs"
 
 [dependencies]
 glium = "0.32.1"
@@ -26,3 +27,4 @@ socketioxide = "0.6.0"
 axum = "0.6.20"
 ufbx = "0.6.1"
 keyboard-keynames = "0.2.0"
+steamworks = "0.11.0"

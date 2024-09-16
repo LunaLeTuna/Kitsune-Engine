@@ -5,7 +5,7 @@ use winit::{event::{VirtualKeyCode, KeyboardInput}, dpi::Position};
 
 use crate::{cameras::Camera, ke_units::{radians, Vec2}, main, models::Model, physic_props::{CopyWhat, PhysWorld}, props::{physhape, phytype, Prop}};
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum character_type {
     First,
     Scroller,

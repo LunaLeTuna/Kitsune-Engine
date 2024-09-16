@@ -14,6 +14,13 @@ then clone this git & cd in
 run this:
 `$cargo run`
 
+## SteamWorks integration
+
+[todo make optional]
+get sdk from https://partner.steamgames.com/
+drop it in root
+possably add steam_appid.txt with steam game id
+
 ## Credits
 
 - [Glium](https://github.com/glium/glium)
