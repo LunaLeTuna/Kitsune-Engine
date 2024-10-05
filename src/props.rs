@@ -60,7 +60,9 @@ pub struct Prop {
     pub phys_id: i32, //id to physics world object
 
     pub shader_non_defalt: bool,
-    pub face_cam: bool
+    pub face_cam: bool,
+
+    pub selfid: i32
 }
 
 impl Prop {
@@ -87,6 +89,8 @@ impl Prop {
 
             parent_prop: -1,
             parent_offset: Vector3::zeros(),
+
+            selfid: -1
         }
     }
 

@@ -59,7 +59,7 @@ addEventListener("keypress", (keyevt) => {
         if(distenc < 3.5){
             console.log("open sesamee");
             LOCK_MOVEMENT=true
-            playera.velocityOnlySideways(new Vector2(-3.5,0));
+            //playera.velocityOnlySideways(new Vector2(-3.5,0));
             var bloop = 0;
             cam_pan_done = false;
             addEventListener("tick",(delta)=> {

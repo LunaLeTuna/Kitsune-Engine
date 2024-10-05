@@ -225,6 +225,7 @@ pub fn load(location: &str) -> World{
                         new_brick.model = 1;
                         new_brick.phys_type = phytype::Collider;
                         new_brick.phys_shape = physhape::Box;
+                        new_brick.selfid = neo_prop.len() as i32;
                         neo_prop.push(new_brick);
                         inside_obj = true;
                     }

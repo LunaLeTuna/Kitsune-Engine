@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use rust_socketio::{ClientBuilder, Payload, RawClient, client::Client};
 use smol::future::FutureExt;
 
-use crate::{cameras::Camera, fs_system::grab, menu_system::{menuimage, menutext, KEmenuTypes}, props::Prop, PointLight, CAMERAS, LIGHTS, MAIN_CAM, MENUS, MODEL_COUNT, PROPS, REQUESTS, SCREEN_SIZE, SHADER_COUNT, TEXTURE_COUNT};
+use crate::{cameras::Camera, fs_system::grab, menu_system::{menuimage, menutext, KEmenuTypes}, props::Prop, PhysWorld, PointLight, CAMERAS, LIGHTS, MAIN_CAM, MENUS, MODEL_COUNT, PROPS, PW, REQUESTS, SCREEN_SIZE, SHADER_COUNT, TEXTURE_COUNT};
 
 pub struct ScriptSpace<'a> {
     pub world: i16,
@@ -348,6 +348,7 @@ fn create_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> J
     womp.textures = vec![0,0];
     let mut propz = PROPS.write().unwrap();
     let i = propz.len() as i32;
+    womp.selfid = i;
     propz.insert(i, womp);
     
     Ok(JsValue::Integer(i))
@@ -896,6 +897,36 @@ fn mod_menu_render(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) 
 
 }
 
+fn raycast_fire(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut phys_world = PW.write().unwrap();
+
+    let st = _nargs.get_or_undefined(0).to_json(_ctx)?;
+    let pos1x = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let pos1y = st.get("y").unwrap().as_f64().unwrap() as f32;
+    let pos1z = st.get("z").unwrap().as_f64().unwrap() as f32;
+    let pos1 = Vector3::new(pos1x, pos1y, pos1z);
+
+    let st = _nargs.get_or_undefined(1).to_json(_ctx)?;
+    let pos2x = st.get("x").unwrap().as_f64().unwrap() as f32;
+    let pos2y = st.get("y").unwrap().as_f64().unwrap() as f32;
+    let pos2z = st.get("z").unwrap().as_f64().unwrap() as f32;
+    let pos2 = Vector3::new(pos2x, pos2y, pos2z);
+
+    let rayreturn = phys_world.raycast_fire_simple(pos1,pos2);
+
+    let json = json!({
+        "hit": rayreturn.hit,
+        "pos": {"x":rayreturn.point.x,"y":rayreturn.point.y, "z":rayreturn.point.z},
+        "nor" : {"x":rayreturn.normal.x,"y":rayreturn.normal.y, "z":rayreturn.normal.z},
+        "whats": rayreturn.whats
+    });
+
+    let fvalue = JsValue::from_json(&json, _ctx).unwrap();
+    
+    Ok(fvalue)
+
+}
+
 fn engineexit(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut propz = REQUESTS.write().unwrap();
 
@@ -1030,6 +1061,8 @@ impl ScriptSpace<'_> {
         //self.context.register_global_builtin_callable("quit", 1, NativeFunction::from_fn_ptr(engineexit));
         self.context.register_global_builtin_callable("tepter", 1, NativeFunction::from_fn_ptr(tepter));
         self.context.register_global_builtin_callable("window_cursor_lock", 1, NativeFunction::from_fn_ptr(window_cursor_lock));
+
+        self.context.register_global_builtin_callable("raycast_fire", 1, NativeFunction::from_fn_ptr(raycast_fire));
         
         
     }

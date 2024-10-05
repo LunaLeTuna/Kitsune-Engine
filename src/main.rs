@@ -100,29 +100,31 @@ lazy_static::lazy_static! {
 
 fn main(){
 
-
-    let (client, single) = Client::init().unwrap();
-
-    let _cb = client.register_callback(|p: PersonaStateChange| {
-        println!("Got callback: {:?}", p);
-    });
-
-    let utils = client.utils();
-    println!("Utils:");
-    println!("AppId: {:?}", utils.app_id());
-    println!("UI Language: {}", utils.ui_language());
-
-    let apps = client.apps();
-    println!("Apps");
-    println!("IsInstalled(480): {}", apps.is_app_installed(AppId(3202780)));
-    println!("InstallDir(480): {}", apps.app_install_dir(AppId(3202780)));
-    println!("BuildId: {}", apps.app_build_id());
-    println!("AppOwner: {:?}", apps.app_owner());
-    println!("Langs: {:?}", apps.available_game_languages());
-    println!("Lang: {}", apps.current_game_language());
-    println!("Beta: {:?}", apps.current_beta_name());
-
     let keconf = keconfig::parse("./KE_config".to_string());
+
+    if(keconf.steam_id != -1){
+        let steamid = keconf.steam_id as u32;
+        let (client, single) = Client::init().unwrap();
+
+        let _cb = client.register_callback(|p: PersonaStateChange| {
+            println!("Got callback: {:?}", p);
+        });
+
+        let utils = client.utils();
+        println!("Utils:");
+        println!("AppId: {:?}", utils.app_id());
+        println!("UI Language: {}", utils.ui_language());
+
+        let apps = client.apps();
+        println!("Apps");
+        println!("IsInstalled({steamid}): {}", apps.is_app_installed(AppId(steamid)));
+        println!("InstallDir({steamid}): {}", apps.app_install_dir(AppId(steamid)));
+        println!("BuildId: {}", apps.app_build_id());
+        println!("AppOwner: {:?}", apps.app_owner());
+        println!("Langs: {:?}", apps.available_game_languages());
+        println!("Lang: {}", apps.current_game_language());
+        println!("Beta: {:?}", apps.current_beta_name());
+    }
 
 
     // project settings
@@ -274,9 +276,11 @@ fn main(){
     }
 
     //init physics system
-    let mut phys_world = PW.write().unwrap();
+    //let mut phys_world = PW.write().unwrap();
 
-    let mut loadmap = |map:String, propz: &mut std::sync::RwLockWriteGuard<HashMap<i32, Prop>>, texturez: &mut HashMap<i32, Texture>, modelz: &mut HashMap<i32, Model>, phys_world: &mut std::sync::RwLockWriteGuard<PhysWorld>| {
+    let mut loadmap = |map:String, propz: &mut std::sync::RwLockWriteGuard<HashMap<i32, Prop>>, texturez: &mut HashMap<i32, Texture>, modelz: &mut HashMap<i32, Model>| {
+
+        let mut phys_world = PW.write().unwrap();
 
         let map = load(&("./maps/".to_owned()+&map));
 
@@ -351,7 +355,7 @@ fn main(){
         (map.environment, map.scripts)
     };
 
-    let (world_emv, scripz) = loadmap(keconf.default_map, &mut propz, &mut texturez, &mut modelz, &mut phys_world);
+    let (world_emv, scripz) = loadmap(keconf.default_map, &mut propz, &mut texturez, &mut modelz);
 
     // {
     //     let mut womp = Prop::new("nya :3".to_owned());
@@ -401,14 +405,18 @@ fn main(){
 
     let mut real_char: Character;
 
-    real_char = Character::new(keconf.char_pov, &display, &mut propz, &mut modelz, &mut phys_world, &mut camera_mapc);
-    *_main_camerac = real_char.camera;
+    {
+        let mut phys_world = PW.write().unwrap();
 
-    drop(camera_mapc);
-    drop(_main_camerac);
+        real_char = Character::new(keconf.char_pov, &display, &mut propz, &mut modelz, &mut phys_world, &mut camera_mapc);
+        *_main_camerac = real_char.camera;
 
-    if world_emv.spawnpoints.len() != 0 {
-        real_char.tp(&mut phys_world, &mut propz, world_emv.spawnpoints[0]);
+        drop(camera_mapc);
+        drop(_main_camerac);
+
+        if world_emv.spawnpoints.len() != 0 {
+            real_char.tp(&mut phys_world, &mut propz, world_emv.spawnpoints[0]);
+        }
     }
 
     let mut loop_wawa: f32 = 0.0;
@@ -815,6 +823,8 @@ fn main(){
                     ).to_string());
                     //drop(rqs);
                     let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
+                    let mut phys_world = PW.write().unwrap();
+
                     real_char.interp_key(&mut phys_world, &mut propz, input, delta_time);
                 }
                 WindowEvent::CloseRequested { .. } => {
@@ -832,6 +842,7 @@ fn main(){
                     DeviceEvent::MouseMotion { delta } => {
                         if(!keconf.headless){
                             let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
+                            let mut phys_world = PW.write().unwrap();
                             let mut _main_camera = MAIN_CAM.write().unwrap();
                             let mut camera_map = CAMERAS.write().unwrap();
                             let (width, height) = display.get_framebuffer_dimensions();
@@ -903,10 +914,12 @@ fn main(){
                 KERequest::Pin_Buffer_Camera(_, _) => todo!(),
                 KERequest::Phys_Prop_Push(propid, flyto) => {
                     let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
+                    let mut phys_world = PW.write().unwrap();
                     phys_world.apply_force(propz.get_mut(&propid).unwrap(), *flyto);
                 },
                 KERequest::Phys_Prop_Push_SideOnly(propid, flyto) => {
                     let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
+                    let mut phys_world = PW.write().unwrap();
                     phys_world.apply_force_xz(propz.get_mut(&propid).unwrap(), *flyto);
                 },
                 KERequest::load_map(locala) => {
@@ -917,6 +930,7 @@ fn main(){
                 },
                 KERequest::copy_prop_phys_pose(propid) => {
                     let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
+                    let mut phys_world = PW.write().unwrap();
                     phys_world._sync_phys_prop(propz.get_mut(&propid).unwrap(), CopyWhat::All);
                 },
                 KERequest::window_cursor_lock(is) => {
@@ -982,6 +996,7 @@ fn main(){
 
         if(keconf.headless){
             let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
+            let mut phys_world = PW.write().unwrap();
             //step physics world
             phys_world.step();
 
@@ -994,6 +1009,7 @@ fn main(){
 
         if(!keconf.headless){
             let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
+            let mut phys_world = PW.write().unwrap();
 
             real_char.step(&mut phys_world, &mut propz, delta_time);
 

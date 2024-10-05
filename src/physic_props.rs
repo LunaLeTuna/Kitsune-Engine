@@ -25,13 +25,16 @@ pub struct PhysWorld {
     ridgid_world: RigidBodySet,
     colliders: ColliderSet,
     phys_handles: HashMap<i32, RigidBodyHandle>,
+    query_pipeline: QueryPipeline,
     last_ID: i32,
     custom_collider_mesh: HashMap<i32,ColliderBuilder>
 }
 
 pub struct RaycastResult {
-    hit: bool,
-    point: Vector3<f32>,
+    pub hit: bool,
+    pub point: Vector3<f32>,
+    pub normal: Vector3<f32>,
+    pub whats: Option<Vec<i32>>
 }
 
 impl PhysWorld {
@@ -39,7 +42,7 @@ impl PhysWorld {
 
 
         PhysWorld {
-            gravity: Vector3::new(0.0,-1.0,0.0),
+            gravity: Vector3::new(0.0,-3.24,0.0),
             ridgid_world: RigidBodySet::new(),
             colliders: ColliderSet::new(),
             phys_handles: HashMap::new(),
@@ -51,6 +54,7 @@ impl PhysWorld {
             impulse_joint_set: ImpulseJointSet::new(),
             multibody_joint_set: MultibodyJointSet::new(),
             ccd_solver: CCDSolver::new(),
+            query_pipeline: QueryPipeline::new(),
             last_ID: 0,
             custom_collider_mesh: HashMap::new(),
         }
@@ -74,9 +78,51 @@ impl PhysWorld {
           );
     }
 
+    pub fn raycast_fire_simple(&mut self, startpos: Vector3<f32>, endpos: Vector3<f32>) -> RaycastResult{
+
+        self.query_pipeline.update(&self.ridgid_world, &self.colliders);
+
+        let rayto = (endpos).normalize();
+        let raydist = Vector3::zeros().metric_distance(&endpos);
+
+        let ray = Ray::new(startpos.into(), rayto);
+        let max_toi = raydist;
+        let solid = true;
+        let filter = QueryFilter::default();
+
+        if let Some((handle, intersection)) = self.query_pipeline.cast_ray_and_get_normal(
+            &self.ridgid_world, &self.colliders, &ray, max_toi, solid, filter
+        ) {
+            // This is similar to `QueryPipeline::cast_ray` illustrated above except
+            // that it also returns the normal of the collider shape at the hit point.
+            let hit_point = ray.point_at(intersection.toi);
+            let hit_normal = intersection.normal;
+            //println!("Collider {:?} hit at point {} with normal {}", handle, hit_point, hit_normal);
+
+            let ida = self.colliders.get(handle).unwrap().user_data as i32;
+
+            let hites = Some(vec![ida]);
+
+            return RaycastResult{
+                hit: true,
+                point: Vector3::new(hit_point.x, hit_point.y, hit_point.z),
+                normal: Vector3::new(hit_normal.x, hit_normal.y, hit_normal.z),
+                whats: hites,
+            }
+        }else{
+            return RaycastResult{
+                hit: false,
+                point: Vector3::zeros(),
+                normal: Vector3::zeros(),
+                whats: None,
+            }
+        }
+    }
+
     pub fn create_collider_block(&mut self, prop: &mut Prop) {
         let mut collider = ColliderBuilder::cuboid(prop.scale.x, prop.scale.y, prop.scale.z)
         .translation(prop.position)
+        .user_data(prop.selfid as u128)
         .build();
 
 
@@ -104,6 +150,7 @@ impl PhysWorld {
     pub fn create_collider_capsule(&mut self, prop: &mut Prop) {
         let mut collider = ColliderBuilder::capsule_y(prop.scale.y, prop.scale.x)
         .translation(prop.position)
+        .user_data(prop.selfid as u128)
         .build();
 
 
@@ -187,15 +234,22 @@ impl PhysWorld {
         todo!()
     }
 
-    pub fn create_dynamic_box(&mut self, prop: &mut Prop) {
-        let collider = ColliderBuilder::cuboid(prop.scale.x, prop.scale.y, prop.scale.z);
-
+    pub fn rbbegining(&mut self, prop: &mut Prop) -> RigidBody{
         let mut rigid_body = RigidBodyBuilder::new(RigidBodyType::Dynamic)
         .translation(prop.position)
         .rotation(prop.rotation) //gotta figure out a effetion waty to do this
         .can_sleep(true) //cube can a bit eepy
         .ccd_enabled(false) //ponder this later
+        .user_data(prop.selfid as u128)
         .build();
+
+        return rigid_body;
+    }
+
+    pub fn create_dynamic_box(&mut self, prop: &mut Prop) {
+        let collider = ColliderBuilder::cuboid(prop.scale.x, prop.scale.y, prop.scale.z);
+
+        let mut rigid_body = self.rbbegining(prop);
 
         //rigid_body.set_rotation(prop.rotation.into(), false);
 
@@ -218,12 +272,7 @@ impl PhysWorld {
     pub fn create_dynamic_ball(&mut self, prop: &mut Prop) {
         let collider = ColliderBuilder::ball(prop.scale.y);
 
-        let mut rigid_body = RigidBodyBuilder::new(RigidBodyType::Dynamic)
-        .translation(prop.position)
-        .rotation(prop.rotation) //gotta figure out a effetion waty to do this
-        .can_sleep(true) //cube can a bit eepy
-        .ccd_enabled(false) //ponder this later
-        .build();
+        let mut rigid_body = self.rbbegining(prop);
 
         //rigid_body.set_rotation(prop.rotation.into(), false);
 
@@ -246,12 +295,7 @@ impl PhysWorld {
     pub fn create_dynamic_capsule(&mut self, prop: &mut Prop) {
         let collider = ColliderBuilder::capsule_y(prop.scale.y, prop.scale.x);
 
-        let mut rigid_body = RigidBodyBuilder::new(RigidBodyType::Dynamic)
-        .translation(prop.position)
-        .rotation(prop.rotation) //gotta figure out a effetion waty to do this
-        .can_sleep(true) //cube can a bit eepy
-        .ccd_enabled(false) //ponder this later
-        .build();
+        let mut rigid_body = self.rbbegining(prop);
 
         //rigid_body.set_rotation(prop.rotation.into(), false);
 

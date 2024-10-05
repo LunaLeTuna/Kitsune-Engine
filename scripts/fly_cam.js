@@ -37,7 +37,7 @@ function loop(delta){
 
     cameras.lookat(new Vector3(asaf.x-cameras.position.x,asaf.y-cameras.position.y,asaf.z-cameras.position.z))
 
-    awadwa+=0.01*delta
+    awadwa+=0.05*delta
 
     var forword = 0;
     var side = 0;
@@ -86,4 +86,12 @@ addEventListener("keypress", (keyevt) => {
         button[keyevt.which] = true
     else
         button[keyevt.which] = false
+
+    let meowmeow = playera.position;
+    meowmeow.y -=3
+
+    // let a = raycast_fire(meowmeow, new Vector3(0,-5,0));
+
+    // if(a.hit)
+    // console.log(a.whats);
 })
