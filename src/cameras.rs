@@ -52,7 +52,7 @@ impl Camera {
         }
     }
 
-    pub fn set_rotation(&mut self, target: Vector3<f32>) { self.rotation = nalgebra::Rotation3::new(target); }
+    pub fn set_rotation(&mut self, target: Vector3<f32>) { self.rotation = nalgebra::Rotation3::from_euler_angles(target.x,target.y,target.z); }
 
     pub fn look_at(&mut self, target: Vector3<f32>) {
         self.rotation = nalgebra::Rotation3::look_at_lh(&(target*-1.0), &self.up);

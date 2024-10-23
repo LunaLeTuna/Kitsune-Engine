@@ -30,16 +30,17 @@ mod_prop_texture(portal_geo._KE_Prop, 0, portal_tex.ID)
 
 function loop(delta){
     
-    let mrow = cameras.position;
-    portal_cam.position = new Vector3(mrow.x-10,mrow.y,mrow.z-60)
+    let mrow = maincamera.position;
+    portal_cam.position = new Vector3(mrow.x,mrow.y,mrow.z-60)
 
-    let asaf = playera.position;
-    meowmedaodiskdas.position = new Vector3(proxp.position.x-10,proxp.position.y,proxp.position.z-60)
+    // let asaf = mainchar.position;
+    // meowmedaodiskdas.position = new Vector3(asaf.position.x,asaf.position.y,asaf.position.z)
 
-    meowmedaodiskdas.rotation = proxp.rotation
+    var rcamrot = maincamera.rotation;
+    portal_cam.rotation = new Vector3(rcamrot.x,rcamrot.y,rcamrot.z)
 
     
-    portal_cam.lookat(new Vector3(asaf.x-cameras.position.x,asaf.y-cameras.position.y,asaf.z-cameras.position.z))
+    //portal_cam.lookat(new Vector3(asaf.x-cameras.position.x,asaf.y-cameras.position.y,asaf.z-cameras.position.z))
 }
 
 addEventListener("tick",loop)
@@ -49,38 +50,38 @@ var cam_pan_speed = 0.04
 var cam_pan_done = false;
 
 
-addEventListener("keypress", (keyevt) => {
-    if(LOCK_MOVEMENT)return
-    if(keyevt.which == 18 && keyevt.how == "released"){
-        var pa1 = mainchar.position;
-        var pa2 = portal_geo.position;
-        let distenc = Math.sqrt((Math.abs(pa1.x-pa2.x)+Math.abs(pa1.y-pa2.y)+Math.abs(pa1.z-pa2.z)))
-        console.log(distenc);
-        if(distenc < 3.5){
-            console.log("open sesamee");
-            LOCK_MOVEMENT=true
-            //playera.velocityOnlySideways(new Vector2(-3.5,0));
-            var bloop = 0;
-            cam_pan_done = false;
-            addEventListener("tick",(delta)=> {
-                bloop+=0.5*delta
-                if(bloop > 100 && cam_pan_done) {
-                    kill_current_listener()
-                    playera.position = meowmedaodiskdas.position
-                    mod_prop_copy_phys(playera._KE_Prop)
-                    LOCK_MOVEMENT=false;
-                    console.log("awawawa!"+bloop);
-                }else{
-                    if(camverticalpan>2.7){
-                        camverticalpan-=cam_pan_speed*(camverticalpan/3)*delta
-                    }else if(camverticalpan<2){
-                        camverticalpan+=cam_pan_speed*delta
-                    }else{
-                        cam_pan_done = true
-                    }
-                }
-            })
+// addEventListener("keypress", (keyevt) => {
+//     if(LOCK_MOVEMENT)return
+//     if(keyevt.which == 18 && keyevt.how == "released"){
+//         var pa1 = mainchar.position;
+//         var pa2 = portal_geo.position;
+//         let distenc = Math.sqrt((Math.abs(pa1.x-pa2.x)+Math.abs(pa1.y-pa2.y)+Math.abs(pa1.z-pa2.z)))
+//         console.log(distenc);
+//         if(distenc < 3.5){
+//             console.log("open sesamee");
+//             LOCK_MOVEMENT=true
+//             //playera.velocityOnlySideways(new Vector2(-3.5,0));
+//             var bloop = 0;
+//             cam_pan_done = false;
+//             addEventListener("tick",(delta)=> {
+//                 bloop+=0.5*delta
+//                 if(bloop > 100 && cam_pan_done) {
+//                     kill_current_listener()
+//                     playera.position = meowmedaodiskdas.position
+//                     mod_prop_copy_phys(playera._KE_Prop)
+//                     LOCK_MOVEMENT=false;
+//                     console.log("awawawa!"+bloop);
+//                 }else{
+//                     if(camverticalpan>2.7){
+//                         camverticalpan-=cam_pan_speed*(camverticalpan/3)*delta
+//                     }else if(camverticalpan<2){
+//                         camverticalpan+=cam_pan_speed*delta
+//                     }else{
+//                         cam_pan_done = true
+//                     }
+//                 }
+//             })
             
-        }
-    }
-})
+//         }
+//     }
+// })

@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use rust_socketio::{ClientBuilder, Payload, RawClient, client::Client};
 use smol::future::FutureExt;
 
-use crate::{cameras::Camera, fs_system::grab, menu_system::{menuimage, menutext, KEmenuTypes}, props::Prop, PhysWorld, PointLight, CAMERAS, LIGHTS, MAIN_CAM, MENUS, MODEL_COUNT, PROPS, PW, REQUESTS, SCREEN_SIZE, SHADER_COUNT, TEXTURE_COUNT};
+use crate::{cameras::Camera, fs_system::grab, menu_system::{menuimage, menutext, KEmenuTypes}, props::Prop, PhysWorld, PointLight, ALLOWFILEGRAB, CAMERAS, LIGHTS, MAIN_CAM, MENUS, MODEL_COUNT, PROPS, PW, REQUESTS, SCREEN_SIZE, SHADER_COUNT, TEXTURE_COUNT};
 
 pub struct ScriptSpace<'a> {
     pub world: i16,
@@ -927,6 +927,21 @@ fn raycast_fire(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> 
 
 }
 
+fn get_file(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    if !*ALLOWFILEGRAB.read().unwrap() {
+        return Ok(JsValue::String("no file grab allowed".into()));
+    }
+    let sat = _nargs.get_or_undefined(0).as_string().unwrap().as_ref();
+
+    let rawtext = match std::string::String::from_utf16(sat) {
+        Ok(x) => x,
+        Err(_) => "".to_owned()
+    };
+    
+    Ok(JsValue::String(grab(&rawtext).into()))
+
+}
+
 fn engineexit(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut propz = REQUESTS.write().unwrap();
 
@@ -1063,6 +1078,8 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("window_cursor_lock", 1, NativeFunction::from_fn_ptr(window_cursor_lock));
 
         self.context.register_global_builtin_callable("raycast_fire", 1, NativeFunction::from_fn_ptr(raycast_fire));
+
+        self.context.register_global_builtin_callable("get_file", 1, NativeFunction::from_fn_ptr(get_file));
         
         
     }

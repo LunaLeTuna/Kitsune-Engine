@@ -95,6 +95,7 @@ lazy_static::lazy_static! {
     pub static ref PW: RwLock<PhysWorld> = RwLock::new(PhysWorld::init_phys_world());
     pub static ref REQUESTS: RwLock<Vec<KERequest>> = RwLock::new(Vec::new());
     pub static ref FIRST: Arc<RwLock<String>> = Arc::new(RwLock::new(format!("")));
+    pub static ref ALLOWFILEGRAB: RwLock<bool> = RwLock::new(false);
 }
 
 

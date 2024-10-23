@@ -1,6 +1,6 @@
 use std::{borrow::Borrow, collections::HashMap, os::raw};
 
-use crate::{char_control::character_type, fs_system::grab, ke_units::{parsef, parsei}};
+use crate::{char_control::character_type, fs_system::grab, ke_units::{parsef, parsei}, ALLOWFILEGRAB};
 
 pub struct keconfig {
     pub steam_id: i32,
@@ -69,6 +69,9 @@ impl keconfig {
         for line in file.lines() {
             let dat: Vec<&str> = line.split_whitespace().collect();
             match dat.as_slice() {
+                ["allow_grab_file"] => {
+                    *ALLOWFILEGRAB.write().unwrap() = true;
+                }
                 ["enable_steam", sid] => {
                     conf.steam_id = parsei(sid);
                 }

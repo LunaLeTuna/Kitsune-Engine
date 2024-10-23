@@ -1,14 +1,16 @@
 --default_map burgor.kbf
 default_map testing.kbf
-default_map burgor.kbf
+--default_map burgor.kbf
 --default_map welcome.kbf
 runtime_script index.js;dev_functions.js;console.js
 shader_hotswap
 font_hotswap
-char_pov scripted
+--char_pov scripted
+char_pov firstperson
 --headless
 --is_server
 --has_multiplayer
 mouse_sensitivity 4.0
 colonthree
 buffers 1
+allow_grab_file

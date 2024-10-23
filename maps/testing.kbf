@@ -253,11 +253,6 @@ Model_static -31.01685 4.98798 49.73532 6.33 6.33 6.33
 Script 2.107067 7 34.61434 5 5 5
 	+NAME cubes
 	+ROT 0 270 0
-	+file fly_cam.js
-	+fire start()
-Script 2.107067 7 34.61434 5 5 5
-	+NAME cubes
-	+ROT 0 270 0
 	+file portal.js
 	+fire start()
 Light 5.5 7 -21.5 1 1 1
