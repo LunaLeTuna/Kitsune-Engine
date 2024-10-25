@@ -342,6 +342,25 @@ fn mod_prop_copy_phys(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_
 }
 
 fn create_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let world = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let mut womp = Prop::new("nya :3".to_owned());
+    womp.model = 0;
+    womp.shader = 1;
+    womp.textures = vec![0,0];
+    let mut propz = PROPS.write().unwrap();
+    let mut binding = WORLDS.write().unwrap();
+    let mut worldz = binding.get_mut(&(world as u32)).unwrap();
+    let i = propz.len() as i32;
+    womp.selfid = i;
+    propz.insert(i, womp);
+    worldz.1.push(i);
+    
+    Ok(JsValue::Integer(i))
+
+}
+
+fn get_all_props_in_world(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut womp = Prop::new("nya :3".to_owned());
     womp.model = 0;
     womp.shader = 1;
@@ -355,6 +374,17 @@ fn create_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> J
     worldz.1.push(i);
     
     Ok(JsValue::Integer(i))
+
+}
+
+fn delete_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut reqs = REQUESTS.write().unwrap();
+
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    reqs.push(crate::KERequest::Delete_Prop(propid));
+    
+    Ok(JsValue::null())
 
 }
 
@@ -1020,6 +1050,7 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("get_existing_prop_by_name", 1, NativeFunction::from_fn_ptr(get_existing_prop_by_name));
 
         self.context.register_global_builtin_callable("create_prop", 1, NativeFunction::from_fn_ptr(create_prop));
+        self.context.register_global_builtin_callable("delete_prop", 1, NativeFunction::from_fn_ptr(delete_prop));
         self.context.register_global_builtin_callable("mod_prop_pos", 1, NativeFunction::from_fn_ptr(mod_prop_pos));
         self.context.register_global_builtin_callable("get_prop_pos", 1, NativeFunction::from_fn_ptr(get_prop_pos));
         self.context.register_global_builtin_callable("mod_prop_scale", 1, NativeFunction::from_fn_ptr(mod_prop_scale));
@@ -1037,6 +1068,7 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("get_prop_vel", 1, NativeFunction::from_fn_ptr(get_prop_vel));
         self.context.register_global_builtin_callable("mod_prop_vel_onlyside", 1, NativeFunction::from_fn_ptr(mod_prop_vel_onlyside));
         self.context.register_global_builtin_callable("mod_prop_copy_phys", 1, NativeFunction::from_fn_ptr(mod_prop_copy_phys));
+        self.context.register_global_builtin_callable("get_all_props_in_world", 1, NativeFunction::from_fn_ptr(get_all_props_in_world));
 
         self.context.register_global_builtin_callable("get_existing_cam_by_name", 1, NativeFunction::from_fn_ptr(get_existing_cam_by_name));
         

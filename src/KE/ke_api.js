@@ -118,6 +118,10 @@ class Prop {
         lookat_prop(this._KE_Prop, vec3i)
     }
 
+    destroy(){
+        delete_prop(this._KE_Prop)
+    }
+
     set velocity(vec3i) {
         mod_prop_vel(this._KE_Prop, vec3i);
     }

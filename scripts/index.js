@@ -9,3 +9,12 @@ mod_menu_text_text(tvhowto, `\nopen console with the \` key [unpins cursor from 
 mod_menu_pos(tvhowto, new Vector2(-0.99, -0.87))
 
 //console.log(get_file("README.md"));
+
+let wtfisthisprop = new Prop();
+
+addEventListener("keypress", (keyevt) => {
+    //console.log(JSON.stringify(keyevt));
+
+    if(keyevt.which == 26&&keyevt.how=="pressed")
+        wtfisthisprop.destroy()
+})

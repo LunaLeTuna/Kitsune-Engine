@@ -14,3 +14,4 @@ mouse_sensitivity 4.0
 colonthree
 buffers 1
 allow_grab_file
+garbage_collect

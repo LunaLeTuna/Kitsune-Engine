@@ -3,6 +3,7 @@ use buffer::Buffer;
 use cameras::Camera;
 use char_control::{Character, character_type};
 use config::keconfig;
+use garbage_collector::clear;
 use keyboard_keynames::key_layout::KeyLayout;
 use menu_system::{menuimage, menutext, KEchar, KEfont, KEmenuTypes};
 use glium::{glutin::{ContextBuilder}, index::{NoIndices, PrimitiveType}, DepthTest, framebuffer::SimpleFrameBuffer, texture::{DepthStencilTexture2d, DepthTexture2d}, implement_vertex};
@@ -54,6 +55,7 @@ pub mod physic_props;
 pub mod char_control;
 pub mod script;
 pub mod multiplayer;
+pub mod garbage_collector;
 
 pub enum KERequest {
     Create_Shader(i32, String),
@@ -71,6 +73,7 @@ pub enum KERequest {
     js_push(String, String),
     copy_prop_phys_pose(i32),
     window_cursor_lock(bool),
+    garbage_collect(),
     exit,
     NULL,
 }
@@ -96,6 +99,8 @@ lazy_static::lazy_static! {
     pub static ref REQUESTS: RwLock<Vec<KERequest>> = RwLock::new(Vec::new());
     pub static ref FIRST: Arc<RwLock<String>> = Arc::new(RwLock::new(format!("")));
     pub static ref ALLOWFILEGRAB: RwLock<bool> = RwLock::new(false);
+    //storing file directories to see if something was already loaded
+    pub static ref STRINGSLOADED: RwLock<Vec<String>> = RwLock::new(Vec::new());
 }
 
 
@@ -911,9 +916,24 @@ fn main(){
                 },
                 KERequest::Delete_Prop(propid) => {
                     let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
-                    let w = propz.get_mut(&propid).unwrap();
-                    todo!();
-                    //phys_world;
+                    let w = match propz.get_mut(&propid) {
+                        Some(weee) => weee,
+                        None => continue,
+                    };
+
+                    let mut worldz = WORLDS.try_write().unwrap();
+                    let prpalce = worldz.get_mut(&w.world).unwrap();
+                    for pr in prpalce.1.iter().enumerate().clone() {
+                        if(pr.1 == propid){
+                            prpalce.1.remove(pr.0);
+                            break;
+                        }   
+                    }
+
+                    let mut phys_world = PW.write().unwrap();
+                    phys_world.remove_phy(w);
+
+                    propz.remove(&propid);
                 },
                 KERequest::Create_Buffer(_) => todo!(),
                 KERequest::Create_Camera(_) => todo!(),
@@ -952,6 +972,9 @@ fn main(){
                 },
                 KERequest::exit => {
                     control_flow.set_exit()
+                },
+                KERequest::garbage_collect() => {
+                    clear(&mut texturez, &mut modelz, &mut shaderz);
                 },
                 KERequest::NULL => todo!(),
             }
@@ -1058,7 +1081,7 @@ fn main(){
                         phys_world._sync_prop(prop, CopyWhat::All);
                     }
 
-                    
+
                 }
 
                 let mut screenbuffer = bufferz.get_mut(&main_cam.draw_buffer_to).unwrap();

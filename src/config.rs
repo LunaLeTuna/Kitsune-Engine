@@ -16,7 +16,8 @@ pub struct keconfig {
     pub override_shader: Vec<String>,
     pub mouse_sensitivity: f32,
     pub char_speed: f32,
-    pub buffers: u8
+    pub buffers: u8,
+    pub garbage_collect: bool
 }
 
 #[repr(u8)]
@@ -48,7 +49,8 @@ impl keconfig {
             override_shader: Vec::new(),
             mouse_sensitivity: 4.0,
             char_speed: 0.0,
-            buffers: 0
+            buffers: 0,
+            garbage_collect: false
         };
 
         // let mut keconf: HashMap<&str, kect> = HashMap::new();
@@ -71,6 +73,9 @@ impl keconfig {
             match dat.as_slice() {
                 ["allow_grab_file"] => {
                     *ALLOWFILEGRAB.write().unwrap() = true;
+                }
+                ["garbage_collect"] => {
+                    conf.garbage_collect = true;
                 }
                 ["enable_steam", sid] => {
                     conf.steam_id = parsei(sid);
