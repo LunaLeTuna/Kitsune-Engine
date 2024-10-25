@@ -77,7 +77,7 @@ pub enum KERequest {
 
 lazy_static::lazy_static! {
     // the Vec<i32> is refrences to the prop hashmap, maybe at some point move worlds in to PROPS with HASHMAP<i32,HASHMAP<i32,Prop>>... maybe thats stupid :P
-    static ref WORLDS: RwLock<HashMap<i32, (Environment,Vec<i32>)>> = RwLock::new(HashMap::new());
+    static ref WORLDS: RwLock<HashMap<u32, (Environment,Vec<i32>)>> = RwLock::new(HashMap::new());
     static ref PROPS: RwLock<HashMap<i32, Prop>> = RwLock::new(HashMap::new());
     static ref FONTS: RwLock<HashMap<i32, KEfont>> = RwLock::new(HashMap::new());
     static ref MENUS: RwLock<HashMap<i32, KEmenuTypes>> = RwLock::new(HashMap::new());
@@ -317,6 +317,10 @@ fn main(){
 
         let mut partnp = propz.len() as i32;
 
+        let mut binding = WORLDS.write().unwrap();
+        (*binding).insert(0, (map.environment.clone(),Vec::new()));
+        let mut worlda = binding.get_mut(&0).unwrap();
+
         for np in map.props {
             let mut np = np;
             phys_world.create_phy(&mut np, modelz);
@@ -341,6 +345,7 @@ fn main(){
             //     trans_props.push(partnp);
             // }
 
+            worlda.1.push(partnp);
             propz.insert(partnp, np);
             partnp+=1;
         }
@@ -1018,6 +1023,8 @@ fn main(){
             phys_world.step();
 
 
+            let world = WORLDS.write().unwrap();
+
             // start drawing frame
             let mut target = display.draw();
             target.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
@@ -1032,80 +1039,98 @@ fn main(){
 
                 main_cam.refresh();
 
-            let mut screenbuffer = bufferz.get_mut(&main_cam.draw_buffer_to).unwrap();
-            screenbuffer.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
-
-            //if cam prop parent moved, we move cam
-            if main_cam.parent_prop != -1 {
-                main_cam.position = propz.get(&main_cam.parent_prop).unwrap().position+main_cam.parent_offset;
-                //main_cam.look_at(Vector3::new(0.0, 0.0, 0.0)); //funny testing
-                main_cam.refresh();
-            }
-
-            if main_cam.disabled {continue};
-
-
-            
-
-            let mut trans_props: Vec<i32> = Vec::new();
-
-            // now in theory one could get all the closest props and push refrences of those props in to a list
-            // then replace propz here to that list to implement some sorta calling
-            // i'ma do that later
-            let lastdepthtext = glium::uniforms::Sampler::new(&lastscreen_depth_texture)
-            .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
-            .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
-            .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual));
-        
-            for po in 0..propz.len() {
-                let pid = (po) as i32;
-
-                let prop = propz.get_mut(&pid).unwrap();
-
-                if prop.parent_prop != -1 {
-                    prop.position = PROPS.read().unwrap().get(&prop.parent_prop).unwrap().position+prop.parent_offset;
-                    //main_cam.look_at(Vector3::new(0.0, 0.0, 0.0)); //funny testing
-                }
-                
-                //sync physics prop to visual prop or vis versa
-                if prop.phys_type == phytype::DynamicCollider {
-                    phys_world._sync_phys_prop(prop, CopyWhat::All);
-                }else if prop.phys_type == phytype::Dynamic {
-                    phys_world._sync_prop(prop, CopyWhat::All);
-                }
-                
-                if !prop.render {continue;}
-                if prop.face_cam {
-                    if(main_cam.position.z<prop.position.z){
-                        prop.look_at(main_cam.position-prop.position);
-                    }else{
-                        prop.look_at(prop.position-main_cam.position);
-                    }
-                }
-                if prop.transparency != 1.0 {
-                    trans_props.push(pid); //put it in a list to retry in the transparency pass
-                    continue;
-                }
                 
 
-                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &lastdepthtext, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
+                let mut world = world.get(&main_cam.world).unwrap().clone();
 
-                // if prop.position.y < -2.0 {
-                //     to_remove.push(*po.0);
+                // this is the "smart" way of doing, but forgor if this would technically memory leak or not
+                // if(real_char.world == main_cam.world) {
+                //     world.1.push(real_char.body);
                 // }
-            };
 
-            lastscreenbuffer.blit_buffers_from_simple_framebuffer(&screenbuffer, &glium::Rect { left: 0, bottom: 0, width: width, height: height }, &glium::BlitTarget { left: 0, bottom: 0, width: width as i32, height: height as i32 }, glium::uniforms::MagnifySamplerFilter::Nearest, glium::BlitMask { color: true, depth: true, stencil: false });
-        
-            for po in &trans_props {
-                let prop = propz.get_mut(&po).unwrap();
-                if prop.transparency == 0.0 {continue;}
+                if(real_char.world == main_cam.world) {
+                    let prop = propz.get_mut(&real_char.body).unwrap();
+                    if prop.parent_prop != -1 {
+                        prop.position = PROPS.read().unwrap().get(&prop.parent_prop).unwrap().position+prop.parent_offset;
+                    }
 
-                if !prop.render {continue;}
+                    if prop.phys_type == phytype::Dynamic {
+                        phys_world._sync_prop(prop, CopyWhat::All);
+                    }
 
+                    
+                }
+
+                let mut screenbuffer = bufferz.get_mut(&main_cam.draw_buffer_to).unwrap();
+                screenbuffer.clear_color_and_depth((world_emv.skyColor.x, world_emv.skyColor.y, world_emv.skyColor.z, 1.0), 1.0);
+
+                //if cam prop parent moved, we move cam
+                if main_cam.parent_prop != -1 {
+                    main_cam.position = propz.get(&main_cam.parent_prop).unwrap().position+main_cam.parent_offset;
+                    //main_cam.look_at(Vector3::new(0.0, 0.0, 0.0)); //funny testing
+                    main_cam.refresh();
+                }
+
+                if main_cam.disabled {continue};
                 
-                render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &lastdepthtext, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
-            };
+
+                let mut trans_props: Vec<i32> = Vec::new();
+
+                // now in theory one could get all the closest props and push refrences of those props in to a list
+                // then replace propz here to that list to implement some sorta calling
+                // i'ma do that later
+                let lastdepthtext = glium::uniforms::Sampler::new(&lastscreen_depth_texture)
+                .magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest)
+                .minify_filter(glium::uniforms::MinifySamplerFilter::Nearest)
+                .depth_texture_comparison(Some(glium::uniforms::DepthTextureComparison::LessOrEqual));
+            
+                for pid in &world.1 {
+                    let prop = propz.get_mut(&pid).unwrap();
+
+                    if prop.parent_prop != -1 {
+                        prop.position = PROPS.read().unwrap().get(&prop.parent_prop).unwrap().position+prop.parent_offset;
+                        //main_cam.look_at(Vector3::new(0.0, 0.0, 0.0)); //funny testing
+                    }
+                    
+                    //sync physics prop to visual prop or vis versa
+                    if prop.phys_type == phytype::DynamicCollider {
+                        phys_world._sync_phys_prop(prop, CopyWhat::All);
+                    }else if prop.phys_type == phytype::Dynamic {
+                        phys_world._sync_prop(prop, CopyWhat::All);
+                    }
+                    
+                    if !prop.render {continue;}
+                    if prop.face_cam {
+                        if(main_cam.position.z<prop.position.z){
+                            prop.look_at(main_cam.position-prop.position);
+                        }else{
+                            prop.look_at(prop.position-main_cam.position);
+                        }
+                    }
+                    if prop.transparency != 1.0 {
+                        trans_props.push(*pid); //put it in a list to retry in the transparency pass
+                        continue;
+                    }
+                    
+
+                    render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &lastdepthtext, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
+
+                    // if prop.position.y < -2.0 {
+                    //     to_remove.push(*po.0);
+                    // }
+                };
+
+                lastscreenbuffer.blit_buffers_from_simple_framebuffer(&screenbuffer, &glium::Rect { left: 0, bottom: 0, width: width, height: height }, &glium::BlitTarget { left: 0, bottom: 0, width: width as i32, height: height as i32 }, glium::uniforms::MagnifySamplerFilter::Nearest, glium::BlitMask { color: true, depth: true, stencil: false });
+            
+                for po in &trans_props {
+                    let prop = propz.get_mut(&po).unwrap();
+                    if prop.transparency == 0.0 {continue;}
+
+                    if !prop.render {continue;}
+
+                    
+                    render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &lastdepthtext, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
+                };
         }
             let mut screenbuffer: &mut SimpleFrameBuffer = bufferz.get_mut(&_main_buffer).unwrap();
 

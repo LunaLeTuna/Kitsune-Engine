@@ -8,6 +8,7 @@ use nalgebra::{Vector3, Rotation3};
 
 use crate::{props::{Prop, phytype, physhape, proptype}, fs_system::grab, ke_units::{Vec3, parsef, radians, parse, parsei}, shaders::ShadvType, lights::PointLight, textures::Texture};
 
+#[derive(Clone)]
 pub struct Environment {
     pub ambient: Vector3<f32>,
     pub skyColor: Vector3<f32>,

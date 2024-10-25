@@ -36,7 +36,9 @@ pub struct Character {
     pub is_running: bool,
     pub is_croutched: bool,
 
-    pub character_type: character_type
+    pub character_type: character_type,
+
+    pub world: u32
 }
 
 fn pivot_point(place: Vector2<f32>, center: Vector2<f32>, rot:f32) -> Vector2<f32>{
@@ -95,7 +97,8 @@ impl Character {
             pitch: 0.0,
             camfont: Vector3::new(0.0,1.0,0.0),
             forword: 0.0,
-            sideways: 0.0
+            sideways: 0.0,
+            world: 0
         }
     }
 

@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use rust_socketio::{ClientBuilder, Payload, RawClient, client::Client};
 use smol::future::FutureExt;
 
-use crate::{cameras::Camera, fs_system::grab, menu_system::{menuimage, menutext, KEmenuTypes}, props::Prop, PhysWorld, PointLight, ALLOWFILEGRAB, CAMERAS, LIGHTS, MAIN_CAM, MENUS, MODEL_COUNT, PROPS, PW, REQUESTS, SCREEN_SIZE, SHADER_COUNT, TEXTURE_COUNT};
+use crate::{cameras::Camera, fs_system::grab, menu_system::{menuimage, menutext, KEmenuTypes}, props::Prop, PhysWorld, PointLight, ALLOWFILEGRAB, CAMERAS, LIGHTS, MAIN_CAM, MENUS, MODEL_COUNT, PROPS, PW, REQUESTS, SCREEN_SIZE, SHADER_COUNT, TEXTURE_COUNT, WORLDS};
 
 pub struct ScriptSpace<'a> {
     pub world: i16,
@@ -347,9 +347,12 @@ fn create_prop(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> J
     womp.shader = 1;
     womp.textures = vec![0,0];
     let mut propz = PROPS.write().unwrap();
+    let mut binding = WORLDS.write().unwrap();
+    let mut worldz = binding.get_mut(&0).unwrap();
     let i = propz.len() as i32;
     womp.selfid = i;
     propz.insert(i, womp);
+    worldz.1.push(i);
     
     Ok(JsValue::Integer(i))
 
