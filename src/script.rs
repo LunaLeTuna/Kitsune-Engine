@@ -180,6 +180,52 @@ fn get_prop_rot(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> 
 
 }
 
+fn mod_prop_backcull(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.write().unwrap();
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+    let to = _nargs.get_or_undefined(1).to_boolean();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.backface = to;
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_prop_backcull(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+    
+    Ok(JsValue::Boolean(w.backface))
+}
+
+fn mod_prop_render(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.write().unwrap();
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+    let to = _nargs.get_or_undefined(1).to_boolean();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.render = to;
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_prop_render(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+    
+    Ok(JsValue::Boolean(w.backface))
+}
+
 fn mod_prop_shader(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut propz = PROPS.write().unwrap();
     let st = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
@@ -260,6 +306,32 @@ fn get_prop_texture(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>)
     
     
     Ok(JsValue::new(w.textures[st as usize]))
+
+}
+
+fn mod_prop_trans(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).as_number().unwrap() as f32;
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.transparency = st;
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_prop_trans(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = PROPS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+
+    
+    
+    Ok(JsValue::new(w.transparency))
 
 }
 
@@ -1008,6 +1080,16 @@ fn window_cursor_lock(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_
     Ok(JsValue::Undefined)
 }
 
+
+fn garbage_collect(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut reqs = REQUESTS.write().unwrap();
+
+    reqs.push(crate::KERequest::garbage_collect());
+    
+    Ok(JsValue::null())
+
+}
+
 impl ScriptSpace<'_> {
 
     pub fn new() -> ScriptSpace<'static>{
@@ -1063,6 +1145,12 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("get_prop_texture", 1, NativeFunction::from_fn_ptr(get_prop_texture));
         self.context.register_global_builtin_callable("mod_prop_rot", 1, NativeFunction::from_fn_ptr(mod_prop_rot));
         self.context.register_global_builtin_callable("get_prop_rot", 1, NativeFunction::from_fn_ptr(get_prop_rot));
+        self.context.register_global_builtin_callable("mod_prop_backcull", 1, NativeFunction::from_fn_ptr(mod_prop_backcull));
+        self.context.register_global_builtin_callable("get_prop_backcull", 1, NativeFunction::from_fn_ptr(get_prop_backcull));
+        self.context.register_global_builtin_callable("mod_prop_render", 1, NativeFunction::from_fn_ptr(mod_prop_render));
+        self.context.register_global_builtin_callable("get_prop_render", 1, NativeFunction::from_fn_ptr(get_prop_render));
+        self.context.register_global_builtin_callable("mod_prop_trans", 1, NativeFunction::from_fn_ptr(mod_prop_trans));
+        self.context.register_global_builtin_callable("get_prop_trans", 1, NativeFunction::from_fn_ptr(get_prop_trans));
         self.context.register_global_builtin_callable("lookat_prop", 1, NativeFunction::from_fn_ptr(lookat_prop));
         self.context.register_global_builtin_callable("mod_prop_vel", 1, NativeFunction::from_fn_ptr(mod_prop_vel));
         self.context.register_global_builtin_callable("get_prop_vel", 1, NativeFunction::from_fn_ptr(get_prop_vel));
@@ -1111,6 +1199,7 @@ impl ScriptSpace<'_> {
         //self.context.register_global_builtin_callable("quit", 1, NativeFunction::from_fn_ptr(engineexit));
         self.context.register_global_builtin_callable("tepter", 1, NativeFunction::from_fn_ptr(tepter));
         self.context.register_global_builtin_callable("window_cursor_lock", 1, NativeFunction::from_fn_ptr(window_cursor_lock));
+        self.context.register_global_builtin_callable("garbage_collect", 1, NativeFunction::from_fn_ptr(garbage_collect));
 
         self.context.register_global_builtin_callable("raycast_fire", 1, NativeFunction::from_fn_ptr(raycast_fire));
 

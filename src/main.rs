@@ -159,7 +159,7 @@ fn main(){
         v.set_cursor_visible(false);
     }
 
-    let params = DrawParameters {
+    let mut params = DrawParameters {
         depth: Depth {
             test: DepthTest::IfLess,
             write: true,
@@ -176,8 +176,8 @@ fn main(){
             },
             constant_value: (0.0, 0.0, 0.0, 0.0),
         },
-        backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
-        //backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
+        //backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+        backface_culling: glium::draw_parameters::BackfaceCullingMode::CullingDisabled,
         ..Default::default()
     };
 
@@ -983,18 +983,23 @@ fn main(){
         (a).clear();}
 
         if(keconf.shader_hotswap){
-            for x in 0..shaderz.len() as i32 {
-                let mut sh = shaderz.get_mut(&x).unwrap();
+            let mut tochange = Vec::new();
+            for x in shaderz.iter() {
+                let mut sh = x.1;
                 let name = sh.url.clone();
                 let metadataF = fs::metadata(format!("{name}.frag")).expect("failed to check shader file");
                 let metadataV = fs::metadata(format!("{name}.vert")).expect("failed to check shader file");
 
                 if(metadataF.modified().unwrap() != sh.time_changed_f || metadataV.modified().unwrap() != sh.time_changed_v) {
-                    sh.time_changed_f = metadataF.modified().unwrap();
-                    sh.time_changed_v = metadataV.modified().unwrap();
-                    *sh = Shader::craft(&name, &display);
-                    println!("{} has been updated", name);
+                    tochange.push((*x.0,name,metadataF,metadataV));
                 }
+            }
+            for x in tochange {
+                let sh = shaderz.get_mut(&x.0).unwrap();
+                sh.time_changed_f = x.2.modified().unwrap();
+                sh.time_changed_v = x.3.modified().unwrap();
+                *sh = Shader::craft(&x.1, &display);
+                println!("{} has been updated", x.1);
             }
         }
 
@@ -1135,9 +1140,16 @@ fn main(){
                         continue;
                     }
                     
+                    if !prop.backface {
+                        params.backface_culling = glium::draw_parameters::BackfaceCullingMode::CullingDisabled;
+                    }
 
                     render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &lastdepthtext, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
 
+                    if !prop.backface {
+                        params.backface_culling = glium::draw_parameters::BackfaceCullingMode::CullClockwise;
+                    }
+                    
                     // if prop.position.y < -2.0 {
                     //     to_remove.push(*po.0);
                     // }
@@ -1151,8 +1163,15 @@ fn main(){
 
                     if !prop.render {continue;}
 
+                    if !prop.backface {
+                        params.backface_culling = glium::draw_parameters::BackfaceCullingMode::CullingDisabled;
+                    }
                     
                     render_prop(loop_wawa, prop, main_cam, &shader_vars, &world_emv, &lightz, &lastscreen_texture, &lastdepthtext, &mut screenbuffer, &texturez, &texturez2, &mut target, &modelz, &shaderz, &params);
+                
+                    if !prop.backface {
+                        params.backface_culling = glium::draw_parameters::BackfaceCullingMode::CullClockwise;
+                    }
                 };
         }
             let mut screenbuffer: &mut SimpleFrameBuffer = bufferz.get_mut(&_main_buffer).unwrap();

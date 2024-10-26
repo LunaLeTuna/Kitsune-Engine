@@ -1,18 +1,18 @@
 var maincamera = getCamByName("TheCharacterCamera");
 var mainchar = getByName("TheCharacterController");
 var portal_geo = new Prop();
-var portal_mes = new Model("house/inside.obj");
+var portal_mes = new Model("portal_doors/base_portal.obj");
 var portal_tex = new Texture("");
 var portal_cam = new Camera();
 
 
-var meowmedaodiskdas = new Prop();
-mod_prop_texture(meowmedaodiskdas._KE_Prop, 0, 0)
-mod_prop_shader(meowmedaodiskdas._KE_Prop, 2)
+// var meowmedaodiskdas = new Prop();
+// mod_prop_texture(meowmedaodiskdas._KE_Prop, 0, 0)
+// mod_prop_shader(meowmedaodiskdas._KE_Prop, 2)
 
 
 var house = new Prop();
-var house_mesh = new Model("house/house_frame.obj");
+var house_mesh = new Model("portal_doors/base_frame.obj");
 house.model = house_mesh
 house.position = new Vector3(0,0.501,0);
 mod_prop_shader(house._KE_Prop, 0)
@@ -27,6 +27,8 @@ portal_geo.position = new Vector3(0,0.501,0)
 mod_prop_shader(portal_geo._KE_Prop, 6)
 mod_prop_model(portal_geo._KE_Prop, portal_mes.ID)
 mod_prop_texture(portal_geo._KE_Prop, 0, portal_tex.ID)
+portal_geo.backfacing = false
+portal_geo.trans = 0.9
 
 function loop(delta){
     

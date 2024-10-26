@@ -142,6 +142,30 @@ class Prop {
         return get_prop_scale(this._KE_Prop);
     }
 
+    set backfacing(toa) {
+        mod_prop_backcull(this._KE_Prop, toa);
+    }
+
+    get backfacing() {
+        return get_prop_backcull(this._KE_Prop);
+    }
+
+    set render(toa) {
+        mod_prop_render(this._KE_Prop, toa);
+    }
+
+    get render() {
+        return get_prop_render(this._KE_Prop);
+    }
+
+    set trans(toa) {
+        mod_prop_trans(this._KE_Prop, toa);
+    }
+
+    get trans() {
+        return get_prop_trans(this._KE_Prop);
+    }
+
     set shader(modeli) {
         //ops.mod_prop_shader(this._KE_Prop, modeli.ID);
     }

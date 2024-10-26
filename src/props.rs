@@ -54,6 +54,7 @@ pub struct Prop {
     pub parent_offset: Vector3<f32>,
 
     pub render: bool, //if to render
+    pub backface: bool,
 
     pub phys_type: phytype, //if rigid, or collision
     pub phys_shape: physhape, //what shape collision is
@@ -80,6 +81,8 @@ impl Prop {
             transparency: 1.0,
             rotation: Vector3::zeros(),
             render: true,
+            backface: true,
+
             phys_type: phytype::NULL,
             phys_shape: physhape::NULL,
             phys_id: -1,

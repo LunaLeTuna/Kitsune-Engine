@@ -188,6 +188,8 @@ uniform sampler2D texture4;
 uniform sampler2D texture5;
 uniform sampler2D texture6;
 uniform sampler2D texture7;
+uniform sampler2D screenbuffer;
+uniform sampler2D screenbufferdepth;
 uniform vec2 framebufferSize;
 uniform vec3 Color;
 uniform mat4 view;
@@ -256,9 +258,16 @@ void main() {
     // else v_normal
 
     vec4 tecx = texture(texture1, (gl_FragCoord.xy/framebufferSize.xy)).rgba;
+    vec4 behind = texture(screenbuffer, (gl_FragCoord.xy/framebufferSize.xy)).rgba;
     //vec4 tecx = texture(texture1, v_tex_coords).rgba;
+    
+    
 
     color = vec4(tecx.rgb, 1.0);
+
+    if(!gl_FrontFacing){
+        color = vec4(behind.rgb, 1.0);
+    }
     
 }
 // void main() {
