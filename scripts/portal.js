@@ -17,6 +17,16 @@ house.model = house_mesh
 house.position = new Vector3(0,0.501,0);
 mod_prop_shader(house._KE_Prop, 0)
 
+var door = new Prop();
+var door_mesh = new Model("portal_doors/base_door.obj");
+door.model = door_mesh
+door.position = new Vector3(0,0.501,1.8);
+mod_prop_shader(door._KE_Prop, 0)
+
+function modor(vvv) {
+    door.position = new Vector3(0,0.501,vvv);
+}
+
 
 portal_geo.texture = portal_tex;
 tepter(portal_tex.ID, 0)
@@ -47,43 +57,37 @@ function loop(delta){
 
 addEventListener("tick",loop)
 
-
+var camverticalpan = 0;
 var cam_pan_speed = 0.04
 var cam_pan_done = false;
 
 
-// addEventListener("keypress", (keyevt) => {
-//     if(LOCK_MOVEMENT)return
-//     if(keyevt.which == 18 && keyevt.how == "released"){
-//         var pa1 = mainchar.position;
-//         var pa2 = portal_geo.position;
-//         let distenc = Math.sqrt((Math.abs(pa1.x-pa2.x)+Math.abs(pa1.y-pa2.y)+Math.abs(pa1.z-pa2.z)))
-//         console.log(distenc);
-//         if(distenc < 3.5){
-//             console.log("open sesamee");
-//             LOCK_MOVEMENT=true
-//             //playera.velocityOnlySideways(new Vector2(-3.5,0));
-//             var bloop = 0;
-//             cam_pan_done = false;
-//             addEventListener("tick",(delta)=> {
-//                 bloop+=0.5*delta
-//                 if(bloop > 100 && cam_pan_done) {
-//                     kill_current_listener()
-//                     playera.position = meowmedaodiskdas.position
-//                     mod_prop_copy_phys(playera._KE_Prop)
-//                     LOCK_MOVEMENT=false;
-//                     console.log("awawawa!"+bloop);
-//                 }else{
-//                     if(camverticalpan>2.7){
-//                         camverticalpan-=cam_pan_speed*(camverticalpan/3)*delta
-//                     }else if(camverticalpan<2){
-//                         camverticalpan+=cam_pan_speed*delta
-//                     }else{
-//                         cam_pan_done = true
-//                     }
-//                 }
-//             })
+addEventListener("keypress", (keyevt) => {
+    if(keyevt.which == 18 && keyevt.how == "released"){
+        var pa1 = mainchar.position;
+        var pa2 = portal_geo.position;
+        let distenc = Math.sqrt((Math.abs(pa1.x-pa2.x)+Math.abs(pa1.y-pa2.y)+Math.abs(pa1.z-pa2.z)))
+        console.log(distenc);
+        if(distenc < 3.5){
+            console.log("open sesamee");
+            //LOCK_MOVEMENT=true
+            //playera.velocityOnlySideways(new Vector2(-3.5,0));
+            var bloop = 0;
+            cam_pan_done = false;
+            addEventListener("tick",(delta)=> {
+                bloop+=0.9*delta
+                if(bloop > 700) {
+                    kill_current_listener()
+                    //playera.position = meowmedaodiskdas.position
+                    //mod_prop_copy_phys(playera._KE_Prop)
+                    //LOCK_MOVEMENT=false;
+                    console.log("awawawa!"+bloop);
+                }else{
+
+                    door.rotation = new Vector3(0,bloop/360,0)
+                }
+            })
             
-//         }
-//     }
-// })
+        }
+    }
+})
