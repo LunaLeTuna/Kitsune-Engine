@@ -257,15 +257,11 @@ void main() {
     // color = vec4(result*vec3(1.0,0.0,0.0), 1.0);
     // else v_normal
 
-    vec4 tecx = texture(texture1, (gl_FragCoord.xy/framebufferSize.xy)).rgba;
-    vec4 behind = texture(screenbuffer, (gl_FragCoord.xy/framebufferSize.xy)).rgba;
-    //vec4 tecx = texture(texture1, v_tex_coords).rgba;
-    
-    
-
-    color = vec4(tecx.rgb, 1.0);
-
-    if(!gl_FrontFacing){
+    if(gl_FrontFacing){
+        vec4 tecx = texture(texture1, (gl_FragCoord.xy/framebufferSize.xy)).rgba;
+        color = vec4(tecx.rgb, 1.0);
+    } else {
+        vec4 behind = texture(screenbuffer, (gl_FragCoord.xy/framebufferSize.xy)).rgba;
         color = vec4(behind.rgb, 1.0);
     }
     

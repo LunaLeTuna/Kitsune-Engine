@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use rust_socketio::{ClientBuilder, Payload, RawClient, client::Client};
 use smol::future::FutureExt;
 
-use crate::{cameras::Camera, fs_system::grab, menu_system::{menuimage, menutext, KEmenuTypes}, props::Prop, PhysWorld, PointLight, ALLOWFILEGRAB, CAMERAS, LIGHTS, MAIN_CAM, MENUS, MODEL_COUNT, PROPS, PW, REQUESTS, SCREEN_SIZE, SHADER_COUNT, TEXTURE_COUNT, WORLDS};
+use crate::{cameras::Camera, fs_system::grab, kbf::Environment, menu_system::{menuimage, menutext, KEmenuTypes}, props::Prop, PhysWorld, PointLight, ALLOWFILEGRAB, CAMERAS, LIGHTS, MAIN_CAM, MENUS, MODEL_COUNT, PROPS, PW, REQUESTS, SCREEN_SIZE, SHADER_COUNT, TEXTURE_COUNT, WORLDS};
 
 pub struct ScriptSpace<'a> {
     pub world: i16,
@@ -600,6 +600,30 @@ fn get_camera_dis(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -
 
 }
 
+fn mod_camera_world(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = CAMERAS.write().unwrap();
+    let st = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
+    
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get_mut(&propid).unwrap();
+
+    w.world=st as u32;
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn get_camera_world(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = CAMERAS.read().unwrap();
+    let propid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    let w = propz.get(&propid).unwrap();
+    
+    Ok(JsValue::Integer(w.world as i32))
+
+}
+
 fn mod_camera_bw2(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
     let mut propz = CAMERAS.write().unwrap();
     let st = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap();
@@ -745,6 +769,26 @@ fn create_model(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> 
     *modelcount = *modelcount + 1;
     
     Ok(JsValue::Integer(*modelcount-1))
+
+}
+
+//
+// world
+//
+
+fn create_world(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = WORLDS.write().unwrap();
+    
+    let sat = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
+
+    propz.insert(sat as u32, (Environment{
+        ambient: Vector3::new(0.0, 0.0, 0.0),
+        skyColor: Vector3::new(0.1372549, 0.509804, 0.2),
+        sun_intensity: 300.0,
+        spawnpoints: Vec::new(),
+    },Vec::new()));
+    
+    Ok(JsValue::Integer(sat))
 
 }
 
@@ -1167,10 +1211,14 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("get_camera_rot", 1, NativeFunction::from_fn_ptr(get_camera_rot));
         self.context.register_global_builtin_callable("mod_camera_dis", 1, NativeFunction::from_fn_ptr(mod_camera_dis));
         self.context.register_global_builtin_callable("get_camera_dis", 1, NativeFunction::from_fn_ptr(get_camera_dis));
+        self.context.register_global_builtin_callable("mod_camera_world", 1, NativeFunction::from_fn_ptr(mod_camera_world));
+        self.context.register_global_builtin_callable("get_camera_world", 1, NativeFunction::from_fn_ptr(get_camera_world));
         self.context.register_global_builtin_callable("mod_camera_bw2", 1, NativeFunction::from_fn_ptr(mod_camera_bw2));
         self.context.register_global_builtin_callable("get_camera_bw2", 1, NativeFunction::from_fn_ptr(get_camera_bw2));
         self.context.register_global_builtin_callable("lookat_camera", 1, NativeFunction::from_fn_ptr(lookat_camera));
         self.context.register_global_builtin_callable("set_main_camera", 1, NativeFunction::from_fn_ptr(set_main_camera));
+
+        self.context.register_global_builtin_callable("create_world", 1, NativeFunction::from_fn_ptr(create_world));
 
         self.context.register_global_builtin_callable("create_light", 1, NativeFunction::from_fn_ptr(create_light));
         self.context.register_global_builtin_callable("mod_light_pos", 1, NativeFunction::from_fn_ptr(mod_light_pos));

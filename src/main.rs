@@ -949,6 +949,7 @@ fn main(){
                     phys_world.apply_force_xz(propz.get_mut(&propid).unwrap(), *flyto);
                 },
                 KERequest::load_map(locala) => {
+                    //now I must fix it
                    //loadmap(locala.to_string(), &mut propz, &mut texturez, &mut modelz, &mut phys_world);
                 },
                 KERequest::js_push(namre, dattaa) => {

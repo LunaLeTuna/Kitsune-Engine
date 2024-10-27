@@ -267,6 +267,14 @@ class Camera {
         return get_camera_dis(this._KE_Prop);
     }
 
+    set world(vec3i) {
+        mod_camera_world(this._KE_Prop, vec3i);
+    }
+
+    get world() {
+        return get_camera_world(this._KE_Prop);
+    }
+
     set buffer_write2(vec1i) {
         mod_camera_bw2(this._KE_Prop, vec1i);
     }
