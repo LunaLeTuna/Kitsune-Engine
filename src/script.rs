@@ -777,16 +777,19 @@ fn create_model(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> 
 //
 
 fn create_world(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
-    let mut propz = WORLDS.write().unwrap();
+    let mut worldz = WORLDS.write().unwrap();
+    let mut phys_worldz = PW.write().unwrap();
     
     let sat = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap();
 
-    propz.insert(sat as u32, (Environment{
+    worldz.insert(sat as u32, (Environment{
         ambient: Vector3::new(0.0, 0.0, 0.0),
         skyColor: Vector3::new(0.1372549, 0.509804, 0.2),
         sun_intensity: 300.0,
         spawnpoints: Vec::new(),
     },Vec::new()));
+
+    phys_worldz.insert(sat as u32, PhysWorld::init_phys_world());
     
     Ok(JsValue::Integer(sat))
 
@@ -1047,7 +1050,9 @@ fn mod_menu_render(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) 
 }
 
 fn raycast_fire(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
-    let mut phys_world = PW.write().unwrap();
+    let st = _nargs.get_or_undefined(2).to_i32(_ctx).unwrap();
+    let mut binding = PW.write().unwrap();
+    let mut phys_world = binding.get_mut(&(st as u32)).unwrap();
 
     let st = _nargs.get_or_undefined(0).to_json(_ctx)?;
     let pos1x = st.get("x").unwrap().as_f64().unwrap() as f32;

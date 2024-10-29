@@ -3,7 +3,7 @@ use glium::{Depth, Display, DrawParameters, Program, Surface, VertexBuffer};
 use nalgebra::{Vector3, Vector2};
 use winit::{event::{VirtualKeyCode, KeyboardInput}, dpi::Position};
 
-use crate::{cameras::Camera, ke_units::{radians, Vec2}, main, models::Model, physic_props::{CopyWhat, PhysWorld}, props::{physhape, phytype, Prop}};
+use crate::{cameras::Camera, ke_units::{radians, Vec2}, main, models::Model, physic_props::{CopyWhat, PhysWorld}, props::{physhape, phytype, Prop}, PW};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum character_type {
@@ -109,11 +109,13 @@ impl Character {
         phys_world._sync_phys_prop(leprop, CopyWhat::All);
     }
 
-    pub fn apply_force(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, force: Vector2<f32>){
-        phys_world.apply_force_xz(propz.get(&self.body).unwrap(), force);
+    pub fn apply_force(&mut self, phys_world: &mut HashMap<u32,PhysWorld>, propz: &mut HashMap<i32, Prop>, force: Vector2<f32>){
+        let body = propz.get(&self.body).unwrap();
+        let pw = phys_world.get_mut(&body.world).unwrap();
+        pw.apply_force_xz(body, force);
     }
 
-    pub fn step(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, delta_time: f32){
+    pub fn step(&mut self, phys_world: &mut HashMap<u32,PhysWorld>, propz: &mut HashMap<i32, Prop>, delta_time: f32){
         match self.character_type {
             character_type::First => {self.apply_force(phys_world, propz, pivot_point(Vector2::new(self.forword, self.sideways), Vector2::zeros(), radians(self.yaw))*self.speed*delta_time)},
             character_type::Scroller => todo!(),
@@ -124,7 +126,7 @@ impl Character {
         
     }
 
-    pub fn interp_key(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, input: KeyboardInput, delta_time: f32){
+    pub fn interp_key(&mut self, phys_world: &mut HashMap<u32,PhysWorld>, propz: &mut HashMap<i32, Prop>, input: KeyboardInput, delta_time: f32){
         let a = input.virtual_keycode.unwrap_or_else(|| winit::event::VirtualKeyCode::NoConvert);
         let state = input.state;
         match self.character_type {
@@ -169,7 +171,7 @@ impl Character {
         }
     }
 
-    pub fn interp_mouse(&mut self, phys_world: &mut PhysWorld, propz: &mut HashMap<i32, Prop>, camera_map: &mut HashMap<i32, Camera>, mouse_delta: Vector2<f32>, screen_size: Vector2<f32>, delta_time: f32){
+    pub fn interp_mouse(&mut self, phys_world: &mut HashMap<u32, PhysWorld>, propz: &mut HashMap<i32, Prop>, camera_map: &mut HashMap<i32, Camera>, mouse_delta: Vector2<f32>, screen_size: Vector2<f32>, delta_time: f32){
         match self.character_type {
             character_type::First => {
                 //print("mouse x: " + event.xpos);

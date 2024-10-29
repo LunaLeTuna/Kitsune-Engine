@@ -74,6 +74,7 @@ pub enum KERequest {
     copy_prop_phys_pose(i32),
     window_cursor_lock(bool),
     garbage_collect(),
+    world_move_prop(i32,u32),
     exit,
     NULL,
 }
@@ -95,7 +96,7 @@ lazy_static::lazy_static! {
     pub static ref TEXTURE_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref CAMERA_COUNT: RwLock<i32> = RwLock::new(0);
     pub static ref BUFFER_COUNT: RwLock<i32> = RwLock::new(0);
-    pub static ref PW: RwLock<PhysWorld> = RwLock::new(PhysWorld::init_phys_world());
+    pub static ref PW: RwLock<HashMap<u32, PhysWorld>> = RwLock::new(HashMap::new());
     pub static ref REQUESTS: RwLock<Vec<KERequest>> = RwLock::new(Vec::new());
     pub static ref FIRST: Arc<RwLock<String>> = Arc::new(RwLock::new(format!("")));
     pub static ref ALLOWFILEGRAB: RwLock<bool> = RwLock::new(false);
@@ -216,6 +217,11 @@ fn main(){
     let mut bufferz: HashMap<i32, SimpleFrameBuffer> = HashMap::new();
     bufferz.reserve(4);
 
+    //init first physics world
+    {
+        PW.write().unwrap().insert(0, PhysWorld::init_phys_world());
+    }
+
 
     let thekeylayout = KeyLayout::new().unwrap();
 
@@ -283,10 +289,10 @@ fn main(){
 
     //init physics system
     //let mut phys_world = PW.write().unwrap();
+    fn loadmap(map:&String, propz: &mut std::sync::RwLockWriteGuard<HashMap<i32, Prop>>, texturez: &mut HashMap<i32, Texture>, modelz: &mut HashMap<i32, Model>, shaderz: &mut HashMap<i32,Shader>, display: &Display) -> (Environment, Vec<String>){
 
-    let mut loadmap = |map:String, propz: &mut std::sync::RwLockWriteGuard<HashMap<i32, Prop>>, texturez: &mut HashMap<i32, Texture>, modelz: &mut HashMap<i32, Model>| {
-
-        let mut phys_world = PW.write().unwrap();
+        let mut binding = PW.write().unwrap();
+        let mut phys_world = binding.get_mut(&0).unwrap();
 
         let map = load(&("./maps/".to_owned()+&map));
 
@@ -366,7 +372,7 @@ fn main(){
         (map.environment, map.scripts)
     };
 
-    let (world_emv, scripz) = loadmap(keconf.default_map, &mut propz, &mut texturez, &mut modelz);
+    let (world_emv, scripz) = loadmap(&keconf.default_map, &mut propz, &mut texturez, &mut modelz, &mut shaderz, &display);
 
     // {
     //     let mut womp = Prop::new("nya :3".to_owned());
@@ -417,7 +423,8 @@ fn main(){
     let mut real_char: Character;
 
     {
-        let mut phys_world = PW.write().unwrap();
+        let mut binding = PW.write().unwrap();
+        let mut phys_world = binding.get_mut(&0).unwrap();
 
         real_char = Character::new(keconf.char_pov, &display, &mut propz, &mut modelz, &mut phys_world, &mut camera_mapc);
         *_main_camerac = real_char.camera;
@@ -930,7 +937,8 @@ fn main(){
                         }   
                     }
 
-                    let mut phys_world = PW.write().unwrap();
+                    let mut binding = PW.write().unwrap();
+                    let mut phys_world = binding.get_mut(&w.world).unwrap();
                     phys_world.remove_phy(w);
 
                     propz.remove(&propid);
@@ -940,25 +948,32 @@ fn main(){
                 KERequest::Pin_Buffer_Camera(_, _) => todo!(),
                 KERequest::Phys_Prop_Push(propid, flyto) => {
                     let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
-                    let mut phys_world = PW.write().unwrap();
-                    phys_world.apply_force(propz.get_mut(&propid).unwrap(), *flyto);
+                    let mut propa = propz.get_mut(&propid).unwrap();
+                    let mut binding = PW.write().unwrap();
+                    let mut phys_world = binding.get_mut(&propa.world).unwrap();
+                    phys_world.apply_force(propa, *flyto);
                 },
                 KERequest::Phys_Prop_Push_SideOnly(propid, flyto) => {
                     let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
-                    let mut phys_world = PW.write().unwrap();
-                    phys_world.apply_force_xz(propz.get_mut(&propid).unwrap(), *flyto);
+                    let mut propa = propz.get_mut(&propid).unwrap();
+                    let mut binding = PW.write().unwrap();
+                    let mut phys_world = binding.get_mut(&propa.world).unwrap();
+                    phys_world.apply_force_xz(propa, *flyto);
                 },
                 KERequest::load_map(locala) => {
                     //now I must fix it
-                   //loadmap(locala.to_string(), &mut propz, &mut texturez, &mut modelz, &mut phys_world);
+                    let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
+                    loadmap(&keconf.default_map, &mut propz, &mut texturez, &mut modelz, &mut shaderz, &display);
                 },
                 KERequest::js_push(namre, dattaa) => {
                     js_world.triggerlis(&namre, &dattaa);
                 },
                 KERequest::copy_prop_phys_pose(propid) => {
                     let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
-                    let mut phys_world = PW.write().unwrap();
-                    phys_world._sync_phys_prop(propz.get_mut(&propid).unwrap(), CopyWhat::All);
+                    let mut propa = propz.get_mut(&propid).unwrap();
+                    let mut binding = PW.write().unwrap();
+                    let mut phys_world = binding.get_mut(&propa.world).unwrap();
+                    phys_world._sync_phys_prop(propa, CopyWhat::All);
                 },
                 KERequest::window_cursor_lock(is) => {
                     if *is {
@@ -976,6 +991,41 @@ fn main(){
                 },
                 KERequest::garbage_collect() => {
                     clear(&mut texturez, &mut modelz, &mut shaderz);
+                },
+                KERequest::world_move_prop(propid,worldid) => {
+                    //get prop from propz
+                    let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
+                    let w = match propz.get_mut(&propid) {
+                        Some(weee) => weee,
+                        None => continue,
+                    };
+
+                    let mut worldz = WORLDS.try_write().unwrap();
+                    //remove from previous world
+                    let prpalce = worldz.get_mut(&w.world).unwrap();
+                    for pr in prpalce.1.iter().enumerate().clone() {
+                        if(pr.1 == propid){
+                            prpalce.1.remove(pr.0);
+                            break;
+                        }   
+                    }
+                    //move to new world
+                    let prpalce = worldz.get_mut(&worldid).unwrap();
+                    prpalce.1.push(*propid);
+
+                    //remove physprop from physworld
+                    let mut binding = PW.write().unwrap();
+                    let mut phys_world = binding.get_mut(&w.world).unwrap();
+                    phys_world._sync_prop(w, CopyWhat::All); //syncing data to prop so when we crate it over at new physworld, it (in theory) should just work
+                    phys_world.remove_phy(w);
+
+                    //add to new physworld (please god, don't let there be any problems)
+                    let mut phys_world = binding.get_mut(&worldid).unwrap();
+                    phys_world.create_phy(w, &mut modelz);
+                    phys_world._sync_phys_prop(w, CopyWhat::All);
+                    //TODO: sync rotation locks between worlds
+
+                    //propz.remove(&propid);
                 },
                 KERequest::NULL => todo!(),
             }
@@ -1033,10 +1083,14 @@ fn main(){
             let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
             let mut phys_world = PW.write().unwrap();
             //step physics world
-            phys_world.step();
+            for awa in 0..phys_world.len() as u32{
+                let pwa = phys_world.get_mut(&awa).unwrap();
+                pwa.step();
+            }
 
             for po in propz.iter_mut() {
                 let prop = po.1;
+                let phys_world = phys_world.get_mut(&prop.world).unwrap();
                 phys_world._sync_prop(prop, CopyWhat::All);
             };
         }
@@ -1049,7 +1103,10 @@ fn main(){
             real_char.step(&mut phys_world, &mut propz, delta_time);
 
             //step physics world
-            phys_world.step();
+            for awa in 0..phys_world.len() as u32{
+                let pwa = phys_world.get_mut(&awa).unwrap();
+                pwa.step();
+            }
 
 
             let world = WORLDS.write().unwrap();
@@ -1084,6 +1141,7 @@ fn main(){
                     }
 
                     if prop.phys_type == phytype::Dynamic {
+                        let phys_world = phys_world.get_mut(&prop.world).unwrap();
                         phys_world._sync_prop(prop, CopyWhat::All);
                     }
 
@@ -1115,6 +1173,7 @@ fn main(){
             
                 for pid in &world.1 {
                     let prop = propz.get_mut(&pid).unwrap();
+                    let pwa = phys_world.get_mut(&prop.world).unwrap();
 
                     if prop.parent_prop != -1 {
                         prop.position = PROPS.read().unwrap().get(&prop.parent_prop).unwrap().position+prop.parent_offset;
@@ -1123,9 +1182,9 @@ fn main(){
                     
                     //sync physics prop to visual prop or vis versa
                     if prop.phys_type == phytype::DynamicCollider {
-                        phys_world._sync_phys_prop(prop, CopyWhat::All);
+                        pwa._sync_phys_prop(prop, CopyWhat::All);
                     }else if prop.phys_type == phytype::Dynamic {
-                        phys_world._sync_prop(prop, CopyWhat::All);
+                        pwa._sync_prop(prop, CopyWhat::All);
                     }
                     
                     if !prop.render {continue;}
