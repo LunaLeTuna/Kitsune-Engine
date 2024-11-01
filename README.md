@@ -28,6 +28,7 @@ possably add steam_appid.txt with steam game id
 - [BoaJS](https://boajs.dev/)
 - [rapier3d](https://rapier.rs/)
 - [Ty for pig "Ellie Pig" model](https://github.com/TyThePotato)
+- [fooooooo for helping port engine from c++ to rust](https://github.com/fooooooooooooooo)
 
 ## Project Ideas with KE
 

@@ -33,7 +33,7 @@ use steamworks::Client;
 use steamworks::FriendFlags;
 use steamworks::PersonaStateChange;
 
-use std::{borrow::BorrowMut, collections::VecDeque, f32::consts::PI, fmt::Debug, fs, hash::Hash, ops::Mul, path, sync::{mpsc::channel, Arc, Mutex, RwLock}, thread::sleep, time::{Duration, SystemTime, UNIX_EPOCH}};
+use std::{borrow::BorrowMut, collections::VecDeque, f32::consts::PI, fmt::Debug, fs, hash::Hash, ops::{Mul}, path, sync::{mpsc::channel, Arc, Mutex, RwLock}, thread::sleep, time::{Duration, SystemTime, UNIX_EPOCH}};
 use std::collections::HashMap;
 use winit::platform::run_return::EventLoopExtRunReturn;
 
@@ -69,12 +69,13 @@ pub enum KERequest {
     Pin_Buffer_Camera(i32,i32),
     Phys_Prop_Push(i32,Vector3<f32>),
     Phys_Prop_Push_SideOnly(i32,Vector2<f32>),
-    load_map(String),
+    load_map(String, u32),
     js_push(String, String),
     copy_prop_phys_pose(i32),
     window_cursor_lock(bool),
     garbage_collect(),
     world_move_prop(i32,u32),
+    move_char(u32),
     exit,
     NULL,
 }
@@ -276,7 +277,7 @@ fn main(){
         let missing_texture = _KE_MAIN_DEPENDENTS.to_owned()+"/missing.png";
         texturez.insert(1, Texture::craft(&missing_texture, &display));
 
-        *TEXTURE_COUNT.write().expect("RwLock poisoned") += 2;
+        *TEXTURE_COUNT.write().expect("RwLock poisoned") += 3;
 
         // propz.insert(0, Prop::new("nya".into()));
 
@@ -289,48 +290,47 @@ fn main(){
 
     //init physics system
     //let mut phys_world = PW.write().unwrap();
-    fn loadmap(map:&String, propz: &mut std::sync::RwLockWriteGuard<HashMap<i32, Prop>>, texturez: &mut HashMap<i32, Texture>, modelz: &mut HashMap<i32, Model>, shaderz: &mut HashMap<i32,Shader>, display: &Display) -> (Environment, Vec<String>){
+    fn loadmap(map:&String, propz: &mut std::sync::RwLockWriteGuard<HashMap<i32, Prop>>, texturez: &mut HashMap<i32, Texture>, modelz: &mut HashMap<i32, Model>, shaderz: &mut HashMap<i32,Shader>, lightz: &mut Vec<PointLight>, display: &Display, worldid: u32) -> (Environment, Vec<String>){
 
         let mut binding = PW.write().unwrap();
-        let mut phys_world = binding.get_mut(&0).unwrap();
+        let mut phys_world = binding.get_mut(&worldid).unwrap();
 
         let map = load(&("./maps/".to_owned()+&map));
-
         
-        let txCount = (texturez.len() as i32)-1;
+        let txCount = *TEXTURE_COUNT.read().unwrap()-1;
 
-        for tx in map.textures {
-            texturez.insert(txCount+tx.0, Texture::craft(&("./textures/".to_owned()+&tx.1), &display));
-            *TEXTURE_COUNT.write().expect("RwLock poisoned") += 1;
+    for tx in map.textures {
+        texturez.insert(txCount+tx.0, Texture::craft(&("./textures/".to_owned()+&tx.1), &display));
+        *TEXTURE_COUNT.write().expect("RwLock poisoned") += 1;
+    }
+
+    let mdCount = *MODEL_COUNT.read().unwrap()-1 ;
+
+    for md in map.models {
+        if(md.1.ends_with(".obj")){
+            modelz.insert(mdCount+md.0, models::load_obj(&("./models/".to_owned()+&md.1), &display));
+        }else if(md.1.ends_with(".fbx")){
+            modelz.insert(mdCount+md.0, models::load_fbx(&("./models/".to_owned()+&md.1), &display));
+        }else if(md.1.ends_with(".gltf") || md.1.ends_with(".glb")){
+            modelz.insert(mdCount+md.0, models::load_gltf(&("./models/".to_owned()+&md.1), &display));
         }
+        *MODEL_COUNT.write().expect("RwLock poisoned") += 1;
+    }
 
-        let mdCount = (modelz.len() as i32)-1;
+    let shCount = *SHADER_COUNT.read().unwrap()-1;
 
-        for md in map.models {
-            if(md.1.ends_with(".obj")){
-                modelz.insert(mdCount+md.0, models::load_obj(&("./models/".to_owned()+&md.1), &display));
-            }else if(md.1.ends_with(".fbx")){
-                modelz.insert(mdCount+md.0, models::load_fbx(&("./models/".to_owned()+&md.1), &display));
-            }else if(md.1.ends_with(".gltf") || md.1.ends_with(".glb")){
-                modelz.insert(mdCount+md.0, models::load_gltf(&("./models/".to_owned()+&md.1), &display));
-            }
-            *MODEL_COUNT.write().expect("RwLock poisoned") += 1;
-        }
-
-        let shCount = (shaderz.len() as i32)-1;
-
-        for sh in map.shaders {
-            let de_shader = "./shaders/".to_owned()+&sh.1;
-            shaderz.insert(shCount+sh.0, Shader::craft(&de_shader, &display));
-            
-            *SHADER_COUNT.write().expect("RwLock poisoned") += 1;
-        }
+    for sh in map.shaders {
+        let de_shader = "./shaders/".to_owned()+&sh.1;
+        shaderz.insert(shCount+sh.0, Shader::craft(&de_shader, &display));
+        
+        *SHADER_COUNT.write().expect("RwLock poisoned") += 1;
+    }
 
         let mut partnp = propz.len() as i32;
 
         let mut binding = WORLDS.write().unwrap();
-        (*binding).insert(0, (map.environment.clone(),Vec::new()));
-        let mut worlda = binding.get_mut(&0).unwrap();
+        (*binding).insert(worldid, (map.environment.clone(),Vec::new()));
+        let mut worlda = binding.get_mut(&worldid).unwrap();
 
         for np in map.props {
             let mut np = np;
@@ -361,7 +361,6 @@ fn main(){
             partnp+=1;
         }
 
-        let mut lightz = LIGHTS.write().unwrap();
         let mut partnp = lightz.len();
 
         for nl in map.lights {
@@ -372,7 +371,7 @@ fn main(){
         (map.environment, map.scripts)
     };
 
-    let (world_emv, scripz) = loadmap(&keconf.default_map, &mut propz, &mut texturez, &mut modelz, &mut shaderz, &display);
+    let (world_emv, scripz) = loadmap(&keconf.default_map, &mut propz, &mut texturez, &mut modelz, &mut shaderz, &mut LIGHTS.write().unwrap(), &display, 0);
 
     // {
     //     let mut womp = Prop::new("nya :3".to_owned());
@@ -914,6 +913,7 @@ fn main(){
                     }else{
                         HashMap::insert(&mut texturez, *ida, Texture::craft(&format!("./textures/{local}"), &display));
                     }
+                    *TEXTURE_COUNT.write().expect("RwLock poisoned") += 1;
                 },
                 KERequest::Pin_Texture_Buffer(wheret, placed) => {
                     let projecto = texturez.get_mut(&wheret).unwrap();
@@ -960,10 +960,11 @@ fn main(){
                     let mut phys_world = binding.get_mut(&propa.world).unwrap();
                     phys_world.apply_force_xz(propa, *flyto);
                 },
-                KERequest::load_map(locala) => {
+                KERequest::load_map(locala, worldid) => {
                     //now I must fix it
                     let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
-                    loadmap(&keconf.default_map, &mut propz, &mut texturez, &mut modelz, &mut shaderz, &display);
+                    loadmap(&locala, &mut propz, &mut texturez, &mut modelz, &mut shaderz, &mut lightz, &display, *worldid);
+
                 },
                 KERequest::js_push(namre, dattaa) => {
                     js_world.triggerlis(&namre, &dattaa);
@@ -993,39 +994,13 @@ fn main(){
                     clear(&mut texturez, &mut modelz, &mut shaderz);
                 },
                 KERequest::world_move_prop(propid,worldid) => {
-                    //get prop from propz
-                    let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
-                    let w = match propz.get_mut(&propid) {
-                        Some(weee) => weee,
-                        None => continue,
-                    };
-
-                    let mut worldz = WORLDS.try_write().unwrap();
-                    //remove from previous world
-                    let prpalce = worldz.get_mut(&w.world).unwrap();
-                    for pr in prpalce.1.iter().enumerate().clone() {
-                        if(pr.1 == propid){
-                            prpalce.1.remove(pr.0);
-                            break;
-                        }   
-                    }
-                    //move to new world
-                    let prpalce = worldz.get_mut(&worldid).unwrap();
-                    prpalce.1.push(*propid);
-
-                    //remove physprop from physworld
-                    let mut binding = PW.write().unwrap();
-                    let mut phys_world = binding.get_mut(&w.world).unwrap();
-                    phys_world._sync_prop(w, CopyWhat::All); //syncing data to prop so when we crate it over at new physworld, it (in theory) should just work
-                    phys_world.remove_phy(w);
-
-                    //add to new physworld (please god, don't let there be any problems)
-                    let mut phys_world = binding.get_mut(&worldid).unwrap();
-                    phys_world.create_phy(w, &mut modelz);
-                    phys_world._sync_phys_prop(w, CopyWhat::All);
-                    //TODO: sync rotation locks between worlds
-
-                    //propz.remove(&propid);
+                    world_move_prop(propid, worldid, &mut modelz);
+                },
+                KERequest::move_char(worldid) => {
+                    // real_char.world = *worldid;
+                    // world_move_prop(&real_char.body, worldid, &mut modelz);
+                    // let mut camera_map = CAMERAS.write().unwrap();
+                    // camera_map.get_mut(&real_char.camera).unwrap().world=*worldid;
                 },
                 KERequest::NULL => todo!(),
             }
@@ -1316,6 +1291,44 @@ fn main(){
         //     propz.remove(&amongus);
         // }
     });
+}
+
+fn world_move_prop(propid: &i32, worldid: &u32, modelz: &mut HashMap<i32, Model>) {
+    //get prop from propz
+    let mut propz: std::sync::RwLockWriteGuard<HashMap<i32, Prop>> = PROPS.try_write().unwrap();
+    let w = match propz.get_mut(&propid) {
+        Some(weee) => weee,
+        None => return,
+    };
+    let mut worldz = WORLDS.try_write().unwrap();
+    let prpalce = worldz.get_mut(&w.world).unwrap();
+    //remove from previous world
+    for pr in prpalce.1.iter().enumerate().clone() {
+        if(pr.1 == propid){
+            prpalce.1.remove(pr.0);
+            break;
+        }   
+    }
+    //move to new world
+    let prpalce = worldz.get_mut(&worldid).unwrap();
+    prpalce.1.push(*propid);
+    let mut binding = PW.write().unwrap();
+    let mut phys_world = binding.get_mut(&w.world).unwrap();
+    //syncing data to prop so when we crate it over at new physworld, it (in theory) should just work
+    phys_world._sync_prop(w, CopyWhat::All);
+    //remove physprop from physworld
+    phys_world.remove_phy(w);
+    let mut phys_world = binding.get_mut(&worldid).unwrap();
+    //add to new physworld (please god, don't let there be any problems)
+    //TODO: sync rotation locks between worlds
+    phys_world.create_phy(w, modelz);
+    phys_world._sync_phys_prop(w, CopyWhat::All);
+
+
+
+
+    //propz.remove(&propid);
+    return;
 }
 
 fn screen_compile(loop_wawa: f32, screen_model: &VertexBuffer<Vertex2D>, screen_shader: &i32, shader_vars: &HashMap<String, ShadvType>, screen_texture: &SrgbTexture2d, screen_depth_texture: &DepthTexture2d, screenbuffer: &mut  SimpleFrameBuffer, target: &mut glium::Frame, shaderz: &HashMap<i32, Shader>, params: &DrawParameters<'_>){

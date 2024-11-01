@@ -13,12 +13,28 @@ class Vector3 {
     }
 }
 
-Vector3.prototype["Zero"] = new Vector3(0,0,0)
-
-Vector3.prototype["+"] = function( b )
-{
-  return new Vector3( this.x + b.x, this.y + b.y, this.z + b.z );
+Vector3.prototype.Add = function (v2) {
+    var v = new Vector(this.x + v2.x,
+                       this.y + v2.y,
+                       this.z + v2.z);
+    return v;
 }
+
+Vector3.prototype.addTo = function (v2) {
+    this.x += v2.x
+    this.y += v2.y
+    this.z += v2.z
+    return this
+}
+
+Vector3.prototype.equal = function (v2) {
+    return this.x == v2.x && this.y == v2.y && this.z == v2.z;
+}
+
+
+Vector3.prototype.toString = function () {
+    return `${this.x} ${this.y} ${this.z}`;
+  };
 
 class Shader {
     constructor(url) {

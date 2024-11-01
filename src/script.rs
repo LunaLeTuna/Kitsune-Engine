@@ -1139,6 +1139,37 @@ fn garbage_collect(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) 
 
 }
 
+
+fn fnloadmap(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = REQUESTS.write().unwrap();
+
+    let sat = _nargs.get_or_undefined(0).as_string().unwrap().as_ref();
+    let maplocation = match std::string::String::from_utf16(sat) {
+        Ok(x) => x,
+        Err(_) => "".to_owned()
+    };
+
+    let worldid = _nargs.get_or_undefined(1).to_i32(_ctx).unwrap() as u32;
+
+    propz.push(crate::KERequest::load_map(maplocation, worldid));
+    drop(propz);
+    
+    Ok(JsValue::Undefined)
+
+}
+
+fn move_char(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> JsResult<JsValue> {
+    let mut propz = REQUESTS.write().unwrap();
+
+    let worldid = _nargs.get_or_undefined(0).to_i32(_ctx).unwrap() as u32;
+
+    propz.push(crate::KERequest::move_char(worldid));
+    drop(propz);
+    
+    Ok(JsValue::Undefined)
+
+}
+
 impl ScriptSpace<'_> {
 
     pub fn new() -> ScriptSpace<'static>{
@@ -1253,6 +1284,10 @@ impl ScriptSpace<'_> {
         self.context.register_global_builtin_callable("tepter", 1, NativeFunction::from_fn_ptr(tepter));
         self.context.register_global_builtin_callable("window_cursor_lock", 1, NativeFunction::from_fn_ptr(window_cursor_lock));
         self.context.register_global_builtin_callable("garbage_collect", 1, NativeFunction::from_fn_ptr(garbage_collect));
+        
+        self.context.register_global_builtin_callable("load_map", 1, NativeFunction::from_fn_ptr(fnloadmap));
+
+        self.context.register_global_builtin_callable("move_char", 1, NativeFunction::from_fn_ptr(move_char));
 
         self.context.register_global_builtin_callable("raycast_fire", 1, NativeFunction::from_fn_ptr(raycast_fire));
 
