@@ -15,13 +15,13 @@ xv1.addTo(xv2)
 
 console.log(xv1);
 
-addEventListener("keypress", (keyevt) => {
-    //console.log(JSON.stringify(keyevt));
+// addEventListener("keypress", (keyevt) => {
+//     //console.log(JSON.stringify(keyevt));
 
-    if(keyevt.which == 26&&keyevt.how=="pressed"){
-        create_world(1)
-        load_map("burgor.kbf",1)
-        portal_cam.world = 1
-        //need to containerize lights to worlds
-    }
-})
+//     if(keyevt.which == 26&&keyevt.how=="pressed"){
+//         create_world(1)
+//         load_map("burgor.kbf",1)
+//         portal_cam.world = 1
+//         //need to containerize lights to worlds
+//     }
+// })

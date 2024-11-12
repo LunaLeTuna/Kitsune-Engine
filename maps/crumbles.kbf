@@ -1,0 +1,70 @@
+Kitsune Engine V1
+
+>AmbientColor 0 0 0
+>SkyColor 0.04619991 0 0.18
+>SunIntensity 0
+>Baseplate 500 0.51 0.2448 0.383588 1
+
+
+
+
+Legacy_Brick -3.5 114.75 2.5 14 230.5 14
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 
+Spawn_Point 20 221.5 -39.5 1 1 1
+	+NAME New Spawn
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 
+Legacy_Brick 34.5 109.25 23.5 14 219.5 16
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 
+Legacy_Brick 47.5 109.25 -39 14 219.5 16
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 
+Light 40 3.5 -22.5 1 1 1
+	+NAME New Light
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 
+Legacy_Brick 1.25 0 51 19.5 1 5
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 
+Legacy_Brick -136.25 108.75 52.25 15.5 218.5 37.5
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 
+Legacy_Brick -64.5 64.75 -9 32 130.5 15
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 
+Legacy_Brick -57.75 16.75 13.5 11.5 5.5 41
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 
+Legacy_Brick -43 109.25 -129.5 14 219.5 16
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 
+Legacy_Brick 107 114.75 41.5 14 230.5 14
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 
+Legacy_Brick -33.25 217 -39 147.5 5 19
+	+NAME New Brick
+	+COLOR 0.5 0.5 0.5
+	+file 
+	+fire 

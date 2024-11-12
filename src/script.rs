@@ -787,7 +787,7 @@ fn create_world(_this: &JsValue, _nargs: &[JsValue], _ctx: &mut Context<'_>) -> 
         skyColor: Vector3::new(0.1372549, 0.509804, 0.2),
         sun_intensity: 300.0,
         spawnpoints: Vec::new(),
-    },Vec::new()));
+    },Vec::new(),Vec::new()));
 
     phys_worldz.insert(sat as u32, PhysWorld::init_phys_world());
     

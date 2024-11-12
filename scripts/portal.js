@@ -31,6 +31,7 @@ function modor(vvv) {
 portal_geo.texture = portal_tex;
 tepter(portal_tex.ID, 0)
 portal_cam.buffer_write2 = 1;
+portal_cam.disabled = true
 
 //portal_geo.scale = new Vector3(0.2,4,3)
 portal_geo.position = new Vector3(0,0.501,0)
@@ -39,6 +40,8 @@ mod_prop_model(portal_geo._KE_Prop, portal_mes.ID)
 mod_prop_texture(portal_geo._KE_Prop, 0, portal_tex.ID)
 portal_geo.backfacing = false
 portal_geo.trans = 0.9
+
+var is_door_open = false;
 
 function loop(delta){
     
@@ -63,12 +66,23 @@ var cam_pan_done = false;
 
 
 addEventListener("keypress", (keyevt) => {
+    if(is_door_open) return
+
     if(keyevt.which == 18 && keyevt.how == "released"){
+
         var pa1 = mainchar.position;
         var pa2 = portal_geo.position;
         let distenc = Math.sqrt((Math.abs(pa1.x-pa2.x)+Math.abs(pa1.y-pa2.y)+Math.abs(pa1.z-pa2.z)))
-        console.log(distenc);
+        //console.log(distenc);
         if(distenc < 3.5){
+            is_door_open=true
+
+            //load portal
+            create_world(1)
+            load_map("burgor.kbf",1)
+            portal_cam.world = 1
+            portal_cam.disabled = false
+
             console.log("open sesamee");
             //LOCK_MOVEMENT=true
             //playera.velocityOnlySideways(new Vector2(-3.5,0));

@@ -82,7 +82,7 @@ pub enum KERequest {
 
 lazy_static::lazy_static! {
     // the Vec<i32> is refrences to the prop hashmap, maybe at some point move worlds in to PROPS with HASHMAP<i32,HASHMAP<i32,Prop>>... maybe thats stupid :P
-    static ref WORLDS: RwLock<HashMap<u32, (Environment,Vec<i32>)>> = RwLock::new(HashMap::new());
+    static ref WORLDS: RwLock<HashMap<u32, (Environment,Vec<i32>, Vec<i32>)>> = RwLock::new(HashMap::new());
     static ref PROPS: RwLock<HashMap<i32, Prop>> = RwLock::new(HashMap::new());
     static ref FONTS: RwLock<HashMap<i32, KEfont>> = RwLock::new(HashMap::new());
     static ref MENUS: RwLock<HashMap<i32, KEmenuTypes>> = RwLock::new(HashMap::new());
@@ -329,7 +329,7 @@ fn main(){
         let mut partnp = propz.len() as i32;
 
         let mut binding = WORLDS.write().unwrap();
-        (*binding).insert(worldid, (map.environment.clone(),Vec::new()));
+        (*binding).insert(worldid, (map.environment.clone(),Vec::new(),Vec::new()));
         let mut worlda = binding.get_mut(&worldid).unwrap();
 
         for np in map.props {
